@@ -8,16 +8,27 @@ const importConfigScript = `
 `;
 
 function loadConfig(renderApiOrigin) {
+  const env = { ...process.env };
+  if (renderApiOrigin === undefined) {
+    delete env.RENDER_API_ORIGIN;
+  } else {
+    env.RENDER_API_ORIGIN = renderApiOrigin;
+  }
+
   return spawnSync(
     process.execPath,
     ['--no-warnings', '--experimental-strip-types', '--eval', importConfigScript],
     {
       cwd: process.cwd(),
       encoding: 'utf8',
-      env: { ...process.env, RENDER_API_ORIGIN: renderApiOrigin },
+      env,
     },
   );
 }
+
+const defaultOrigin = loadConfig();
+assert.equal(defaultOrigin.status, 0, defaultOrigin.stderr);
+assert.match(defaultOrigin.stdout, /https:\/\/bughunter-api-2o5c\.onrender\.com\/api\/:path\*/);
 
 const validOrigin = loadConfig('https://api.example.com');
 assert.equal(validOrigin.status, 0, validOrigin.stderr);

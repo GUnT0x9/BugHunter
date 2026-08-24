@@ -1,11 +1,9 @@
 import { routes, type VercelConfig } from '@vercel/config/v1';
 
-function getRenderApiOrigin(value: string | undefined): string {
-  if (!value) {
-    throw new Error('RENDER_API_ORIGIN must be set to the public Render API origin.');
-  }
+const DEFAULT_RENDER_API_ORIGIN = 'https://bughunter-api-2o5c.onrender.com';
 
-  const url = new URL(value);
+function getRenderApiOrigin(value: string | undefined): string {
+  const url = new URL(value ?? DEFAULT_RENDER_API_ORIGIN);
   if (url.protocol !== 'https:') {
     throw new Error('RENDER_API_ORIGIN must use HTTPS.');
   }

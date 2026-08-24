@@ -26,9 +26,8 @@ admin 계정 seed를 수행합니다.
 2. 같은 GitHub 저장소를 Import합니다.
 3. Root Directory는 저장소 root로 유지합니다.
 4. `vercel.ts`에서 build와 output 설정을 자동으로 읽는지 확인합니다.
-5. Environment Variable을 추가합니다.
-   - Key: `RENDER_API_ORIGIN`
-   - Value: `https://<api-address>`
+5. 현재 Render API는 기본값 `https://bughunter-api-2o5c.onrender.com`으로 연결됩니다.
+   API 주소가 바뀐 경우에만 `RENDER_API_ORIGIN`에 새 origin을 입력합니다.
 6. Production Deploy를 실행하고 최종 `https://<project>.vercel.app` 주소를 복사합니다.
 
 Web browser는 Vercel의 `/api`에만 요청하며 Vercel이 Render API를 reverse proxy합니다. 따라서
