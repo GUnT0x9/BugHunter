@@ -6,7 +6,7 @@ function toConceptSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9가-힣]+/g, '-');
 }
 
-export async function seedDatabase(prisma: PrismaClient): Promise<void> {
+export async function seedContent(prisma: PrismaClient): Promise<void> {
   for (const bugType of bugTypes) {
     await prisma.bugType.upsert({
       where: { slug: bugType.slug },
@@ -104,7 +104,9 @@ export async function seedDatabase(prisma: PrismaClient): Promise<void> {
       });
     });
   }
+}
 
+export async function seedAdmin(prisma: PrismaClient): Promise<void> {
   const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const adminPassword = process.env.ADMIN_PASSWORD;
   if (!adminEmail || !adminPassword) return;
@@ -124,4 +126,9 @@ export async function seedDatabase(prisma: PrismaClient): Promise<void> {
       role: UserRole.ADMIN,
     },
   });
+}
+
+export async function seedDatabase(prisma: PrismaClient): Promise<void> {
+  await seedContent(prisma);
+  await seedAdmin(prisma);
 }

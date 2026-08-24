@@ -35,4 +35,4 @@ FROM runtime AS setup
 CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy --schema prisma/schema.prisma && node dist/seed-main.js"]
 
 FROM runtime AS production
-CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy --schema prisma/schema.prisma && exec node dist/main.js"]
+CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy --schema prisma/schema.prisma && node dist/bootstrap-main.js && exec node dist/main.js"]
