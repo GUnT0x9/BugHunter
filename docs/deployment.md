@@ -10,7 +10,6 @@ Judge Worker는 Docker host가 준비될 때까지 배포하지 않으며 API가
 2. GitHub의 `GUnT0x9/BugHunter` 저장소와 `main` branch를 선택합니다.
 3. 저장소 root의 `render.yaml`을 사용합니다.
 4. Blueprint가 요청하는 값을 입력합니다.
-   - `WEB_ORIGIN`: 첫 생성에서는 `https://placeholder.invalid`
    - `ADMIN_EMAIL`: 실제 admin 로그인 email
    - `ADMIN_PASSWORD`: 12자 이상의 새 password
    - `ADMIN_USERNAME`: 화면에 표시할 admin 이름
@@ -35,9 +34,9 @@ Web browser는 Vercel의 `/api`에만 요청하며 Vercel이 Render API를 rever
 
 ## 3. Render origin 확정
 
-1. Render의 `bughunter-api` 서비스에서 `WEB_ORIGIN`을 최종 Vercel 주소로 변경합니다.
-2. 주소 끝에는 `/`를 붙이지 않습니다.
-3. API를 Manual Deploy 또는 Restart합니다.
+1. `render.yaml`의 `WEB_ORIGIN`이 최종 Vercel 주소와 같은지 확인합니다.
+2. 주소가 바뀌면 끝에 `/`를 붙이지 않고 값을 수정한 뒤 `main`에 push합니다.
+3. Render Blueprint가 변경사항을 동기화하고 API를 재배포할 때까지 기다립니다.
 
 ## 4. 배포 확인
 

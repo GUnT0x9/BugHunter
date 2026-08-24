@@ -39,7 +39,7 @@ services:
           name: bughunter-redis
           property: connectionString
       - key: WEB_ORIGIN
-        sync: false
+        value: https://bug-hunter-api-gunt0x9s-projects.vercel.app
       - key: NODE_ENV
         value: production
       - key: SESSION_COOKIE_SAME_SITE
