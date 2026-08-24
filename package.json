@@ -6,9 +6,9 @@
   "scripts": {
     "build": "pnpm -r build",
     "dev": "pnpm --parallel --filter @bughunter/web --filter @bughunter/api --filter @bughunter/judge-worker dev",
-    "lint": "pnpm -r lint",
-    "typecheck": "pnpm --filter @bughunter/contracts build && pnpm --filter @bughunter/content build && pnpm -r typecheck",
-    "test": "pnpm --filter @bughunter/contracts build && pnpm --filter @bughunter/content build && pnpm -r test",
+    "lint": "pnpm exec tsc -p tsconfig.vercel.json && pnpm -r lint",
+    "typecheck": "pnpm exec tsc -p tsconfig.vercel.json && pnpm --filter @bughunter/contracts build && pnpm --filter @bughunter/content build && pnpm -r typecheck",
+    "test": "node scripts/validate-vercel-config.mjs && pnpm --filter @bughunter/contracts build && pnpm --filter @bughunter/content build && pnpm -r test",
     "test:content": "pnpm --filter @bughunter/contracts build && pnpm --filter @bughunter/content test",
     "test:judge-content": "pnpm --filter @bughunter/contracts build && pnpm --filter @bughunter/content build && pnpm --filter @bughunter/judge-worker validate:content",
     "test:judge-api-content": "pnpm --filter @bughunter/contracts build && pnpm --filter @bughunter/content build && node scripts/validate-api-content.mjs",
@@ -21,6 +21,7 @@
     "docker:logs": "docker compose logs -f api worker web"
   },
   "devDependencies": {
+    "@vercel/config": "^0.6.1",
     "prettier": "^3.5.3",
     "typescript": "^5.8.3"
   }

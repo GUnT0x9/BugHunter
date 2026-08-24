@@ -47,9 +47,9 @@ pnpm dev
 
 ## Vercel + Render 배포
 
-Frontend는 Vercel, API와 PostgreSQL/Redis는 Render Blueprint로 배포할 수 있습니다. 기본
-`vercel.app`/`onrender.com` 주소를 사용할 때는 배포 설정이 secure cross-site session cookie를
-사용하며, API는 설정한 `WEB_ORIGIN`에서 온 변경 요청만 허용합니다.
+Frontend는 Vercel, API와 PostgreSQL/Redis는 Render Blueprint로 배포할 수 있습니다. Vercel이
+`/api` 요청을 Render로 reverse proxy하므로 별도 domain 없이도 session cookie가 same-origin으로
+동작합니다. API는 설정한 `WEB_ORIGIN`에서 온 변경 요청만 허용합니다.
 
 현재 Judge Worker는 Docker socket이 필요한 구조이므로 Render에 포함하지 않습니다. Docker를
 실행할 수 있는 별도 Worker가 연결되기 전까지 실행과 제출 요청은 즉시 `503`을 반환하며 Queue에

@@ -43,7 +43,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: SESSION_COOKIE_SAME_SITE
-        value: none
+        value: lax
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD
