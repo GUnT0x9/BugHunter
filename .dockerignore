@@ -4,6 +4,11 @@ node_modules
 **/node_modules.failed-install-*
 .git
 .env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
 coverage
 .runtime
 *.log

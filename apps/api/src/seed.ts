@@ -1,10 +1,12 @@
+import { bugTypes, chapters, missions } from '@bughunter/content';
 import { PrismaClient, UserRole } from '@prisma/client';
 import * as argon2 from 'argon2';
-import { bugTypes, chapters, missions } from '@bughunter/content';
 
-const prisma = new PrismaClient();
+function toConceptSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9가-힣]+/g, '-');
+}
 
-async function main(): Promise<void> {
+export async function seedDatabase(prisma: PrismaClient): Promise<void> {
   for (const bugType of bugTypes) {
     await prisma.bugType.upsert({
       where: { slug: bugType.slug },
@@ -36,7 +38,7 @@ async function main(): Promise<void> {
   const conceptNameBySlug = new Map<string, string>();
   for (const seed of missions) {
     for (const conceptName of seed.concepts) {
-      conceptNameBySlug.set(conceptName.toLowerCase().replace(/[^a-z0-9가-힣]+/g, '-'), conceptName);
+      conceptNameBySlug.set(toConceptSlug(conceptName), conceptName);
     }
   }
   await Promise.all(
@@ -83,11 +85,15 @@ async function main(): Promise<void> {
         })),
       });
       await tx.hint.createMany({
-        data: seed.hints.map((content, index) => ({ missionId: mission.id, level: index + 1, content })),
+        data: seed.hints.map((content, index) => ({
+          missionId: mission.id,
+          level: index + 1,
+          content,
+        })),
       });
       const conceptIds = new Set(
         seed.concepts.map((name) => {
-          const slug = name.toLowerCase().replace(/[^a-z0-9가-힣]+/g, '-');
+          const slug = toConceptSlug(name);
           const conceptId = conceptIdBySlug.get(slug);
           if (!conceptId) throw new Error(`Invalid Concept relation: ${slug}`);
           return conceptId;
@@ -101,22 +107,21 @@ async function main(): Promise<void> {
 
   const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const adminPassword = process.env.ADMIN_PASSWORD;
-  if (adminEmail && adminPassword) {
-    if (adminPassword.length < 12)
-      throw new Error('ADMIN_PASSWORD must be at least 12 characters long.');
-    const passwordHash = await argon2.hash(adminPassword, { type: argon2.argon2id });
-    const username = process.env.ADMIN_USERNAME?.trim() || 'BugHunter Admin';
-    await prisma.user.upsert({
-      where: { email: adminEmail },
-      update: { username, passwordHash, role: UserRole.ADMIN },
-      create: {
-        email: adminEmail,
-        username,
-        passwordHash,
-        role: UserRole.ADMIN,
-      },
-    });
+  if (!adminEmail || !adminPassword) return;
+  if (adminPassword.length < 12) {
+    throw new Error('ADMIN_PASSWORD must be at least 12 characters long.');
   }
-}
 
-main().finally(async () => prisma.$disconnect());
+  const passwordHash = await argon2.hash(adminPassword, { type: argon2.argon2id });
+  const username = process.env.ADMIN_USERNAME?.trim() || 'BugHunter Admin';
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: { username, passwordHash, role: UserRole.ADMIN },
+    create: {
+      email: adminEmail,
+      username,
+      passwordHash,
+      role: UserRole.ADMIN,
+    },
+  });
+}

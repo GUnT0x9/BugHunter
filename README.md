@@ -44,4 +44,3 @@ pnpm dev
 - `pnpm test:judge-docker`: Docker 격리 제한 7개 검증
 - `pnpm test:judge-content`: 45개 초기 코드와 reference solution을 실제 Docker Runner로 검증
 - `pnpm test:judge-api-content`: admin 계정으로 45개 reference solution을 Web proxy/API/Queue/Worker에 실제 제출
-# BugHunter

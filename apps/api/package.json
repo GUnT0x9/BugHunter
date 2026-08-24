@@ -5,14 +5,14 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "pnpm build && node dist/main.js",
+    "dev": "pnpm build && node --env-file=../../.env dist/main.js",
     "lint": "tsc -p tsconfig.json --noEmit",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:deploy": "prisma migrate deploy",
-    "prisma:seed": "ts-node-esm prisma/seed.ts"
+    "prisma:migrate": "node --env-file=../../.env node_modules/prisma/build/index.js migrate dev",
+    "prisma:deploy": "node --env-file=../../.env node_modules/prisma/build/index.js migrate deploy",
+    "prisma:seed": "pnpm build && node --env-file=../../.env dist/seed-main.js"
   },
   "dependencies": {
     "@bughunter/content": "workspace:*",
@@ -25,6 +25,7 @@
     "bullmq": "^5.51.3",
     "cookie-parser": "^1.4.7",
     "ioredis": "^5.6.1",
+    "prisma": "^6.6.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "zod": "^3.24.3"
@@ -34,8 +35,6 @@
     "@types/cookie-parser": "^1.4.9",
     "@types/express": "^5.0.1",
     "@types/node": "^22.15.3",
-    "prisma": "^6.6.0",
-    "ts-node": "^10.9.2",
     "vitest": "^3.2.7"
   }
 }

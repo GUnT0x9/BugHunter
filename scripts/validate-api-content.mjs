@@ -18,7 +18,8 @@ function delay(milliseconds) {
 async function parseResponse(response) {
   const body = await response.json().catch(() => null);
   if (!response.ok) {
-    const message = body && typeof body === 'object' && 'message' in body ? body.message : response.statusText;
+    const message =
+      body && typeof body === 'object' && 'message' in body ? body.message : response.statusText;
     throw new Error(`${response.status} ${String(message)}`);
   }
   return body;
@@ -79,7 +80,9 @@ async function main() {
   const { body: publicMissions } = await request('/missions', cookie);
   const publicBySlug = new Map(publicMissions.map((mission) => [mission.slug, mission]));
   if (publicMissions.length !== contentMissions.length) {
-    throw new Error(`Mission count mismatch: API=${publicMissions.length}, content=${contentMissions.length}`);
+    throw new Error(
+      `Mission count mismatch: API=${publicMissions.length}, content=${contentMissions.length}`,
+    );
   }
   if (publicMissions.some((mission) => mission.isLocked)) {
     throw new Error('At least one Mission is locked for the admin account.');
@@ -99,12 +102,17 @@ async function main() {
     const result = await waitForExecution(job.executionId, cookie);
     const issues = validateResult(mission, result);
     if (issues.length > 0) failures.push(`${mission.slug}: ${issues.join(', ')}`);
-    process.stdout.write(`[${index + 1}/${contentMissions.length}] ${mission.slug} ${result.status}\n`);
+    process.stdout.write(
+      `[${index + 1}/${contentMissions.length}] ${mission.slug} ${result.status}\n`,
+    );
     await delay(500);
   }
 
-  if (failures.length > 0) throw new Error(`API content validation failed:\n${failures.join('\n')}`);
-  process.stdout.write(`Validated ${contentMissions.length} Mission submissions through ${API_BASE_URL}.\n`);
+  if (failures.length > 0)
+    throw new Error(`API content validation failed:\n${failures.join('\n')}`);
+  process.stdout.write(
+    `Validated ${contentMissions.length} Mission submissions through ${API_BASE_URL}.\n`,
+  );
 }
 
 await main();

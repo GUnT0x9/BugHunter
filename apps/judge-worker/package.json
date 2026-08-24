@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "pnpm build && node dist/main.js",
+    "dev": "pnpm build && node --env-file=../../.env dist/main.js",
     "lint": "tsc -p tsconfig.json --noEmit",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
@@ -23,7 +23,6 @@
   "devDependencies": {
     "@types/dockerode": "^3.3.38",
     "@types/node": "^22.15.3",
-    "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "prisma": "^6.6.0",
     "vitest": "^3.1.2"

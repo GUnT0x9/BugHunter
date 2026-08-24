@@ -23,9 +23,6 @@ RUN pnpm --filter @bughunter/contracts build \
   && TARGET_MODULES="$(dirname "$(dirname "$TARGET_CLIENT")")" \
   && cp -R "$SOURCE_MODULES/.prisma/." "$TARGET_MODULES/.prisma/"
 
-FROM build AS setup
-CMD ["sh", "-c", "apps/api/node_modules/.bin/prisma migrate deploy --schema apps/api/prisma/schema.prisma && apps/api/node_modules/.bin/ts-node-esm apps/api/prisma/seed.ts"]
-
 FROM node:24-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
@@ -33,3 +30,6 @@ COPY --from=build --chown=node:node /release ./
 USER node
 EXPOSE 3000
 CMD ["node", "dist/main.js"]
+
+FROM runtime AS setup
+CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy --schema prisma/schema.prisma && node dist/seed-main.js"]
