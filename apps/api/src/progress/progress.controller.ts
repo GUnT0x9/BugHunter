@@ -1,0 +1,26 @@
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import type { User } from '@bughunter/contracts';
+import { CurrentUser } from '../auth/current-user.decorator.js';
+import { SessionAuthGuard } from '../auth/session-auth.guard.js';
+import { ProgressRepository } from './progress.repository.js';
+
+@Controller()
+@UseGuards(SessionAuthGuard)
+export class ProgressController {
+  constructor(private readonly progress: ProgressRepository) {}
+
+  @Get('progress')
+  dashboard(@CurrentUser() user: User) {
+    return this.progress.dashboard(user.id);
+  }
+
+  @Get('bugdex')
+  bugdex(@CurrentUser() user: User) {
+    return this.progress.bugdex(user.id);
+  }
+
+  @Get('statistics')
+  statistics(@CurrentUser() user: User) {
+    return this.progress.statistics(user.id);
+  }
+}

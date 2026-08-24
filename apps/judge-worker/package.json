@@ -1,0 +1,31 @@
+{
+  "name": "@bughunter/judge-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "pnpm build && node dist/main.js",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "validate:content": "pnpm build && node dist/validate-content.js"
+  },
+  "dependencies": {
+    "@bughunter/contracts": "workspace:*",
+    "@bughunter/content": "workspace:*",
+    "@prisma/client": "^6.6.0",
+    "bullmq": "^5.51.3",
+    "dockerode": "^4.0.2",
+    "ioredis": "^5.6.1",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.38",
+    "@types/node": "^22.15.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "prisma": "^6.6.0",
+    "vitest": "^3.1.2"
+  }
+}

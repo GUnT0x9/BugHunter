@@ -1,0 +1,32 @@
+FROM node:24-alpine AS dependencies
+WORKDIR /workspace
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY apps/judge-worker/package.json apps/judge-worker/package.json
+COPY packages/contracts/package.json packages/contracts/package.json
+COPY packages/content/package.json packages/content/package.json
+RUN pnpm install --frozen-lockfile
+
+FROM dependencies AS build
+COPY apps/judge-worker apps/judge-worker
+COPY apps/api/prisma/schema.prisma apps/judge-worker/prisma/schema.prisma
+COPY packages/contracts packages/contracts
+COPY packages/content packages/content
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/build?schema=public
+RUN pnpm --filter @bughunter/contracts build \
+  && pnpm --filter @bughunter/content build \
+  && PRISMA_GENERATE_SKIP_AUTOINSTALL=true pnpm --filter @bughunter/judge-worker exec prisma generate --schema prisma/schema.prisma \
+  && pnpm --filter @bughunter/judge-worker build \
+  && pnpm --filter @bughunter/judge-worker deploy --prod --legacy /release \
+  && SOURCE_CLIENT="$(readlink -f apps/judge-worker/node_modules/@prisma/client)" \
+  && SOURCE_MODULES="$(dirname "$(dirname "$SOURCE_CLIENT")")" \
+  && TARGET_CLIENT="$(readlink -f /release/node_modules/@prisma/client)" \
+  && TARGET_MODULES="$(dirname "$(dirname "$TARGET_CLIENT")")" \
+  && cp -R "$SOURCE_MODULES/.prisma/." "$TARGET_MODULES/.prisma/"
+
+FROM node:24-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build --chown=node:node /release ./
+USER node
+CMD ["node", "dist/main.js"]

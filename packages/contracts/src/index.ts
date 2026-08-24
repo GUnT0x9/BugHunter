@@ -1,0 +1,202 @@
+import { z } from 'zod';
+
+export const USER_ROLES = ['USER', 'ADMIN'] as const;
+export const EXECUTION_STATUSES = [
+  'QUEUED',
+  'RUNNING',
+  'SUCCEEDED',
+  'FAILED',
+  'ERROR',
+  'TIMED_OUT',
+] as const;
+export const EXECUTION_KINDS = ['RUN', 'SUBMIT'] as const;
+export const EXECUTION_ERROR_KINDS = [
+  'NONE',
+  'SYNTAX_ERROR',
+  'RUNTIME_ERROR',
+  'TIMEOUT',
+  'OUTPUT_LIMIT',
+  'INTERNAL_ERROR',
+] as const;
+export const EXECUTION_DIAGNOSTIC_KINDS = [
+  'SYNTAX_ERROR',
+  'RUNTIME_ERROR',
+  'TIMEOUT',
+  'OUTPUT_LIMIT',
+  'INTERNAL_ERROR',
+] as const;
+export const SUBMISSION_STATUSES = [
+  'QUEUED',
+  'RUNNING',
+  'PASSED',
+  'FAILED',
+  'ERROR',
+  'TIMED_OUT',
+] as const;
+
+export const UserSchema = z.object({
+  id: z.string(),
+  email: z.string().email(),
+  username: z.string().min(2).max(32),
+  role: z.enum(USER_ROLES),
+  totalXp: z.number().int().nonnegative(),
+});
+
+export const LoginInputSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email('올바른 이메일 주소를 입력해주세요.')
+    .max(254, '이메일 주소가 너무 깁니다.'),
+  password: z
+    .string()
+    .min(8, '비밀번호는 8자 이상이어야 합니다.')
+    .max(128, '비밀번호는 128자 이하여야 합니다.'),
+});
+
+export const RegisterInputSchema = LoginInputSchema.extend({
+  username: z
+    .string()
+    .trim()
+    .min(2, '닉네임은 2자 이상이어야 합니다.')
+    .max(32, '닉네임은 32자 이하여야 합니다.')
+    .regex(
+      /^[가-힣a-zA-Z0-9_ -]+$/,
+      '닉네임에는 한글, 영문, 숫자, 공백, _, -만 사용할 수 있습니다.',
+    ),
+});
+
+export const TestCaseSchema = z.object({
+  id: z.string(),
+  order: z.number().int().positive(),
+  input: z.string(),
+  expectedOutput: z.string(),
+  isHidden: z.boolean(),
+});
+
+export const PublicTestCaseSchema = TestCaseSchema.pick({
+  id: true,
+  order: true,
+  input: true,
+  expectedOutput: true,
+});
+
+export const HintSchema = z.object({
+  id: z.string(),
+  level: z.number().int().min(1).max(3),
+  content: z.string(),
+});
+
+export const MissionPublicSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  chapterOrder: z.number().int().positive(),
+  order: z.number().int().positive(),
+  title: z.string(),
+  description: z.string(),
+  language: z.literal('python'),
+  difficulty: z.number().int().min(1).max(5),
+  isBoss: z.boolean(),
+  bugType: z.object({ id: z.string(), name: z.string(), description: z.string() }),
+  initialCode: z.string(),
+  explanation: z.string().nullable(),
+  hints: z.array(HintSchema),
+  concepts: z.array(z.string()),
+  visibleTests: z.array(PublicTestCaseSchema),
+  baseXp: z.number().int().positive(),
+  isCompleted: z.boolean(),
+  isLocked: z.boolean(),
+});
+
+export const MissionCodeSchema = z.object({
+  code: z
+    .string()
+    .min(1)
+    .max(64 * 1024)
+    .refine((code) => !code.includes('\0'), '코드에는 null 문자를 포함할 수 없습니다.'),
+});
+
+export const ExecutionDiagnosticSchema = z.object({
+  kind: z.enum(EXECUTION_DIAGNOSTIC_KINDS),
+  message: z.string(),
+  line: z.number().int().positive().nullable(),
+  column: z.number().int().positive().nullable(),
+});
+
+export const TestResultSchema = z.object({
+  order: z.number().int().positive(),
+  passed: z.boolean(),
+  input: z.string().optional(),
+  expectedOutput: z.string().optional(),
+  actualOutput: z.string().optional(),
+  isHidden: z.boolean(),
+});
+
+export const ExecutionResultSchema = z.object({
+  id: z.string(),
+  kind: z.enum(EXECUTION_KINDS),
+  status: z.enum(EXECUTION_STATUSES),
+  stdout: z.string(),
+  stderr: z.string(),
+  exitCode: z.number().int().nullable(),
+  executionTimeMs: z.number().int().nonnegative().nullable(),
+  errorKind: z.enum(EXECUTION_ERROR_KINDS),
+  diagnostic: ExecutionDiagnosticSchema.nullable(),
+  tests: z.array(TestResultSchema),
+  awardedXp: z.number().int().nonnegative(),
+  completed: z.boolean(),
+});
+
+export const SubmissionResultSchema = z.object({
+  id: z.string(),
+  status: z.enum(SUBMISSION_STATUSES),
+  stdout: z.string(),
+  stderr: z.string(),
+  executionTimeMs: z.number().int().nonnegative().nullable(),
+  errorKind: z.enum(EXECUTION_ERROR_KINDS),
+  diagnostic: ExecutionDiagnosticSchema.nullable(),
+  tests: z.array(TestResultSchema),
+  awardedXp: z.number().int().nonnegative(),
+  completed: z.boolean(),
+});
+
+export const ChapterSchema = z.object({
+  id: z.string(),
+  order: z.number().int().positive(),
+  title: z.string(),
+  description: z.string(),
+  missionCount: z.number().int().nonnegative(),
+  completedCount: z.number().int().nonnegative(),
+  isLocked: z.boolean(),
+});
+
+export type User = z.infer<typeof UserSchema>;
+export type LoginInput = z.infer<typeof LoginInputSchema>;
+export type RegisterInput = z.infer<typeof RegisterInputSchema>;
+export type TestCase = z.infer<typeof TestCaseSchema>;
+export type Hint = z.infer<typeof HintSchema>;
+export type MissionPublic = z.infer<typeof MissionPublicSchema>;
+export type MissionCode = z.infer<typeof MissionCodeSchema>;
+export type ExecutionResult = z.infer<typeof ExecutionResultSchema>;
+export type ExecutionStatus = (typeof EXECUTION_STATUSES)[number];
+export type ExecutionKind = (typeof EXECUTION_KINDS)[number];
+export type ExecutionErrorKind = (typeof EXECUTION_ERROR_KINDS)[number];
+export type ExecutionDiagnostic = z.infer<typeof ExecutionDiagnosticSchema>;
+export type SubmissionResult = z.infer<typeof SubmissionResultSchema>;
+export type Chapter = z.infer<typeof ChapterSchema>;
+
+export function normalizeOutput(value: string): string {
+  return value
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .trimEnd();
+}
+
+export function redactHiddenTests(
+  results: z.infer<typeof TestResultSchema>[],
+): z.infer<typeof TestResultSchema>[] {
+  return results.map((result) =>
+    result.isHidden ? { order: result.order, passed: result.passed, isHidden: true } : result,
+  );
+}
