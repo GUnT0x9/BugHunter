@@ -157,8 +157,8 @@ export class AdminRepository {
       initialCode: mission.initialCode,
       referenceSolution: mission.referenceSolution,
       tests: mission.tests,
-      hints: mission.hints,
-      concepts: mission.concepts,
+      hints: mission.hints.map((hint) => hint.content),
+      concepts: mission.concepts.map((item) => item.concept.name),
     });
   }
 

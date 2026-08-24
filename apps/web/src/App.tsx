@@ -13,6 +13,7 @@ import { Statistics } from './components/Statistics.js';
 import { Profile } from './components/Profile.js';
 import { Workspace } from './components/Workspace.js';
 import { ProgressBar } from './components/ui/ProgressBar.js';
+import { AdminMissionStudio } from './components/admin/AdminMissionStudio.js';
 
 function BootScreen(): ReactElement {
   return (
@@ -82,10 +83,7 @@ function AuthenticatedApp({ user, onLogout }: { user: User; onLogout: () => void
         </div>
       )}
       <Routes>
-        <Route
-          path="/"
-          element={<Dashboard progress={progress} missions={missions} />}
-        />
+        <Route path="/" element={<Dashboard progress={progress} missions={missions} />} />
         <Route path="/roadmap" element={<Roadmap missions={missions} />} />
         <Route path="/missions" element={<MissionDirectory missions={missions} />} />
         <Route
@@ -95,6 +93,10 @@ function AuthenticatedApp({ user, onLogout }: { user: User; onLogout: () => void
         <Route path="/bugdex" element={<BugDex />} />
         <Route path="/statistics" element={<Statistics />} />
         <Route path="/profile" element={<Profile user={user} progress={progress} />} />
+        <Route
+          path="/admin/missions"
+          element={user.role === 'ADMIN' ? <AdminMissionStudio /> : <Navigate to="/" replace />}
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Shell>
@@ -151,9 +153,7 @@ function MissionRoute({
       </div>
     );
 
-  return (
-    <Workspace mission={mission} onBack={() => navigate(-1)} onComplete={onComplete} />
-  );
+  return <Workspace mission={mission} onBack={() => navigate(-1)} onComplete={onComplete} />;
 }
 
 function errorMessage(error: unknown): string {

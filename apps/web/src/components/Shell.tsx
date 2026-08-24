@@ -7,6 +7,7 @@ import {
   Code2,
   LayoutDashboard,
   LogOut,
+  Settings2,
   UserRound,
 } from 'lucide-react';
 import type { User } from '@bughunter/contracts';
@@ -15,7 +16,7 @@ import { api } from '../lib/api.js';
 
 export type Progress = Awaited<ReturnType<typeof api.progress>>;
 
-const NAV: Array<{ to: string; label: string; icon: ReactElement }> = [
+const LEARNING_NAV: Array<{ to: string; label: string; icon: ReactElement }> = [
   { to: '/', label: '대시보드', icon: <LayoutDashboard size={15} /> },
   { to: '/roadmap', label: '로드맵', icon: <BookOpen size={15} /> },
   { to: '/missions', label: '미션', icon: <Code2 size={15} /> },
@@ -32,6 +33,14 @@ type ShellProps = {
 };
 
 export function Shell({ user, progress, onLogout, children }: ShellProps): ReactElement {
+  const navigation =
+    user.role === 'ADMIN'
+      ? [
+          ...LEARNING_NAV.slice(0, -1),
+          { to: '/admin/missions', label: '관리', icon: <Settings2 size={15} /> },
+          LEARNING_NAV[LEARNING_NAV.length - 1]!,
+        ]
+      : LEARNING_NAV;
   return (
     <div className="app-top-layout">
       <header className="topbar">
@@ -41,7 +50,7 @@ export function Shell({ user, progress, onLogout, children }: ShellProps): React
           </NavLink>
 
           <nav className="topnav" aria-label="주요 내비게이션">
-            {NAV.map((item) => (
+            {navigation.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -55,14 +64,20 @@ export function Shell({ user, progress, onLogout, children }: ShellProps): React
           </nav>
 
           <div className="topbar-right">
-            <span className="topbar-meta">
-              <span className="topbar-user">
-                {user.username} · LV.{progress?.level ?? 1}
+            {user.role === 'ADMIN' ? (
+              <span className="admin-role-badge" title={`${user.username} 계정으로 연결됨`}>
+                ADMIN
               </span>
-              <span className="topbar-xp">
-                XP <strong>{progress?.totalXp ?? 0}</strong> · {progress?.bugsFixed ?? 0}개 해결
+            ) : (
+              <span className="topbar-meta">
+                <span className="topbar-user">
+                  {user.username} · LV.{progress?.level ?? 1}
+                </span>
+                <span className="topbar-xp">
+                  XP <strong>{progress?.totalXp ?? 0}</strong> · {progress?.bugsFixed ?? 0}개 해결
+                </span>
               </span>
-            </span>
+            )}
             <button className="topbar-logout" onClick={onLogout} aria-label="로그아웃">
               <LogOut size={14} /> 로그아웃
             </button>

@@ -5,6 +5,7 @@ import type {
   RegisterInput,
   User,
 } from '@bughunter/contracts';
+import type { AdminMission, AdminMissionDraft, AdminValidationReport } from './admin-types.js';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api';
 
@@ -82,4 +83,18 @@ export const api = {
       executionTimeMs: number;
       bugSkills: Array<{ name: string; fixedCount: number }>;
     }>('/statistics'),
+  adminMissions: () => request<AdminMission[]>('/admin/missions'),
+  updateAdminMission: (id: string, input: AdminMissionDraft) =>
+    request<{ id: string }>(`/admin/missions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    }),
+  duplicateAdminMission: (id: string) =>
+    request<{ id: string }>(`/admin/missions/${id}/duplicate`, { method: 'POST' }),
+  validateAdminMission: (id: string) =>
+    request<AdminValidationReport>(`/admin/missions/${id}/validate`, { method: 'POST' }),
+  publishAdminMission: (id: string) =>
+    request<{ id: string }>(`/admin/missions/${id}/publish`, { method: 'PATCH' }),
+  unpublishAdminMission: (id: string) =>
+    request<{ id: string }>(`/admin/missions/${id}/unpublish`, { method: 'PATCH' }),
 };
