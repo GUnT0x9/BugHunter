@@ -1,0 +1,52 @@
+version: '1'
+
+databases:
+  - name: bughunter-postgres
+    databaseName: bughunter
+    user: bughunter
+    region: singapore
+    plan: free
+    postgresMajorVersion: '16'
+    ipAllowList: []
+
+services:
+  - type: keyvalue
+    name: bughunter-redis
+    region: singapore
+    plan: free
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+
+  - type: web
+    name: bughunter-api
+    runtime: docker
+    region: singapore
+    plan: free
+    branch: main
+    dockerContext: .
+    dockerfilePath: ./infra/Dockerfile.api
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    initialDeployHook: node_modules/.bin/prisma migrate deploy --schema prisma/schema.prisma && node dist/seed-main.js
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bughunter-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: bughunter-redis
+          property: connectionString
+      - key: WEB_ORIGIN
+        sync: false
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_COOKIE_SAME_SITE
+        value: none
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_USERNAME
+        sync: false

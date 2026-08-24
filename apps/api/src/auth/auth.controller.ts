@@ -2,19 +2,13 @@ import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common
 import type { Request, Response } from 'express';
 import { LoginInputSchema, RegisterInputSchema, type User } from '@bughunter/contracts';
 import { parseBody } from '../common/validation.js';
+import { loadEnv } from '../common/env.js';
 import { CurrentUser } from './current-user.decorator.js';
 import { AuthService } from './auth.service.js';
 import { SessionAuthGuard } from './session-auth.guard.js';
 import { SessionService } from './session.service.js';
-import { SESSION_COOKIE_NAME, SESSION_TTL_SECONDS } from './session.constants.js';
-
-const sessionCookieOptions = {
-  httpOnly: true,
-  sameSite: 'lax' as const,
-  secure: process.env.NODE_ENV === 'production',
-  maxAge: SESSION_TTL_SECONDS * 1_000,
-  path: '/',
-};
+import { SESSION_COOKIE_NAME } from './session.constants.js';
+import { createSessionCookieOptions } from './session-cookie-options.js';
 
 type RequestWithCookies = Request & { cookies?: Record<string, string> };
 
@@ -33,6 +27,7 @@ export class AuthController {
   ): Promise<User> {
     const user = await this.auth.register(parseBody(RegisterInputSchema, body));
     await this.sessions.destroy(request.cookies?.[SESSION_COOKIE_NAME]);
+    const sessionCookieOptions = createSessionCookieOptions(loadEnv());
     response.cookie(SESSION_COOKIE_NAME, await this.sessions.create(user.id), sessionCookieOptions);
     return user;
   }
@@ -45,6 +40,7 @@ export class AuthController {
   ): Promise<User> {
     const user = await this.auth.login(parseBody(LoginInputSchema, body));
     await this.sessions.destroy(request.cookies?.[SESSION_COOKIE_NAME]);
+    const sessionCookieOptions = createSessionCookieOptions(loadEnv());
     response.cookie(SESSION_COOKIE_NAME, await this.sessions.create(user.id), sessionCookieOptions);
     return user;
   }
@@ -55,6 +51,7 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<{ ok: true }> {
     await this.sessions.destroy(request.cookies?.[SESSION_COOKIE_NAME]);
+    const sessionCookieOptions = createSessionCookieOptions(loadEnv());
     response.clearCookie(SESSION_COOKIE_NAME, {
       httpOnly: true,
       sameSite: sessionCookieOptions.sameSite,

@@ -5,6 +5,8 @@ const EnvSchema = z.object({
   REDIS_URL: z.string().url(),
   WEB_ORIGIN: z.string().url().default('http://localhost:5173'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
+  SESSION_COOKIE_SAME_SITE: z.enum(['lax', 'none']).default('lax'),
 });
 
 export type AppEnv = z.infer<typeof EnvSchema>;

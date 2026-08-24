@@ -44,3 +44,15 @@ pnpm dev
 - `pnpm test:judge-docker`: Docker 격리 제한 7개 검증
 - `pnpm test:judge-content`: 45개 초기 코드와 reference solution을 실제 Docker Runner로 검증
 - `pnpm test:judge-api-content`: admin 계정으로 45개 reference solution을 Web proxy/API/Queue/Worker에 실제 제출
+
+## Vercel + Render 배포
+
+Frontend는 Vercel, API와 PostgreSQL/Redis는 Render Blueprint로 배포할 수 있습니다. 기본
+`vercel.app`/`onrender.com` 주소를 사용할 때는 배포 설정이 secure cross-site session cookie를
+사용하며, API는 설정한 `WEB_ORIGIN`에서 온 변경 요청만 허용합니다.
+
+현재 Judge Worker는 Docker socket이 필요한 구조이므로 Render에 포함하지 않습니다. Docker를
+실행할 수 있는 별도 Worker가 연결되기 전까지 실행과 제출 요청은 즉시 `503`을 반환하며 Queue에
+무기한 남지 않습니다.
+
+Dashboard 설정 순서와 배포 후 확인 항목은 [배포 가이드](docs/deployment.md)를 따릅니다.
