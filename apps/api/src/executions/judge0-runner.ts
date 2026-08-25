@@ -7,6 +7,8 @@ const REQUEST_TIMEOUT_MS = 8_000;
 const OUTPUT_LIMIT_BYTES = 64 * 1024;
 const MIN_REQUEST_INTERVAL_MS = 220;
 const AVAILABILITY_CACHE_MS = 5 * 60_000;
+const MAX_REQUEST_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 400;
 
 type Judge0Response = {
   stdout?: string | null;
@@ -50,7 +52,22 @@ export class Judge0Runner {
   }
 
   async execute(code: string, stdin: string): Promise<RemoteRunResult> {
-    return this.schedule(() => this.executeRequest(code, stdin));
+    return this.schedule(() => this.executeWithRetry(code, stdin));
+  }
+
+  private async executeWithRetry(code: string, stdin: string): Promise<RemoteRunResult> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= MAX_REQUEST_ATTEMPTS; attempt += 1) {
+      try {
+        return await this.executeRequest(code, stdin);
+      } catch (error: unknown) {
+        lastError = error;
+        if (attempt < MAX_REQUEST_ATTEMPTS) {
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS * attempt));
+        }
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error('Judge0 request failed');
   }
 
   private async schedule<T>(task: () => Promise<T>): Promise<T> {

@@ -43,13 +43,38 @@ describe('Judge0Runner', () => {
   });
 
   it('rejects an invalid upstream response', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ message: 'rate limited' }), {
-        status: 429,
-        headers: { 'content-type': 'application/json' },
-      }),
+    const fetchMock = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ message: 'rate limited' }), {
+          status: 429,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
     );
+    globalThis.fetch = fetchMock;
     await expect(new Judge0Runner().execute('pass', '')).rejects.toThrow('rate limited');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('recovers from a transient upstream failure', async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'temporarily unavailable', status_id: 13 }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ stdout: 'ok\n', exit_code: 0, status_id: 3 }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+    await expect(new Judge0Runner().execute('print("ok")', '')).resolves.toMatchObject({
+      stdout: 'ok\n',
+      exitCode: 0,
+    });
   });
 
   it('marks oversized output', async () => {
