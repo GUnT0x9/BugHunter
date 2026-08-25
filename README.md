@@ -51,8 +51,9 @@ Frontend는 Vercel, API와 PostgreSQL/Redis는 Render Blueprint로 배포할 수
 `/api` 요청을 Render로 reverse proxy하므로 별도 domain 없이도 session cookie가 same-origin으로
 동작합니다. API는 설정한 `WEB_ORIGIN`에서 온 변경 요청만 허용합니다.
 
-현재 Judge Worker는 Docker socket이 필요한 구조이므로 Render에 포함하지 않습니다. Docker를
-실행할 수 있는 별도 Worker가 연결되기 전까지 실행과 제출 요청은 즉시 `503`을 반환하며 Queue에
-무기한 남지 않습니다.
+로컬은 `JUDGE_PROVIDER=docker`로 기존 Docker Judge Worker를 사용합니다. Render 무료 배포는
+`JUDGE_PROVIDER=code_compiler`로 설정되어 ForgeSparse CodeCompiler의 beta 실행 API를 사용하므로
+별도 VPS, 카드, API key가 필요하지 않습니다. 공개 shared API이므로 제출 코드와 테스트 입력이
+외부 실행 서비스로 전달되며, quota나 beta 정책 변경 시 채점이 일시 중단될 수 있습니다.
 
 Dashboard 설정 순서와 배포 후 확인 항목은 [배포 가이드](docs/deployment.md)를 따릅니다.

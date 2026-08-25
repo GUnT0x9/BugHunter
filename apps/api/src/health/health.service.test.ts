@@ -2,7 +2,7 @@ import { ServiceUnavailableException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrismaService } from '../common/prisma.service.js';
 import type { RedisService } from '../common/redis.service.js';
-import type { JudgeQueueService } from '../executions/judge-queue.service.js';
+import type { JudgeProviderService } from '../executions/judge-provider.service.js';
 import { HealthService } from './health.service.js';
 
 function createHealthService(input?: { databaseFails?: boolean; workerAvailable?: boolean }) {
@@ -13,17 +13,17 @@ function createHealthService(input?: { databaseFails?: boolean; workerAvailable?
   const redis = {
     getClient: () => ({ ping: vi.fn().mockResolvedValue('PONG') }),
   } as unknown as RedisService;
-  const queue = {
-    hasAvailableWorker: vi.fn().mockResolvedValue(input?.workerAvailable ?? true),
-  } as unknown as JudgeQueueService;
-  return new HealthService(prisma, redis, queue);
+  const judgeProvider = {
+    isAvailable: vi.fn().mockResolvedValue(input?.workerAvailable ?? true),
+  } as unknown as JudgeProviderService;
+  return new HealthService(prisma, redis, judgeProvider);
 }
 
 describe('HealthService', () => {
   it('reports infrastructure and Judge Worker readiness', async () => {
     await expect(createHealthService().readiness()).resolves.toEqual({
       ok: true,
-      services: { database: 'up', redis: 'up', judgeWorker: 'up' },
+      services: { database: 'up', redis: 'up', judge: 'up' },
     });
   });
 
@@ -31,8 +31,8 @@ describe('HealthService', () => {
     await expect(createHealthService({ databaseFails: true }).status()).rejects.toBeInstanceOf(
       ServiceUnavailableException,
     );
-    await expect(createHealthService({ workerAvailable: false }).readiness()).rejects.toBeInstanceOf(
-      ServiceUnavailableException,
-    );
+    await expect(
+      createHealthService({ workerAvailable: false }).readiness(),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 });

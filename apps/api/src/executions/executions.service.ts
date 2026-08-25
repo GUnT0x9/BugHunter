@@ -9,7 +9,7 @@ import { randomUUID } from 'node:crypto';
 import type { ExecutionResult, MissionCode, User } from '@bughunter/contracts';
 import { MissionRepository } from '../missions/mission.repository.js';
 import { ActiveExecutionError, ExecutionStore } from './execution.store.js';
-import { JudgeQueueService } from './judge-queue.service.js';
+import { JudgeProviderService } from './judge-provider.service.js';
 import { QueueDispatcherService } from './queue-dispatcher.service.js';
 
 @Injectable()
@@ -18,7 +18,7 @@ export class ExecutionsService {
     private readonly missions: MissionRepository,
     private readonly executions: ExecutionStore,
     private readonly dispatcher: QueueDispatcherService,
-    private readonly queue: JudgeQueueService,
+    private readonly judgeProvider: JudgeProviderService,
   ) {}
 
   enqueueRun(user: User, missionId: string, input: MissionCode): Promise<{ executionId: string }> {
@@ -45,9 +45,9 @@ export class ExecutionsService {
     code: string,
     kind: 'RUN' | 'SUBMIT',
   ): Promise<{ executionId: string } | { executionId: string; submissionId: string }> {
-    if (!(await this.queue.hasAvailableWorker())) {
+    if (!(await this.judgeProvider.isAvailable())) {
       throw new ServiceUnavailableException(
-        '채점 서버가 준비되지 않았습니다. Redis, Docker, Judge Worker 상태를 확인해주세요.',
+        '채점 서버가 준비되지 않았습니다. 잠시 후 다시 시도해주세요.',
       );
     }
     const mission = await this.missions.getPublic(missionId, user);

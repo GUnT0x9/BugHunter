@@ -2,7 +2,7 @@ import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../common/prisma.service.js';
 import { RedisService } from '../common/redis.service.js';
-import { JudgeQueueService } from '../executions/judge-queue.service.js';
+import { JudgeProviderService } from '../executions/judge-provider.service.js';
 
 type DependencyStatus = 'up' | 'down';
 type InfrastructureStatus = {
@@ -15,7 +15,7 @@ export class HealthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
-    private readonly queue: JudgeQueueService,
+    private readonly judgeProvider: JudgeProviderService,
   ) {}
 
   async status() {
@@ -26,11 +26,11 @@ export class HealthService {
   async readiness() {
     const [services, workerAvailable] = await Promise.all([
       this.checkInfrastructure(),
-      this.queue.hasAvailableWorker(),
+      this.judgeProvider.isAvailable(),
     ]);
     return this.requireHealthy({
       ...services,
-      judgeWorker: workerAvailable ? 'up' : 'down',
+      judge: workerAvailable ? 'up' : 'down',
     });
   }
 

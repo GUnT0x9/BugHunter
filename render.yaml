@@ -43,6 +43,10 @@ services:
         value: production
       - key: SESSION_COOKIE_SAME_SITE
         value: lax
+      - key: JUDGE_PROVIDER
+        value: code_compiler
+      - key: CODE_COMPILER_API_URL
+        value: https://codecompiler.forgesparse.com/api/run
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD

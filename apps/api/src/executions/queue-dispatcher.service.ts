@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { ExecutionStore } from './execution.store.js';
-import { JudgeQueueService } from './judge-queue.service.js';
+import { JudgeProviderService } from './judge-provider.service.js';
 
 const DISPATCH_INTERVAL_MS = 2_000;
 const WARNING_INTERVAL_MS = 30_000;
@@ -14,7 +14,7 @@ export class QueueDispatcherService implements OnApplicationBootstrap, OnModuleD
 
   constructor(
     private readonly executions: ExecutionStore,
-    private readonly queue: JudgeQueueService,
+    private readonly judgeProvider: JudgeProviderService,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -27,7 +27,7 @@ export class QueueDispatcherService implements OnApplicationBootstrap, OnModuleD
     if (this.isDispatching) return;
     this.isDispatching = true;
     try {
-      if (!(await this.queue.hasAvailableWorker())) {
+      if (!(await this.judgeProvider.isAvailable())) {
         await this.executions.expireQueuedExecutions();
         return;
       }
@@ -40,7 +40,7 @@ export class QueueDispatcherService implements OnApplicationBootstrap, OnModuleD
 
   async dispatchOne(executionId: string): Promise<void> {
     try {
-      await this.queue.enqueue(executionId);
+      await this.judgeProvider.dispatch(executionId);
       await this.executions.markEnqueued(executionId);
     } catch (error: unknown) {
       const now = Date.now();
