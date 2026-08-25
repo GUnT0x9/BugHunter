@@ -7,8 +7,8 @@ const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
   SESSION_COOKIE_SAME_SITE: z.enum(['lax', 'none']).default('lax'),
-  JUDGE_PROVIDER: z.enum(['docker', 'code_compiler']).default('docker'),
-  CODE_COMPILER_API_URL: z.string().url().default('https://codecompiler.forgesparse.com/api/run'),
+  JUDGE_PROVIDER: z.enum(['docker', 'judge0', 'code_compiler']).default('docker'),
+  JUDGE0_API_URL: z.string().url().default('https://ce.judge0.com'),
 });
 
 export type AppEnv = z.infer<typeof EnvSchema>;

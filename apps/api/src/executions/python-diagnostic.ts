@@ -1,7 +1,7 @@
 import type { ExecutionDiagnostic, ExecutionErrorKind } from '@bughunter/contracts';
 
 const ERROR_LINE_PATTERN = /^([A-Za-z_][A-Za-z0-9_]*(?:Error|Exception))(?::\s*(.*))?$/;
-const FILE_LINE_PATTERN = /File "(?:main\.py|\/home\/jdoodle\.py)", line (\d+)/g;
+const FILE_LINE_PATTERN = /File "(?:main\.py|\/home\/jdoodle\.py|\/box\/script\.py)", line (\d+)/g;
 
 function lastSourceLine(stderr: string): number | null {
   let line: number | null = null;
@@ -12,7 +12,7 @@ function lastSourceLine(stderr: string): number | null {
 function syntaxColumn(stderr: string): number | null {
   const lines = stderr.split('\n');
   const fileLineIndex = lines.findIndex((line) =>
-    /File "(?:main\.py|\/home\/jdoodle\.py)", line \d+/.test(line),
+    /File "(?:main\.py|\/home\/jdoodle\.py|\/box\/script\.py)", line \d+/.test(line),
   );
   if (fileLineIndex < 0) return null;
   const caretLine = lines.slice(fileLineIndex + 1).find((line) => line.includes('^'));

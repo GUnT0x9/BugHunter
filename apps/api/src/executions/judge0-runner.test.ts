@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
-import { CodeCompilerRunner } from './code-compiler-runner.js';
+import { Judge0Runner } from './judge0-runner.js';
 
 const originalFetch = globalThis.fetch;
 
@@ -9,21 +9,30 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('CodeCompilerRunner', () => {
+describe('Judge0Runner', () => {
   it('can be constructed by Nest without an injection token', async () => {
-    const module = await Test.createTestingModule({ providers: [CodeCompilerRunner] }).compile();
-    expect(module.get(CodeCompilerRunner)).toBeInstanceOf(CodeCompilerRunner);
+    const module = await Test.createTestingModule({ providers: [Judge0Runner] }).compile();
+    expect(module.get(Judge0Runner)).toBeInstanceOf(Judge0Runner);
     await module.close();
   });
 
   it('maps a successful Python execution', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ stdout: 'BugHunter\n', stderr: '', code: 0, signal: null }), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      }),
+      new Response(
+        JSON.stringify({
+          stdout: 'BugHunter\n',
+          stderr: null,
+          exit_code: 0,
+          status_id: 3,
+          time: '0.01',
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        },
+      ),
     );
-    const result = await new CodeCompilerRunner().execute('print("BugHunter")', '');
+    const result = await new Judge0Runner().execute('print("BugHunter")', '');
     expect(result).toMatchObject({
       stdout: 'BugHunter\n',
       stderr: '',
@@ -40,7 +49,7 @@ describe('CodeCompilerRunner', () => {
         headers: { 'content-type': 'application/json' },
       }),
     );
-    await expect(new CodeCompilerRunner().execute('pass', '')).rejects.toThrow('rate limited');
+    await expect(new Judge0Runner().execute('pass', '')).rejects.toThrow('rate limited');
   });
 
   it('marks oversized output', async () => {
@@ -48,11 +57,11 @@ describe('CodeCompilerRunner', () => {
       .fn()
       .mockResolvedValue(
         new Response(
-          JSON.stringify({ stdout: 'x'.repeat(65_537), stderr: '', code: 0, signal: null }),
+          JSON.stringify({ stdout: 'x'.repeat(65_537), stderr: null, exit_code: 0, status_id: 3 }),
           { status: 200, headers: { 'content-type': 'application/json' } },
         ),
       );
-    await expect(new CodeCompilerRunner().execute('pass', '')).resolves.toMatchObject({
+    await expect(new Judge0Runner().execute('pass', '')).resolves.toMatchObject({
       outputLimited: true,
     });
   });

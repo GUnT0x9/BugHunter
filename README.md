@@ -52,8 +52,8 @@ Frontend는 Vercel, API와 PostgreSQL/Redis는 Render Blueprint로 배포할 수
 동작합니다. API는 설정한 `WEB_ORIGIN`에서 온 변경 요청만 허용합니다.
 
 로컬은 `JUDGE_PROVIDER=docker`로 기존 Docker Judge Worker를 사용합니다. Render 무료 배포는
-`JUDGE_PROVIDER=code_compiler`로 설정되어 ForgeSparse CodeCompiler의 beta 실행 API를 사용하므로
+`JUDGE_PROVIDER=judge0`로 설정되어 Judge0 CE 실행 API를 사용하므로
 별도 VPS, 카드, API key가 필요하지 않습니다. 공개 shared API이므로 제출 코드와 테스트 입력이
-외부 실행 서비스로 전달되며, quota나 beta 정책 변경 시 채점이 일시 중단될 수 있습니다.
+외부 실행 서비스로 전달되며, 공개 endpoint 정책 변경 시 채점이 일시 중단될 수 있습니다.
 
 Dashboard 설정 순서와 배포 후 확인 항목은 [배포 가이드](docs/deployment.md)를 따릅니다.

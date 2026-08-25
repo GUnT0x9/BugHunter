@@ -6,7 +6,7 @@ import { ExecutionsController } from './executions.controller.js';
 import { ExecutionsService } from './executions.service.js';
 import { JudgeProviderService } from './judge-provider.service.js';
 import { JudgeQueueService } from './judge-queue.service.js';
-import { CodeCompilerRunner } from './code-compiler-runner.js';
+import { Judge0Runner } from './judge0-runner.js';
 import { RemoteExecutionService } from './remote-execution.service.js';
 import { QueueDispatcherService } from './queue-dispatcher.service.js';
 import { SubmissionRepository } from './submission.repository.js';
@@ -19,7 +19,7 @@ import { SubmissionRepository } from './submission.repository.js';
     JudgeQueueService,
     JudgeProviderService,
     RemoteExecutionService,
-    CodeCompilerRunner,
+    Judge0Runner,
     QueueDispatcherService,
     SubmissionRepository,
     ExecutionsService,

@@ -7,7 +7,7 @@ import {
 import { ExecutionKind, ExecutionStatus, Prisma, SubmissionStatus } from '@prisma/client';
 import { PrismaService } from '../common/prisma.service.js';
 import { awardFirstCompletion } from './completion-award.js';
-import { CodeCompilerRunner, type RemoteRunResult } from './code-compiler-runner.js';
+import { Judge0Runner, type RemoteRunResult } from './judge0-runner.js';
 import { parsePythonDiagnostic, sanitizePythonStderr } from './python-diagnostic.js';
 
 function classifyRun(run: RemoteRunResult): ExecutionErrorKind {
@@ -40,7 +40,7 @@ export class RemoteExecutionService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly runner: CodeCompilerRunner,
+    private readonly runner: Judge0Runner,
   ) {}
 
   dispatch(executionId: string): void {

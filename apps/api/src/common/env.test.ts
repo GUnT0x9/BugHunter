@@ -14,7 +14,7 @@ describe('loadEnv', () => {
       SESSION_COOKIE_SAME_SITE: 'lax',
       WEB_ORIGIN: 'http://localhost:5173',
       JUDGE_PROVIDER: 'docker',
-      CODE_COMPILER_API_URL: 'https://codecompiler.forgesparse.com/api/run',
+      JUDGE0_API_URL: 'https://ce.judge0.com',
     });
   });
 

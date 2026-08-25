@@ -1,7 +1,7 @@
 # Vercel + Render 배포 가이드
 
 이 구성은 Vercel에 React/Vite Web을, Render에 NestJS API, PostgreSQL, Key Value를 배포합니다.
-Render에서는 카드와 별도 Docker host 없이 `JUDGE_PROVIDER=code_compiler`를 사용해 원격으로
+Render에서는 카드와 별도 Docker host 없이 `JUDGE_PROVIDER=judge0`을 사용해 원격으로
 Python 코드를 실행합니다. 로컬 Docker Judge Worker 구성은 그대로 유지됩니다.
 
 ## 1. Render Blueprint 생성
@@ -46,6 +46,6 @@ Web browser는 Vercel의 `/api`에만 요청하며 Vercel이 Render API를 rever
 4. `https://<api-address>/api/health/ready`가 `200`이고 `judge: up`인지 확인합니다.
 5. Mission의 visible test 실행과 정답 제출이 각각 최종 결과를 반환하는지 확인합니다.
 
-CodeCompiler endpoint는 무료 beta shared API이며 제출 코드와 test input이 해당 서비스와 그
-실행 backend인 JDoodle로 전달됩니다. 무료 정책, quota, endpoint는 사전 고지 없이 바뀔 수 있으므로
+Judge0 CE endpoint는 무료 shared API이며 제출 코드와 test input이 해당 서비스로 전달됩니다.
+무료 정책, quota, endpoint는 사전 고지 없이 바뀔 수 있으므로
 정식 운영 전에는 자체 Docker Judge Worker 또는 SLA가 있는 실행 서비스로 전환해야 합니다.
