@@ -25,16 +25,12 @@ export type RemoteRunResult = {
 
 @Injectable()
 export class CodeCompilerRunner {
-  private readonly apiUrl: string;
+  private readonly apiUrl = (
+    process.env.CODE_COMPILER_API_URL ?? 'https://codecompiler.forgesparse.com/api/run'
+  ).replace(/\/$/, '');
   private requestChain: Promise<void> = Promise.resolve();
   private lastRequestAt = 0;
   private availableUntil = 0;
-
-  constructor(
-    apiUrl = process.env.CODE_COMPILER_API_URL ?? 'https://codecompiler.forgesparse.com/api/run',
-  ) {
-    this.apiUrl = apiUrl.replace(/\/$/, '');
-  }
 
   async isAvailable(): Promise<boolean> {
     if (Date.now() < this.availableUntil) return true;
