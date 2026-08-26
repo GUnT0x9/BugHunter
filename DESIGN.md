@@ -1,8 +1,15 @@
 # BUGhunter Design System
 
+## 0. Research Log
+
+| Lane | Source | Deliverable |
+|------|--------|-------------|
+| Live site extraction | https://codeup.kr (2026-08, HTML fetch) | 레이아웃 문법: 고정 상단바(단색, 링크 나열) → 컨테이너 중앙 정렬(max-w-7xl) → **헤더바 있는 박스 섹션**(header `border-b` + body `p-6`) → **행 기반 밀집 목록**(row마다 `border-bottom`, 좌측 번호+제목 / 우측 메타). 플로팅 카드 없음. 섀도 최소, 모서리 작음 |
+| User brief (2026-08-26) | 사용자 지시 | 카드형식 폐기 / 블랙 배경 / 네온 그린 포인트 / 본문은 대부분 흰색 / 에디터는 Monaco 유지·재테마 |
+
 ## 1. Atmosphere & Identity
 
-BUGhunter는 터미널과 에디터가 만나는 조용한 사냥터다. 다크 차콜 베이스(#0b0e0c) 위에 에디터 패널이 떠 있고, 성공은 네온 그린(#3ecf8e)으로만 점등된다. 시그니처는 **긴장감 있는 밀도 대비** — 대시보드와 미션 목록은 숨을 크게 쉬고(넓은 여백, 큰 타이포), 워크스페이스의 3패널은 바짝 조여(좁은 거터, 고정 헤더) 집중을 강제한다. 방문자가 기억할 한 순간은 **에디터에 커서가 깜빡이고 오른쪽 가이드 패널에서 힌트 칩이 노란색으로 점등되는 2초**다.
+BUGhunter는 **순흑 터미널 위의 온라인 저지(OJ)** 다. 코드업의 정보 중심 밀도 — 헤더바가 붙은 사각 섹션, 번호·제목·상태가 열을 이루는 표 목록 — 를 순흑(`#050505`대) 캔버스에 얹는다. 성공과 살아있는 상태만이 네온 그린으로 점등되고, 나머지 글자는 전부 흰색 계열이다. 시그니처는 **행이 아닌 빛의 위계**: 목록에서 hover된 행의 좌측 코드(CH.-M.)와 상태 LED가 같이 켜지는 순간. 장식 그라데이션·글래스·플로팅 카드는 금기다.
 
 ## 2. Color
 
@@ -10,167 +17,146 @@ BUGhunter는 터미널과 에디터가 만나는 조용한 사냥터다. 다크 
 
 | Role | Token | Value | Usage |
 |------|-------|-------|-------|
-| Surface/bg | --bg | #0b0e0c | 페이지 배경 |
-| Surface/bg-deep | --bg-deep | #070908 | 워크스페이스/코드 배경, 스크롤 트랙 |
-| Surface/panel | --panel | #101310 | 패널, 카드, 사이드바 |
-| Surface/panel-2 | --panel-2 | #151915 | 패널 헤더, 태그, 버튼 기본, 테스트 행 |
-| Surface/panel-3 | --panel-3 | #1a1f1b | hover, 스크롤바 thumb hover |
-| Border/default | --border | #232823 | 패널 외곽, 워크스페이스 그리드 구분선 |
-| Border/subtle | --border-2 | #30362f | 입력, 태그, 버튼 테두리 |
-| Text/primary | --text | #d7ded9 | 본문, 헤딩 |
-| Text/secondary | --text-dim | #8b948e | 설명, 라벨, 보조 정보 |
-| Text/tertiary | --text-faint | #5a625c | 플레이스홀더, 비활성, 메타 |
-| Accent/primary | --green | #3ecf8e | 성공, 진행, 활성 네비, 포커스 링 |
-| Accent/mid | --green-mid | #2ea86f | 버튼 테두리, 프로그레스 바 |
-| Accent/dim | --green-dim | #0f2b1e | 성공 배너, 활성 네비 배경 |
-| Accent/cyan | --cyan | #56b8d8 | 챕터 ID, 진행 링, 실행 중 상태 |
-| Accent/amber | --amber | #d4a64e | 보스 태그, 힌트 칩, 대기 상태 |
-| Accent/red | --red | #e06a5c | 에러, 실패 |
-| Accent/red-dim | --red-dim | #331411 | 에러 진단 박스 배경 |
+| Surface/bg | --bg | #050705 | 페이지 배경 (순흑 근접) |
+| Surface/bg-deep | --bg-deep | #000000 | 코드 에디터, 콘솔, expected-box (순흑) |
+| Surface/panel | --panel | #090c09 | 패널/섹션 본체 |
+| Surface/panel-2 | --panel-2 | #0d110d | 패널 헤더바, 입력, 테이블 헤더 행 |
+| Surface/hover | --panel-3 | #121712 | hover 행, thumb hover |
+| Border/default | --border | #1d231d | 섹션 외곽, 행 구분선 |
+| Border/subtle | --border-2 | #2a332a | 입력, 태그, 버튼 테두리 |
+| Text/primary | --text | #f2f5f2 | 본문·헤딩 (거의 순백) |
+| Text/secondary | --text-dim | #a3aea3 | 설명, 라벨 |
+| Text/tertiary | --text-faint | #7f8c7e | 메타, 비활성 (AA 5.4:1+) |
+| Accent/neon | --green | #48ff9b | 네온 그린 포인트: 활성 네비, 성공, LED, 링크 강조 |
+| Accent/neon-bright | --green-bright | #8cffbc | hover시 밝아지는 그린 텍스트 |
+| Accent/mid | --green-mid | #27c46b | 프로그레스 fill, 버튼 보더 |
+| Accent/tint | --green-dim | #07271a | 성공 배너·활성 배경 틴트 |
+| Accent/amber | --amber | #ffb454 | 보스, 힌트, 대기 상태 (보조 신호 한정) |
+| Accent/red | --red | #ff6b5e | 에러, 실패 |
+| Accent/red-dim | --red-dim | #2a0f0c | 에러 배경 틴트 |
+| Glow | --glow-green | 0 0 10px rgba(72,255,155,.28) | 활성 요소의 단일 발광 (signature) |
+| Border/hover | --border-hover | #39443a | 입력 hover 보더 |
+| Surface/focus | --bg-focus | #081209 | 입력 포커스 배경 틴트 |
+
+※ 구 시안(cyan #56b8d8)은 폐기. 진행중 상태는 그린 LED가 담당하고, cyan 자리는 전부 text-dim 또는 green으로 흡수한다.
 
 ### Rules
-- 배경은 단일 flat이 아니라 톤으로 깊이를 만든다: `bg-deep < panel-2 < panel` 의 3단 톤 시프트로 면을 분리, 보더는 보조 수단.
-- Accent는 오직 인터랙션에만 사용: 그린은 성공/완료/활성, 시안은 진행/대기, 앰버는 힌트/경고, 레드는 실패. 장식용 그라데이션에 accent 남용 금지.
-- 테이블에 없는 색상 도입 시 먼저 이 테이블에 추가.
+- 면 분리는 톤 시프트(`bg < panel < panel-2`) + 1px 보더로만. `box-shadow`(발광 제외) 금지, gradient 배경 금지.
+- 네온 그린은 **상태·인터랙션·포인트에만** 발광한다: 활성 네비, 현재 행, 성공, LED, 포커스 링, 프라이머리 버튼. 대량 배경 채움 금지.
+- 본문 텍스트는 항상 --text(백색). 색 텍스트는 신호일 때만(--green/--red/--amber).
+- 새 색 도입 전 이 테이블에 추가. 하드코딩 헥스 금지 (모나코 테마 파일 제외).
 
 ## 3. Typography
 
 ### Scale
 
-| Level | Size | Weight | Line Height | Tracking | Usage |
-|-------|------|--------|-------------|----------|-------|
-| Display | 30px | 800 | 1.1 | -0.02em | boot-brand |
-| H1 page | clamp(22px,3vw,30px) | 750 | 1.2 | -0.02em | .page-title |
-| H2 section | 17-19px | 750 | 1.3 | -0.01em | .section-heading, resume h2 |
-| H3 label | 12.5-13px | 750 | 1.4 | 0 | 패널 h3, 가이드 h3, 메트릭 라벨 |
-| Body | 14-15.5px | 400-700 | 1.55-1.7 | 0 | 본문, 카드 설명, 에디터 14px |
-| Body/sm | 12-13.5px | 600-700 | 1.5 | 0 | 태그, 힌트, 테스트 행, 상태 |
-| Caption | 11-12px | 600-800 | 1.4 | 0.02em | 오버라인, 코드 라인 넘버, 메타 |
-| Overline | 11px | 600 | 1.3 | 0.08em | 대문자 라벨 (미사용, 예약) |
+| Level | Size | Weight | Line Height | Usage |
+|-------|------|--------|-------------|-------|
+| Display | 26-30px | 800 | 1.15 | boot-brand, auth-hero-title |
+| H1 page | clamp(22px,3vw,28px) | 750 | 1.2 | .page-title |
+| H2 section | 17-19px | 750 | 1.3 | resume h2, section-heading |
+| H3 label | 12.5-13px | 750 | 1.4 | 패널 h3, 가이드 h3 |
+| Body | 14-15px | 400-700 | 1.55-1.7 | 본문 |
+| Meta/mono | 11-13px | 600-800 | 1.5 | 코드(CH.-M.), LED 옆 라벨, 테이블 메타 — `--mono` 필수 |
+| Caption | 11-12px | 600-800 | 1.4 | 오버라인, 행 번호 |
 
 ### Font Stack
-- Primary: Pretendard Variable, system-ui, -apple-system, sans-serif ( `--sans` )
-- Mono: ui-monospace, SFMono-Regular, Menlo, Consolas, Pretendard monospace ( `--mono` ) — 에디터, 콘솔, expected-box, t-diff
+- Primary: Pretendard Variable (`--sans`)
+- Mono: ui-monospace, SFMono-Regular, Menlo, Consolas (`--mono`) — 에디터, 콘솔, **목록의 미션 코드·카운트 등 메타 데이터**
 
 ### Rules
-- Pretendard 로드 유지, Inter로 폴백 금지.
-- 본문 14px 미만 금지 (캡션/태그 제외).
-- 4줄 이상 줄바꿈 되는 헤딩은 `clamp()` 로 축소.
-- 숫자는 `tabular-nums` 고려 (스킬 바, XP 수치).
+- Pretendard 로드 유지. Inter 폴백 금지.
+- 목록 밀도가 심장이다: 행 높이 44-52px, 줄바꿈 금지(truncate), 메타는 mono.
 
 ## 4. Spacing & Layout
 
 ### Base Unit
-4px 베이스. 모든 의도적 여백은 4의 배수.
+4px 베이스.
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| --space-1 | 4px | 아이콘-라벨 간격 |
-| --space-2 | 8px | 인라인 그룹, 테스트 행 gap |
-| --space-3 | 12px | 패널 헤더 내부, 카드 메타 gap |
-| --space-4 | 16px | 카드 패딩 기본, 에디터 헤더 패딩 |
-| --space-5 | 20px | 패널 바디 패딩(20px) |
-| --space-6 | 24px | 섹션 내부 여백 |
-| --space-8 | 32px | 카드 그룹 간격 |
-| --space-10 | 40px | 페이지 섹션 간격 |
-| --space-12 | 48px | .page padding 최대 |
-| --space-16 | 64px | 페이지 레벨 리듬 |
-| --space-20 | 80px | 히어로/대시보드 상단 |
+| --space-1..20 | 4/8/12/16/20/24/32/40/48/64/80px | 기존 스케일 유지 |
+| --topbar-h | 56px | 상단 고정바 |
+| Row height | 44-52px | 목록 행 표준 |
 
 ### Grid
-- Max content width: 1080px (.page), 1280px 이상에서는 중앙 정렬
-- 워크스페이스: `grid-template-columns: minmax(230px,0.8fr) minmax(400px,1.9fr) minmax(230px,0.8fr)` — 현재 좌우 패널이 230px 최소에서 협소, 중앙 에디터가 과도하게 넓음. 권장 조정: `0.9fr / 1.6fr / 0.9fr` 또는 `280px / 1fr / 320px` 로 좌우 밸런스 재조정.
-- Breakpoints: 800px(사이드바 상단 전환), 1080px(워크스페이스 1단 스택), 768px/375px (모바일)
-- Gutter: 8-14px (그리드 gap), 섹션 gap 13-26px
+- Max content width: 1080px(.page) — 코드업의 container 문법과 동일한 중앙 단일 컬럼.
+- 워크스페이스 3패널 그리드 유지: `minmax(280px,.95fr) minmax(460px,1.45fr) minmax(300px,.9fr)` (1080px에서 1단 스택).
+- Breakpoints: 1080px(워크스페이스 스택), 900px(topbar 2행), 800px(메트릭 1열), 760px(admin 스택).
 
 ### Rules
-- 토큰은 의도(여백 단계, 콘텐츠 폭, 거터)만 토큰화. 브라우저 메커니즘(`clamp()`, `minmax()`, `auto`, `%`)은 raw 유지.
-- 대칭 패딩은 광학 보정 — 하단 패딩을 상단보다 2-4px 크게 잡아 시각적 중심을 맞춤.
+- 반경(radius) 체계: 섹션/패널 4px, 버튼/입력 4px, 태그 3px, LED/배지 99px. **8px 이상 금지** — 각진 OJ 질감.
+- 목록은 반드시 **하나의 컨테이너 안의 행들**(행 사이 border-bottom). 행마다 개별 보더·배경·radius를 주는 카드 문법 금지.
 
 ## 5. Components
 
-### Panel
-- Structure: `.panel > .panel-bar(38px) + .panel-body(20px)`
-- Variants: default, problem-panel(좌), guide-panel(우), editor-panel(중앙)
-- Spacing: 바 0 16px, 바디 20px, h3 margin 24px 0 9px
-- States: default, hover 없음 (정적 컨테이너)
-- Motion: 없음
+### SectionBox (구 Panel)
+- Structure: `.panel > .panel-bar(min-height 42px) + .panel-body`
+- Look: panel 배경, 외곽 1px 보더, radius 4px, 헤더바는 panel-2 + border-bottom. 코드업의 `header(border-b) + body(p-6)` 박스와 동일 문법.
+- States: 정적 컨테이너 (hover 없음)
+
+### ListTable (신규 — 카드의 대체)
+- Structure: `.list-table > .lt-head(헤더 행) + button.lt-row*(데이터 행)`
+- Row anatomy: `[상태 20px] [코드 mono 110px] [제목 flex] [분류 tag] [난이도 ★] [액션]`
+- States: default(LED 회색), hover(panel-3 배경 + 좌측 코드·LED 네온 점등 동시), locked(opacity .5), completed(LED green 고정)
+- Rows are separated by `border-bottom: 1px solid var(--border)`; 마지막 행 제외. 행 자체 radius/보더 없음.
+- Used by: MissionDirectory, BugDex, (Roadmap은 ChapterGroup 내부에서 동일 행 문법 재사용)
+
+### ChapterGroup
+- Structure: `.chapter-group > .cg-head(CH.{n} · 이름 · n/n) + .cg-body(mission-node 행들)`
+- mission-node: 행 문법(하단 보더), 좌측 아이콘(상태), 제목, 우측 M.{order} mono. rounded pill 아님.
 
 ### Button
-- Structure: `.btn` (inline-flex, gap 7px, border 1px, radius 6px, padding 9px 15px, font 13.5px/650)
-- Variants: default(panel-2), primary(green-dim/green-mid), ghost(transparent)
-- Spacing: 내부 9-15px, 그룹 gap 8px
-- States: default, hover(panel-3/ #14402c), active(scale 0.98 미구현 → 추가 권장), focus(보더+그림자), disabled(opacity 0.5)
-- Accessibility: 키보드 포커스 링 필요, 44px 터치 타깃 모바일에서 미달 → 패딩 확대 권장
+- `.btn`: radius 4px, border 1px border-2, padding 9px 16px, font 13.5px/650
+- Variants: default(panel-2), primary(**--green 배경 + 검정 텍스트 #04140b**, hover green-bright), ghost, danger
+- States: hover(배경/보더 시프트), active(scale .98), focus-visible(2px --green outline), disabled(opacity .5)
+- Motion: 140ms ease (color/bg/border 만)
 
 ### Tag
-- Structure: `.tag` (inline-flex, gap 6px, padding 3px 9px, border 1px, radius 5px, font 12px/600)
-- Variants: default, green, amber, cyan
-- Spacing: 그룹 gap 7px, 내부 3-9px — 12px 대비 작아 밀도 높음. 권장: 5px 10px 로 확대
-- States: 정적
-
-### MissionCard
-- Structure: `.mission-card` (flex, gap 16px, padding 15px 17px, radius 8px) > .mc-meta(92px) + .mc-body(flex1) + .mc-side
-- Variants: default, locked(opacity 0.55)
-- Spacing: 현재 15/17px 패딩은 1080px에서 적절하나 모바일에서 flex-wrap 시 .mc-side가 100%로 깨짐 — 간격 12px로 축소 권장
-- States: hover(panel-2), locked, completed
-- Sizing 이슈: .mc-title 15.5px/700, .mc-desc 12.5px — 계층 약함. 타이틀 16px, 설명 13px로 1.5px 격차 확대 권장. .mc-meta 92px 고정폭은 좁음 → 104px 권장
+- `.tag`: radius 3px, padding 3px 8px, font 12px/650, mono 숫자 허용
+- Variants: default, green(neon 틴트), amber, red
 
 ### Metric
-- Structure: `.metric > .m-label(12.5px) + .m-value(26px/800) + .m-sub(12px)`
-- Variants: default, green/amber
-- Spacing: gap 6px, 그리드 gap 13px
+- `.metric > .m-label + .m-value(26px/800 tabular-nums) + .m-sub`
+- 값 색은 신호일 때만(green/amber), 기본 --text.
 
 ### EditorPanel
-- Structure: `.editor-panel` (grid 44px 헤더 + 1fr 에디터, min-height 480px)
-- 헤더: `.editor-header` 44px, 파일명 13px/700, 우측 12px
-- 이슈: 480px min-height는 13인치 노트북에서 워크스페이스 전체가 100vh를 넘어 스크롤 2중 발생. `min-height: min(480px, 56dvh)` 또는 `flex:1` 로 유연화 권장.
+- Monaco `bughunter-terminal` 테마: bg #050805, foreground #f2f5f2, cursor/line-number active = neon green, keyword/string/number = green·amber 계열 3색 제한.
+- 헤더 44px, min-height clamp(400px,48dvh,560px).
 
-### TestRow
-- Structure: `.test-row` (grid gap 6px, padding 10px 12px, radius 6px)
-- States: passed/failed/pending (led 색 + verdict 색)
-- Sizing: 10/12px 패딩은 12/13px 폰트 대비 타이트 — 12px 14px 로 완화 권장
-
-### Statusbar/Sidebar
-- Statusbar: 44px 고정, Sidebar 224px 고정, 네비 아이템 13px 14px
-- 이슈: Sidebar 224px는 1280px에서 적절하나 1024px 이하에서 콘텐츠 압박 — 200px로 축소 또는 접힘 기능 권장
+### ConsoleRow / TestRow
+- 콘솔 라인: mono 13px, ok=green err=red warn=amber info=faint.
+- TestRow: `.test-list > .test-row` 행 문법(행 사이 border-bottom만, per-row 보더·배경·radius 없음), verdict 색 = passed green / failed red / pending faint.
 
 ## 6. Motion & Interaction
 
-### Timing
-
 | Type | Duration | Easing | Usage |
 |------|----------|--------|-------|
-| Micro | 140ms | ease-out | 버튼 hover, 태그 |
-| Standard | 220ms | ease-in-out | 패널 전환, 탭 |
-| Emphasis | 320ms | cubic-bezier(0.16,1,0.3,1) | 성공 배너 pop |
-| Led pulse | 1100ms | ease-in-out infinite | 실행 중 led |
+| Micro | 140ms | ease | 버튼/행/태그 hover |
+| Standard | 200ms | ease-in-out | 탭 전환 |
+| Emphasis | 260ms | ease-out | success-pop |
+| Led pulse | 1100ms | ease-in-out infinite | 실행 중 LED |
+| Neon breathe | 2.4s ease-in-out infinite | 활성 네비 dot의 미세 발광 (유일한 장식 모션) |
 
-### Rules
-- `transform`, `opacity` 만 애니메이션. 레이아웃 속성 금지.
-- 모든 인터랙티브에 hover + active + focus. 현재 active `scale(0.98)` 미구현 — 추가 필요.
-- `prefers-reduced-motion` 준수 — led pulse 및 success-pop 비활성화.
+- transform/opacity만 애니메이션. `prefers-reduced-motion` 시 전부 비활성.
+- hover가 아무것도 바꾸지 않으면 결함으로 간주 (행 hover = 배경 + 코드/LED 점등 동시).
 
 ## 7. Depth & Surface
 
-### Strategy
-Mixed — tonal-shift 메인 + borders 보조 + subtle shadow 없음.
-
-- 배경: `bg-deep` → `panel-2` → `panel` 3단 톤으로 깊이. 보더(`--border`)는 1px 보조선으로만 사용.
-- 패널/카드는 `box-shadow` 없음 — 톤 분리로 입체감. 모달/팝오버만 `0 8px 24px rgba(0,0,0,0.12)` 예약.
-- 버튼/태그는 보더 1px로만 분리, 그림자 없음.
+- 전략: **tonal-shift + 1px 보더 + 선택적 네온 발광**. box-shadow(발광 제외) 없음.
+- 발광(--glow-green)은 페이지당 눈에 띄는 1-2곳: 활성 네비, 프라이머리 CTA, 성공 배너. 남발 시 결함.
+- 코드/콘솔 영역은 --bg-deep(순흑)으로 화면 최암부를 만들어 에디터가 무대임을 보여준다.
 
 ## 8. Accessibility Constraints & Accepted Debt
 
 ### Constraints
-- WCAG 2.2 AA: 본문 4.5:1, 큰 텍스트 3:1, 모든 인터랙티브에 visible focus, 키보드 도달, `prefers-reduced-motion` 준수.
-- 현재 --text #d7ded9 on --bg #0b0e0c 대비 약 14:1 충족. --text-dim #8b948e on --panel #101310 대비 약 6.2:1 충족.
-- 에디터/콘솔은 mono 13px, 행간 1.7로 가독성 확보.
+- WCAG 2.2 AA: --text #f2f5f2 on #050705 ≈ 17:1. --text-dim ≈ 8.5:1. --text-faint #7f8c7e ≥ 5.4:1. --green #48ff9b on black ≈ 15:1. primary 버튼 텍스트 #04140b on #48ff9b ≈ 12:1. 본문·메타 텍스트 전부 충족.
+- 모든 인터랙티브 focus-visible 2px --green ring. 키보드 도달 보장.
+- prefers-reduced-motion 준수.
 
 ### Accepted Debt
-| Item | Location | Why accepted | Owner / Exit |
-|------|----------|--------------|--------------|
-| Sidebar 224px 고정폭이 1024px 이하에서 압박 | Sidebar | 레이아웃 스킬 미적용 상태, 접힘 기능 후순위 | 제거 시 `layout-skill` 적용 |
-| 버튼 터치 타깃 44px 미달 (현재 34px) | .btn | 데스크탑 우선, 모바일 패딩 확대 예정 | 다음 사이징 패치에서 40px로 확대 |
-| MissionCard .mc-desc 한 줄 말줄임으로 설명 잘림 | MissionDirectory | 목록 밀도 유지 목적, 상세는 Workspace에서 확인 | 추후 2줄 clamp로 완화 검토 |
-
+| Item | Location | Why accepted | Exit |
+|------|----------|--------------|------|
+| admin 스타디오 일부 레거시 헥스(#0f1310 등) 잔존 가능 | Admin* 컴포넌트 | 토큰 전환 우선, 관리자 전용 화면 | 다음 admin 정비 시 토큰화 |
+| 목록 행에서 description truncate 1줄 | ListTable | 밀도 우선, 상세는 Workspace | 필요 시 2줄 clamp |
+| 버튼 터치 타깃 38px (44px 미달) | .btn | 데스크탑 우선 서비스 | 모바일 패딩 확대 패치 |

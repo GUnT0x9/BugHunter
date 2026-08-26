@@ -107,10 +107,18 @@ export function MissionDirectory({ missions, onStart }: MissionDirectoryProps): 
         <strong>{filtered.length}</strong>개의 미션
       </p>
       <div className="mission-list">
+        <div className="lt-head" aria-hidden="true">
+          <span />
+          <span>MISSION</span>
+          <span>제목</span>
+          <span>분류</span>
+          <span>난이도</span>
+          <span />
+        </div>
         {filtered.map((mission) => (
           <button
             key={mission.id}
-            className={mission.isLocked ? 'mission-card locked' : 'mission-card'}
+            className={mission.isLocked ? 'lt-row locked' : 'lt-row'}
             disabled={mission.isLocked}
             onClick={() => handleStart(mission.id)}
           >
@@ -121,25 +129,23 @@ export function MissionDirectory({ missions, onStart }: MissionDirectoryProps): 
             ) : (
               <span className="led ok" />
             )}
-            <span className="mc-meta">
-              <span className="mc-code">
-                CH.{mission.chapterOrder}-M.{mission.order}
-              </span>
-              {mission.isBoss && <span className="mc-boss">보스 미션</span>}
+            <span className="lt-code">
+              CH.{mission.chapterOrder}-M.{mission.order}
+              {mission.isBoss && <em className="lt-boss">BOSS</em>}
             </span>
-            <span className="mc-body">
-              <span className="mc-title">{mission.title}</span>
-              <span className="mc-desc">{mission.description}</span>
+            <span className="lt-main">
+              <span className="lt-title">{mission.title}</span>
+              <span className="lt-desc">{mission.description}</span>
             </span>
-            <span className="mc-side">
-              <span className="tag">{mission.bugType.name}</span>
-              <span className="mc-stars">
-                {Array.from({ length: 5 }, (_, index) => (
-                  <span key={index} className={index < mission.difficulty ? '' : 'star-off'}>
-                    ★
-                  </span>
-                ))}
-              </span>
+            <span className="lt-tag tag">{mission.bugType.name}</span>
+            <span className="lt-stars">
+              {Array.from({ length: 5 }, (_, index) => (
+                <span key={index} className={index < mission.difficulty ? '' : 'star-off'}>
+                  ★
+                </span>
+              ))}
+            </span>
+            <span className="lt-action">
               {mission.isCompleted ? (
                 <span className="btn ghost">다시 풀기 <ChevronRight size={14} /></span>
               ) : (
