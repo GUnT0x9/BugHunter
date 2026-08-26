@@ -96,14 +96,18 @@ describe('RemoteExecutionService', () => {
 
     expect(execution.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ status: 'QUEUED', enqueuedAt: null, startedAt: null }),
+        data: expect.objectContaining({
+          status: 'QUEUED',
+          enqueuedAt: expect.any(Date),
+          startedAt: null,
+        }),
       }),
     );
   });
 
   it('finishes with an explicit ERROR after the retry budget is exhausted', async () => {
     const { service, execution } = createService(
-      3,
+      6,
       vi.fn().mockRejectedValue(new Error('Judge0 unavailable')),
     );
 

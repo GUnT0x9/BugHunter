@@ -48,7 +48,7 @@ Web browser는 Vercel의 `/api`에만 요청하며 Vercel이 Render API를 rever
 6. Mission의 visible test 실행과 정답 제출이 각각 최종 결과를 반환하는지 확인합니다.
 
 Render sleep·재배포 중 `RUNNING`이던 채점은 PostgreSQL lease가 만료되면 `QUEUED`로
-복구되고, API가 다시 시작된 뒤 동일 execution ID로 자동 재시도됩니다.
+복구되고, API가 다시 시작된 뒤 동일 execution ID로 최대 6회까지 간격을 두고 자동 재시도됩니다.
 
 Judge0 CE endpoint는 무료 shared API이며 제출 코드와 test input이 해당 서비스로 전달됩니다.
 무료 정책, quota, endpoint는 사전 고지 없이 바뀔 수 있으므로

@@ -9,7 +9,7 @@ import { Panel } from './ui/Panel.js';
 
 const delay = (milliseconds: number) =>
   new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
-const EXECUTION_POLL_TIMEOUT_MS = 120_000;
+const EXECUTION_POLL_TIMEOUT_MS = 300_000;
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';

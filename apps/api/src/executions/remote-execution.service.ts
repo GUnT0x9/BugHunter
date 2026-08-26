@@ -10,7 +10,7 @@ import { awardFirstCompletion } from './completion-award.js';
 import { Judge0Runner, type RemoteRunResult } from './judge0-runner.js';
 import { parsePythonDiagnostic, sanitizePythonStderr } from './python-diagnostic.js';
 
-const MAX_REMOTE_EXECUTION_ATTEMPTS = 3;
+const MAX_REMOTE_EXECUTION_ATTEMPTS = 6;
 
 type LoadedExecution = Prisma.ExecutionGetPayload<{
   include: { mission: { include: { tests: { orderBy: { sortOrder: 'asc' } } } } };
@@ -260,7 +260,7 @@ export class RemoteExecutionService implements OnModuleDestroy {
         },
         data: {
           status: ExecutionStatus.QUEUED,
-          enqueuedAt: null,
+          enqueuedAt: new Date(),
           startedAt: null,
         },
       });
