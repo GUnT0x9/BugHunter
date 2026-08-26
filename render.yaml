@@ -25,7 +25,7 @@ services:
     branch: main
     dockerContext: .
     dockerfilePath: ./infra/Dockerfile.api
-    healthCheckPath: /api/health
+    healthCheckPath: /api/health/live
     autoDeployTrigger: commit
     envVars:
       - key: DATABASE_URL

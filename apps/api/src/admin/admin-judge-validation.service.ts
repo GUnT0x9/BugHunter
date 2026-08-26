@@ -1,4 +1,4 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { Queue, QueueEvents } from 'bullmq';
 import { randomUUID } from 'node:crypto';
 import type { Redis } from 'ioredis';
@@ -10,6 +10,7 @@ export type MissionValidationJobData = { missionId: string };
 
 @Injectable()
 export class AdminJudgeValidationService implements OnModuleDestroy {
+  private readonly logger = new Logger(AdminJudgeValidationService.name);
   private queue: Queue<MissionValidationJobData, MissionValidationReport> | null = null;
   private events: QueueEvents | null = null;
   private eventsConnection: Redis | null = null;
@@ -43,5 +44,11 @@ export class AdminJudgeValidationService implements OnModuleDestroy {
     this.events = new QueueEvents(MISSION_VALIDATION_QUEUE_NAME, {
       connection: this.eventsConnection,
     });
+    this.queue.on('error', (error) =>
+      this.logger.warn(`Mission validation queue error: ${error.message}`),
+    );
+    this.events.on('error', (error) =>
+      this.logger.warn(`Mission validation event error: ${error.message}`),
+    );
   }
 }

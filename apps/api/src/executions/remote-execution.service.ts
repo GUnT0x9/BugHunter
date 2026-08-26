@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import {
   normalizeOutput,
   type ExecutionErrorKind,
@@ -9,6 +9,18 @@ import { PrismaService } from '../common/prisma.service.js';
 import { awardFirstCompletion } from './completion-award.js';
 import { Judge0Runner, type RemoteRunResult } from './judge0-runner.js';
 import { parsePythonDiagnostic, sanitizePythonStderr } from './python-diagnostic.js';
+
+const MAX_REMOTE_EXECUTION_ATTEMPTS = 3;
+
+type LoadedExecution = Prisma.ExecutionGetPayload<{
+  include: { mission: { include: { tests: { orderBy: { sortOrder: 'asc' } } } } };
+}>;
+
+type ExecutionOutcome = {
+  result: ExecutionResult;
+  status: ExecutionStatus;
+  executionTimeMs: number;
+};
 
 function classifyRun(run: RemoteRunResult): ExecutionErrorKind {
   if (run.timedOut) return 'TIMEOUT';
@@ -35,8 +47,9 @@ function jsonValue(result: ExecutionResult): Prisma.InputJsonValue {
 }
 
 @Injectable()
-export class RemoteExecutionService {
+export class RemoteExecutionService implements OnModuleDestroy {
   private readonly logger = new Logger(RemoteExecutionService.name);
+  private readonly activeTasks = new Set<Promise<void>>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -44,24 +57,56 @@ export class RemoteExecutionService {
   ) {}
 
   dispatch(executionId: string): void {
-    void this.process(executionId).catch(async (error: unknown) => {
+    const task = this.process(executionId).catch((error: unknown) => {
       this.logger.error(
-        `Remote execution failed: ${error instanceof Error ? error.message : 'unknown error'}`,
+        `Remote execution dispatch failed: ${error instanceof Error ? error.message : 'unknown error'}`,
       );
-      await this.failExecution(executionId);
     });
+    this.activeTasks.add(task);
+    void task.finally(() => this.activeTasks.delete(task));
   }
 
   private async process(executionId: string): Promise<void> {
+    const execution = await this.claimExecution(executionId);
+    if (!execution) return;
+    try {
+      const outcome = await this.executeTests(execution);
+      await this.persistOutcome(execution, outcome);
+    } catch (error: unknown) {
+      await this.handleProcessFailure(executionId, execution.attemptCount, error);
+    }
+  }
+
+  private async claimExecution(executionId: string): Promise<LoadedExecution | null> {
     const claimed = await this.prisma.execution.updateMany({
-      where: { id: executionId, status: ExecutionStatus.QUEUED },
+      where: {
+        id: executionId,
+        status: ExecutionStatus.QUEUED,
+        attemptCount: { lt: MAX_REMOTE_EXECUTION_ATTEMPTS },
+      },
       data: {
         status: ExecutionStatus.RUNNING,
         startedAt: new Date(),
         attemptCount: { increment: 1 },
       },
     });
-    if (claimed.count === 0) return;
+    if (claimed.count === 0) {
+      const current = await this.prisma.execution.findUnique({
+        where: { id: executionId },
+        select: { status: true, attemptCount: true },
+      });
+      if (
+        current?.status === ExecutionStatus.QUEUED &&
+        current.attemptCount >= MAX_REMOTE_EXECUTION_ATTEMPTS
+      ) {
+        await this.failExecution(
+          executionId,
+          ExecutionStatus.QUEUED,
+          current.attemptCount,
+        );
+      }
+      return null;
+    }
     const execution = await this.prisma.execution.findUniqueOrThrow({
       where: { id: executionId },
       include: { mission: { include: { tests: { orderBy: { sortOrder: 'asc' } } } } },
@@ -72,7 +117,10 @@ export class RemoteExecutionService {
         data: { status: SubmissionStatus.RUNNING },
       });
     }
+    return execution;
+  }
 
+  private async executeTests(execution: LoadedExecution): Promise<ExecutionOutcome> {
     const selectedTests = execution.mission.tests.filter(
       (test) => execution.kind === ExecutionKind.SUBMIT || !test.isHidden,
     );
@@ -84,7 +132,9 @@ export class RemoteExecutionService {
     const tests: ExecutionResult['tests'] = [];
 
     for (const test of selectedTests) {
+      await this.touchExecution(execution.id, execution.attemptCount);
       const run = await this.runner.execute(execution.code, test.input);
+      await this.touchExecution(execution.id, execution.attemptCount);
       executionTimeMs += run.executionTimeMs;
       stdout = run.stdout;
       stderr = sanitizePythonStderr(run.stderr);
@@ -121,17 +171,30 @@ export class RemoteExecutionService {
       awardedXp: 0,
       completed: false,
     };
+    return { result: baseResult, status, executionTimeMs };
+  }
 
+  private async persistOutcome(
+    execution: LoadedExecution,
+    outcome: ExecutionOutcome,
+  ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
+      const current = await tx.execution.findUniqueOrThrow({ where: { id: execution.id } });
+      if (
+        current.status !== ExecutionStatus.RUNNING ||
+        current.attemptCount !== execution.attemptCount
+      ) {
+        return;
+      }
       const award =
-        execution.kind === ExecutionKind.SUBMIT && status === ExecutionStatus.SUCCEEDED
+        execution.kind === ExecutionKind.SUBMIT && outcome.status === ExecutionStatus.SUCCEEDED
           ? await awardFirstCompletion(tx, execution.userId, execution.missionId)
           : { awardedXp: 0, completed: false };
-      const result = { ...baseResult, ...award };
+      const result = { ...outcome.result, ...award };
       await tx.execution.update({
         where: { id: execution.id },
         data: {
-          status,
+          status: outcome.status,
           resultJson: jsonValue(result),
           activeUserId: null,
           finishedAt: new Date(),
@@ -141,8 +204,8 @@ export class RemoteExecutionService {
         await tx.submission.update({
           where: { id: execution.submissionId },
           data: {
-            status: submissionStatus(status),
-            executionTimeMs,
+            status: submissionStatus(outcome.status),
+            executionTimeMs: outcome.executionTimeMs,
             resultJson: jsonValue(result),
           },
         });
@@ -150,46 +213,115 @@ export class RemoteExecutionService {
     });
   }
 
-  private async failExecution(executionId: string): Promise<void> {
+  private async touchExecution(executionId: string, attemptCount: number): Promise<void> {
+    const touched = await this.prisma.execution.updateMany({
+      where: { id: executionId, status: ExecutionStatus.RUNNING, attemptCount },
+      data: { updatedAt: new Date() },
+    });
+    if (touched.count === 0) throw new Error(`Remote execution lease lost: ${executionId}`);
+  }
+
+  private async handleProcessFailure(
+    executionId: string,
+    attemptCount: number,
+    error: unknown,
+  ): Promise<void> {
+    this.logger.warn(
+      `Remote execution interrupted: ${error instanceof Error ? error.message : 'unknown error'}`,
+    );
+    try {
+      await this.retryOrFailExecution(executionId, attemptCount);
+    } catch (recoveryError: unknown) {
+      this.logger.error(
+        `Remote execution recovery failed: ${recoveryError instanceof Error ? recoveryError.message : 'unknown error'}`,
+      );
+    }
+  }
+
+  private async retryOrFailExecution(executionId: string, attemptCount: number): Promise<void> {
     const execution = await this.prisma.execution.findUnique({ where: { id: executionId } });
     if (
       !execution ||
-      (execution.status !== ExecutionStatus.QUEUED && execution.status !== ExecutionStatus.RUNNING)
+      execution.status !== ExecutionStatus.RUNNING ||
+      execution.attemptCount !== attemptCount
     ) {
       return;
     }
-    const result: ExecutionResult = {
-      id: execution.id,
-      kind: execution.kind,
-      status: 'ERROR',
-      stdout: '',
-      stderr: '',
-      exitCode: null,
-      executionTimeMs: null,
-      errorKind: 'INTERNAL_ERROR',
-      diagnostic: parsePythonDiagnostic('INTERNAL_ERROR', ''),
-      tests: [],
-      awardedXp: 0,
-      completed: false,
-    };
-    await this.prisma.$transaction([
-      this.prisma.execution.update({
-        where: { id: execution.id },
+    if (execution.attemptCount >= MAX_REMOTE_EXECUTION_ATTEMPTS) {
+      await this.failExecution(executionId, ExecutionStatus.RUNNING, attemptCount);
+      return;
+    }
+    await this.prisma.$transaction(async (tx) => {
+      const reset = await tx.execution.updateMany({
+        where: {
+          id: execution.id,
+          status: ExecutionStatus.RUNNING,
+          attemptCount: execution.attemptCount,
+        },
+        data: {
+          status: ExecutionStatus.QUEUED,
+          enqueuedAt: null,
+          startedAt: null,
+        },
+      });
+      if (reset.count === 0 || !execution.submissionId) return;
+      await tx.submission.updateMany({
+        where: { id: execution.submissionId, status: SubmissionStatus.RUNNING },
+        data: { status: SubmissionStatus.QUEUED },
+      });
+    });
+  }
+
+  private async failExecution(
+    executionId: string,
+    expectedStatus: ExecutionStatus,
+    expectedAttemptCount: number,
+  ): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const execution = await tx.execution.findUnique({ where: { id: executionId } });
+      if (
+        !execution ||
+        execution.status !== expectedStatus ||
+        execution.attemptCount !== expectedAttemptCount
+      ) {
+        return;
+      }
+      const result: ExecutionResult = {
+        id: execution.id,
+        kind: execution.kind,
+        status: 'ERROR',
+        stdout: '',
+        stderr: '',
+        exitCode: null,
+        executionTimeMs: null,
+        errorKind: 'INTERNAL_ERROR',
+        diagnostic: parsePythonDiagnostic('INTERNAL_ERROR', ''),
+        tests: [],
+        awardedXp: 0,
+        completed: false,
+      };
+      const updated = await tx.execution.updateMany({
+        where: {
+          id: execution.id,
+          status: expectedStatus,
+          attemptCount: expectedAttemptCount,
+        },
         data: {
           status: ExecutionStatus.ERROR,
           resultJson: jsonValue(result),
           activeUserId: null,
           finishedAt: new Date(),
         },
-      }),
-      ...(execution.submissionId
-        ? [
-            this.prisma.submission.update({
-              where: { id: execution.submissionId },
-              data: { status: SubmissionStatus.ERROR, resultJson: jsonValue(result) },
-            }),
-          ]
-        : []),
-    ]);
+      });
+      if (updated.count === 0 || !execution.submissionId) return;
+      await tx.submission.updateMany({
+        where: { id: execution.submissionId },
+        data: { status: SubmissionStatus.ERROR, resultJson: jsonValue(result) },
+      });
+    });
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    await Promise.allSettled(this.activeTasks);
   }
 }

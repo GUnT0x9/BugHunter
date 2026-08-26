@@ -3,12 +3,13 @@ import {
   ExecutionKind as PrismaExecutionKind,
   ExecutionStatus as PrismaExecutionStatus,
   Prisma,
+  SubmissionStatus as PrismaSubmissionStatus,
 } from '@prisma/client';
 import { redactHiddenTests, type ExecutionKind, type ExecutionResult } from '@bughunter/contracts';
 import { PrismaService } from '../common/prisma.service.js';
 
 const REDIS_REQUEUE_AFTER_MS = 5_000;
-const QUEUE_EXPIRY_MS = 30_000;
+const INTERRUPTED_EXECUTION_AFTER_MS = 45_000;
 
 export class ActiveExecutionError extends Error {
   constructor() {
@@ -124,48 +125,43 @@ export class ExecutionStore {
     });
   }
 
-  async expireQueuedExecutions(): Promise<number> {
+  async recoverInterruptedExecutions(now = new Date()): Promise<number> {
     const stale = await this.prisma.execution.findMany({
       where: {
-        status: PrismaExecutionStatus.QUEUED,
-        createdAt: { lt: new Date(Date.now() - QUEUE_EXPIRY_MS) },
+        status: PrismaExecutionStatus.RUNNING,
+        updatedAt: { lt: new Date(now.getTime() - INTERRUPTED_EXECUTION_AFTER_MS) },
       },
-      select: { id: true, kind: true, submissionId: true },
+      select: { id: true, submissionId: true },
     });
-    let expiredCount = 0;
+    let recoveredCount = 0;
     for (const execution of stale) {
       await this.prisma.$transaction(async (tx) => {
-        const result: ExecutionResult = {
-          ...ExecutionStore.initial(execution.id, execution.kind),
-          status: 'ERROR',
-          errorKind: 'INTERNAL_ERROR',
-          diagnostic: {
-            kind: 'INTERNAL_ERROR',
-            message: '채점 서버에 연결할 수 없습니다.',
-            line: null,
-            column: null,
-          },
-        };
         const updated = await tx.execution.updateMany({
-          where: { id: execution.id, status: PrismaExecutionStatus.QUEUED },
+          where: {
+            id: execution.id,
+            status: PrismaExecutionStatus.RUNNING,
+            updatedAt: { lt: new Date(now.getTime() - INTERRUPTED_EXECUTION_AFTER_MS) },
+          },
           data: {
-            status: PrismaExecutionStatus.ERROR,
-            resultJson: JSON.parse(JSON.stringify(result)) as Prisma.InputJsonValue,
-            activeUserId: null,
-            finishedAt: new Date(),
+            status: PrismaExecutionStatus.QUEUED,
+            enqueuedAt: null,
+            startedAt: null,
           },
         });
         if (updated.count === 0) return;
-        expiredCount += 1;
+        recoveredCount += 1;
         if (execution.submissionId) {
-          await tx.submission.update({
-            where: { id: execution.submissionId },
-            data: { status: 'ERROR', resultJson: JSON.parse(JSON.stringify(result)) },
+          await tx.submission.updateMany({
+            where: {
+              id: execution.submissionId,
+              status: PrismaSubmissionStatus.RUNNING,
+            },
+            data: { status: PrismaSubmissionStatus.QUEUED },
           });
         }
       });
     }
-    return expiredCount;
+    return recoveredCount;
   }
 
   static initial(id: string, kind: ExecutionKind): ExecutionResult {

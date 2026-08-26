@@ -18,6 +18,10 @@ export class HealthService {
     private readonly judgeProvider: JudgeProviderService,
   ) {}
 
+  liveness() {
+    return { ok: true } as const;
+  }
+
   async status() {
     const services = await this.checkInfrastructure();
     return this.requireHealthy(services);

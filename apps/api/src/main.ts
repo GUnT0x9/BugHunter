@@ -19,7 +19,12 @@ async function bootstrap(): Promise<void> {
   app.use(cookieParser());
   app.use(createOriginMiddleware(env.WEB_ORIGIN));
   app.setGlobalPrefix('api');
+  app.enableShutdownHooks();
   await app.listen(env.PORT, '0.0.0.0');
 }
 
-void bootstrap();
+void bootstrap().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : 'unknown error';
+  process.stderr.write(`[api] Startup failed: ${message}\n`);
+  process.exitCode = 1;
+});

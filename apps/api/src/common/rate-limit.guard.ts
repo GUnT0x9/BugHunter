@@ -19,7 +19,7 @@ export class RateLimitGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    if (request.path.endsWith('/health')) return true;
+    if (request.path === '/api/health' || request.path.startsWith('/api/health/')) return true;
     const clientId = request.ip || request.socket.remoteAddress || 'unknown';
     const isAuthRequest =
       request.method === 'POST' &&

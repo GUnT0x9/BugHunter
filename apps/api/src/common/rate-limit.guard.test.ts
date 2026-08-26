@@ -17,6 +17,15 @@ describe('RateLimitGuard', () => {
     await expect(guard.canActivate(context('/api/missions'))).resolves.toBe(true);
   });
 
+  it('never rate limits Render liveness and readiness probes', async () => {
+    const guard = new RateLimitGuard();
+
+    for (let requestCount = 0; requestCount < 150; requestCount += 1) {
+      await expect(guard.canActivate(context('/api/health/live'))).resolves.toBe(true);
+      await expect(guard.canActivate(context('/api/health/ready'))).resolves.toBe(true);
+    }
+  });
+
   it('limits repeated authentication attempts', async () => {
     const guard = new RateLimitGuard();
     const login = context('/api/auth/login', 'POST');

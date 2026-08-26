@@ -1,14 +1,16 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { RedisService } from '../common/redis.service.js';
 import { JUDGE_QUEUE_NAME, type JudgeJobData } from './judge.types.js';
 
 @Injectable()
 export class JudgeQueueService implements OnModuleDestroy {
+  private readonly logger = new Logger(JudgeQueueService.name);
   private readonly queue: Queue<JudgeJobData>;
 
   constructor(redis: RedisService) {
     this.queue = new Queue<JudgeJobData>(JUDGE_QUEUE_NAME, { connection: redis.getClient() });
+    this.queue.on('error', (error) => this.logger.warn(`Judge queue error: ${error.message}`));
   }
 
   async enqueue(executionId: string): Promise<void> {

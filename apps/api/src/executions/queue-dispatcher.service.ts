@@ -27,12 +27,12 @@ export class QueueDispatcherService implements OnApplicationBootstrap, OnModuleD
     if (this.isDispatching) return;
     this.isDispatching = true;
     try {
-      if (!(await this.judgeProvider.isAvailable())) {
-        await this.executions.expireQueuedExecutions();
-        return;
-      }
+      await this.executions.recoverInterruptedExecutions();
+      if (!(await this.judgeProvider.isAvailable())) return;
       const candidates = await this.executions.findDispatchCandidates();
       for (const candidate of candidates) await this.dispatchOne(candidate.id);
+    } catch (error: unknown) {
+      this.warnUnavailable('Judge recovery unavailable', error);
     } finally {
       this.isDispatching = false;
     }
@@ -43,14 +43,15 @@ export class QueueDispatcherService implements OnApplicationBootstrap, OnModuleD
       await this.judgeProvider.dispatch(executionId);
       await this.executions.markEnqueued(executionId);
     } catch (error: unknown) {
-      const now = Date.now();
-      if (now - this.lastWarningAt >= WARNING_INTERVAL_MS) {
-        this.lastWarningAt = now;
-        this.logger.warn(
-          `Judge queue dispatch unavailable: ${error instanceof Error ? error.message : 'unknown error'}`,
-        );
-      }
+      this.warnUnavailable('Judge dispatch unavailable', error);
     }
+  }
+
+  private warnUnavailable(message: string, error: unknown): void {
+    const now = Date.now();
+    if (now - this.lastWarningAt < WARNING_INTERVAL_MS) return;
+    this.lastWarningAt = now;
+    this.logger.warn(`${message}: ${error instanceof Error ? error.message : 'unknown error'}`);
   }
 
   onModuleDestroy(): void {

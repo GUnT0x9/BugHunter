@@ -9,6 +9,7 @@ import { Panel } from './ui/Panel.js';
 
 const delay = (milliseconds: number) =>
   new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
+const EXECUTION_POLL_TIMEOUT_MS = 120_000;
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
@@ -51,7 +52,7 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
       let next: ExecutionResult | null = null;
       const pollingStartedAt = Date.now();
       let pollingIntervalMs = 500;
-      while (Date.now() - pollingStartedAt < 30_000) {
+      while (Date.now() - pollingStartedAt < EXECUTION_POLL_TIMEOUT_MS) {
         await delay(pollingIntervalMs);
         next = await api.execution(job.executionId);
         setResult(next);
@@ -104,15 +105,21 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
           <h3>입력 / 출력 명세</h3>
           <div style={{ display: 'grid', gap: 8 }}>
             <div>
-              <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 4, fontWeight: 700 }}>
+              <div
+                style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 4, fontWeight: 700 }}
+              >
                 입력 예시
               </div>
               <pre className="expected-box" style={{ color: 'var(--text-dim)' }}>
-                {mission.visibleTests[0]?.input?.trim() ? mission.visibleTests[0]?.input : '(입력 없음)'}
+                {mission.visibleTests[0]?.input?.trim()
+                  ? mission.visibleTests[0]?.input
+                  : '(입력 없음)'}
               </pre>
             </div>
             <div>
-              <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 4, fontWeight: 700 }}>
+              <div
+                style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 4, fontWeight: 700 }}
+              >
                 기대 출력
               </div>
               <pre className="expected-box">
@@ -230,8 +237,12 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
                         </div>
                         {!test.isHidden && !test.passed && (
                           <div className="t-diff">
-                            <pre className="t-exp">&lt; 기대값: {test.expectedOutput || '(빈 출력)'}</pre>
-                            <pre className="t-act">&gt; 실제값: {test.actualOutput || '(빈 출력)'}</pre>
+                            <pre className="t-exp">
+                              &lt; 기대값: {test.expectedOutput || '(빈 출력)'}
+                            </pre>
+                            <pre className="t-act">
+                              &gt; 실제값: {test.actualOutput || '(빈 출력)'}
+                            </pre>
                           </div>
                         )}
                       </div>
@@ -295,11 +306,7 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
             <button className="btn" disabled={busy} onClick={() => void execute('run')}>
               <Play size={14} /> 실행
             </button>
-            <button
-              className="btn primary"
-              disabled={busy}
-              onClick={() => void execute('submit')}
-            >
+            <button className="btn primary" disabled={busy} onClick={() => void execute('submit')}>
               <Send size={14} /> 제출
             </button>
           </div>
@@ -328,10 +335,7 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
               )}
               {result.kind === 'SUBMIT' &&
                 result.tests.map((test) => (
-                  <span
-                    className={`console-line ${test.passed ? 'ok' : 'err'}`}
-                    key={test.order}
-                  >
+                  <span className={`console-line ${test.passed ? 'ok' : 'err'}`} key={test.order}>
                     {test.passed ? '✓' : '✗'} 테스트 {test.order}
                     {test.isHidden ? ' (숨김)' : ''} — {test.passed ? '통과' : '실패'}
                   </span>

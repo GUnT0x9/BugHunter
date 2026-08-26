@@ -20,6 +20,14 @@ function createHealthService(input?: { databaseFails?: boolean; workerAvailable?
 }
 
 describe('HealthService', () => {
+  it('reports process liveness without calling a downstream dependency', () => {
+    expect(createHealthService({ databaseFails: true, workerAvailable: false }).liveness()).toEqual(
+      {
+        ok: true,
+      },
+    );
+  });
+
   it('reports infrastructure and Judge Worker readiness', async () => {
     await expect(createHealthService().readiness()).resolves.toEqual({
       ok: true,

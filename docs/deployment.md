@@ -14,7 +14,7 @@ Python 코드를 실행합니다. 로컬 Docker Judge Worker 구성은 그대로
    - `ADMIN_PASSWORD`: 12자 이상의 새 password
    - `ADMIN_USERNAME`: 화면에 표시할 admin 이름
 5. PostgreSQL, Key Value, API가 모두 생성될 때까지 기다립니다.
-6. API 주소와 `https://<api-address>/api/health`의 정상 응답을 확인합니다.
+6. API 주소와 `https://<api-address>/api/health/live`의 정상 응답을 확인합니다.
 
 `ADMIN_PASSWORD`는 GitHub나 문서에 기록하지 않습니다. 최초 배포 hook이 migration과 45개 Mission,
 admin 계정 seed를 수행합니다.
@@ -42,9 +42,13 @@ Web browser는 Vercel의 `/api`에만 요청하며 Vercel이 Render API를 rever
 
 1. Vercel 주소에서 회원가입과 로그인을 확인합니다.
 2. admin 계정으로 로그인해 `/admin/missions`에 45개 Mission이 표시되는지 확인합니다.
-3. `https://<api-address>/api/health`가 `200`인지 확인합니다.
-4. `https://<api-address>/api/health/ready`가 `200`이고 `judge: up`인지 확인합니다.
-5. Mission의 visible test 실행과 정답 제출이 각각 최종 결과를 반환하는지 확인합니다.
+3. `https://<api-address>/api/health/live`가 `200`인지 확인합니다.
+4. `https://<api-address>/api/health`가 `200`이고 database·redis가 `up`인지 확인합니다.
+5. `https://<api-address>/api/health/ready`가 `200`이고 `judge: up`인지 확인합니다.
+6. Mission의 visible test 실행과 정답 제출이 각각 최종 결과를 반환하는지 확인합니다.
+
+Render sleep·재배포 중 `RUNNING`이던 채점은 PostgreSQL lease가 만료되면 `QUEUED`로
+복구되고, API가 다시 시작된 뒤 동일 execution ID로 자동 재시도됩니다.
 
 Judge0 CE endpoint는 무료 shared API이며 제출 코드와 test input이 해당 서비스로 전달됩니다.
 무료 정책, quota, endpoint는 사전 고지 없이 바뀔 수 있으므로

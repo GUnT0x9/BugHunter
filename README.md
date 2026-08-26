@@ -38,8 +38,9 @@ pnpm dev
 
 ## 상태와 검증
 
+- `/api/health/live`: API process liveness 확인. Render health check는 이 endpoint를 사용합니다.
 - `/api/health`: PostgreSQL과 Redis 연결 확인
-- `/api/health/ready`: PostgreSQL, Redis, Judge Worker readiness 확인
+- `/api/health/ready`: PostgreSQL, Redis, 현재 Judge provider readiness 확인
 - `pnpm lint && pnpm typecheck && pnpm test && pnpm build`: source 검증
 - `pnpm test:judge-docker`: Docker 격리 제한 7개 검증
 - `pnpm test:judge-content`: 45개 초기 코드와 reference solution을 실제 Docker Runner로 검증
@@ -54,6 +55,8 @@ Frontend는 Vercel, API와 PostgreSQL/Redis는 Render Blueprint로 배포할 수
 로컬은 `JUDGE_PROVIDER=docker`로 기존 Docker Judge Worker를 사용합니다. Render 무료 배포는
 `JUDGE_PROVIDER=judge0`로 설정되어 Judge0 CE 실행 API를 사용하므로
 별도 VPS, 카드, API key가 필요하지 않습니다. 공개 shared API이므로 제출 코드와 테스트 입력이
-외부 실행 서비스로 전달되며, 공개 endpoint 정책 변경 시 채점이 일시 중단될 수 있습니다.
+외부 실행 서비스로 전달됩니다. 채점 상태는 PostgreSQL에 저장되므로 Render sleep·재배포로
+실행이 끊겨도 재기동 후 자동 재시도됩니다. 다만 공개 endpoint 정책 변경 시 신규 채점은 일시
+중단될 수 있습다.
 
 Dashboard 설정 순서와 배포 후 확인 항목은 [배포 가이드](docs/deployment.md)를 따릅니다.
