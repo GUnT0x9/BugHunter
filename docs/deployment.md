@@ -50,6 +50,7 @@ Web browser는 Vercel의 `/api`에만 요청하며 Vercel이 Render API를 rever
 Render sleep·재배포 중 `RUNNING`이던 채점은 PostgreSQL lease가 만료되면 `QUEUED`로
 복구되고, API가 다시 시작된 뒤 동일 execution ID로 최대 6회까지 간격을 두고 자동 재시도됩니다.
 Judge0 요청은 공개 provider의 burst 제한을 피하도록 이전 응답 완료 후 최소 1초 간격으로 직렬화합니다.
+Unicode source code, stdin, stdout, stderr는 Judge0의 `base64_encoded=true` 모드로 전송·복원합니다.
 
 Judge0 CE endpoint는 무료 shared API이며 제출 코드와 test input이 해당 서비스로 전달됩니다.
 무료 정책, quota, endpoint는 사전 고지 없이 바뀔 수 있으므로

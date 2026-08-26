@@ -20,7 +20,7 @@ describe('Judge0Runner', () => {
     globalThis.fetch = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
-          stdout: 'BugHunter\n',
+          stdout: Buffer.from('BugHunter\n').toString('base64'),
           stderr: null,
           exit_code: 0,
           status_id: 3,
@@ -42,14 +42,41 @@ describe('Judge0Runner', () => {
     });
   });
 
+  it('uses Judge0 base64 mode for Unicode source, stdin, and output', async () => {
+    globalThis.fetch = vi.fn().mockImplementation(async (input, init) => {
+      expect(String(input)).toContain('base64_encoded=true');
+      const body = JSON.parse(String(init?.body)) as { source_code: string; stdin: string };
+      expect(Buffer.from(body.source_code, 'base64').toString('utf8')).toBe(
+        'name = input()\nprint(name)',
+      );
+      expect(Buffer.from(body.stdin, 'base64').toString('utf8')).toBe('민수\n');
+      return new Response(
+        JSON.stringify({
+          stdout: Buffer.from('민수\n').toString('base64'),
+          exit_code: 0,
+          status_id: 3,
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    });
+
+    await expect(
+      new Judge0Runner().execute('name = input()\nprint(name)', '민수\n'),
+    ).resolves.toMatchObject({ stdout: '민수\n', exitCode: 0 });
+  });
+
   it('spaces consecutive requests after the previous response completes', async () => {
     const requestTimes: number[] = [];
     globalThis.fetch = vi.fn().mockImplementation(async () => {
       requestTimes.push(Date.now());
-      return new Response(JSON.stringify({ stdout: 'ok\n', exit_code: 0, status_id: 3 }), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({
+          stdout: Buffer.from('ok\n').toString('base64'),
+          exit_code: 0,
+          status_id: 3,
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
     });
     const runner = new Judge0Runner();
 
@@ -62,7 +89,7 @@ describe('Judge0Runner', () => {
   it('rejects an invalid upstream response', async () => {
     const fetchMock = vi.fn().mockImplementation(() =>
       Promise.resolve(
-        new Response(JSON.stringify({ message: 'rate limited' }), {
+        new Response(JSON.stringify({ error: 'rate limited' }), {
           status: 429,
           headers: { 'content-type': 'application/json' },
         }),
@@ -77,16 +104,23 @@ describe('Judge0Runner', () => {
     globalThis.fetch = vi
       .fn()
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ message: 'temporarily unavailable', status_id: 13 }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        }),
+        new Response(
+          JSON.stringify({
+            message: Buffer.from('temporarily unavailable').toString('base64'),
+            status_id: 13,
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
       )
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ stdout: 'ok\n', exit_code: 0, status_id: 3 }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        }),
+        new Response(
+          JSON.stringify({
+            stdout: Buffer.from('ok\n').toString('base64'),
+            exit_code: 0,
+            status_id: 3,
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
       );
     await expect(new Judge0Runner().execute('print("ok")', '')).resolves.toMatchObject({
       stdout: 'ok\n',
@@ -99,7 +133,12 @@ describe('Judge0Runner', () => {
       .fn()
       .mockResolvedValue(
         new Response(
-          JSON.stringify({ stdout: 'x'.repeat(65_537), stderr: null, exit_code: 0, status_id: 3 }),
+          JSON.stringify({
+            stdout: Buffer.from('x'.repeat(65_537)).toString('base64'),
+            stderr: null,
+            exit_code: 0,
+            status_id: 3,
+          }),
           { status: 200, headers: { 'content-type': 'application/json' } },
         ),
       );

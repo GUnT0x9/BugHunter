@@ -17,6 +17,7 @@ type Judge0Response = {
   time?: string | null;
   exit_code?: number | null;
   message?: string | null;
+  error?: string | null;
   status_id?: number;
 };
 
@@ -28,6 +29,14 @@ export type RemoteRunResult = {
   timedOut: boolean;
   outputLimited: boolean;
 };
+
+function encodeJudge0Text(value: string): string {
+  return Buffer.from(value, 'utf8').toString('base64');
+}
+
+function decodeJudge0Text(value: string | null | undefined): string | null {
+  return value == null ? null : Buffer.from(value, 'base64').toString('utf8');
+}
 
 @Injectable()
 export class Judge0Runner {
@@ -89,14 +98,14 @@ export class Judge0Runner {
 
   private async executeRequest(code: string, stdin: string): Promise<RemoteRunResult> {
     const response = await fetch(
-      `${this.apiUrl}/submissions?wait=true&fields=stdout,stderr,compile_output,time,exit_code,message,status_id`,
+      `${this.apiUrl}/submissions?base64_encoded=true&wait=true&fields=stdout,stderr,compile_output,time,exit_code,message,status_id`,
       {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           language_id: PYTHON_LANGUAGE_ID,
-          source_code: code,
-          stdin,
+          source_code: encodeJudge0Text(code),
+          stdin: encodeJudge0Text(stdin),
           cpu_time_limit: CPU_TIME_LIMIT_SECONDS,
           wall_time_limit: WALL_TIME_LIMIT_SECONDS,
           enable_network: false,
@@ -106,10 +115,15 @@ export class Judge0Runner {
     );
     const payload = (await response.json()) as Judge0Response;
     if (!response.ok || payload.status_id === undefined || payload.status_id >= 13) {
-      throw new Error(payload.message ?? `Judge0 request failed with status ${response.status}`);
+      throw new Error(
+        decodeJudge0Text(payload.message) ??
+          payload.error ??
+          `Judge0 request failed with status ${response.status}`,
+      );
     }
-    const stdout = payload.stdout ?? '';
-    const stderr = payload.stderr ?? payload.compile_output ?? '';
+    const stdout = decodeJudge0Text(payload.stdout) ?? '';
+    const stderr =
+      decodeJudge0Text(payload.stderr) ?? decodeJudge0Text(payload.compile_output) ?? '';
     const combinedBytes = Buffer.byteLength(stdout) + Buffer.byteLength(stderr);
     const timedOut = payload.status_id === 5;
     return {

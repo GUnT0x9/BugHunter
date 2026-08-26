@@ -56,7 +56,7 @@ Frontend는 Vercel, API와 PostgreSQL/Redis는 Render Blueprint로 배포할 수
 `JUDGE_PROVIDER=judge0`로 설정되어 Judge0 CE 실행 API를 사용하므로
 별도 VPS, 카드, API key가 필요하지 않습니다. 공개 shared API이므로 제출 코드와 테스트 입력이
 외부 실행 서비스로 전달됩니다. 채점 상태는 PostgreSQL에 저장되므로 Render sleep·재배포로
-실행이 끊겨도 재기동 후 최대 6회까지 간격을 두고 자동 재시도되며, Judge0 요청은 이전 응답 완료 후 1초 간격으로 직렬화됩니다. 다만 공개 endpoint 정책 변경 시 신규 채점은 일시
+실행이 끊겨도 재기동 후 최대 6회까지 간격을 두고 자동 재시도되며, Judge0 요청은 이전 응답 완료 후 1초 간격으로 직렬화됩니다. Unicode 코드·입출력은 Judge0 Base64 모드로 안전하게 전달합니다. 다만 공개 endpoint 정책 변경 시 신규 채점은 일시
 중단될 수 있습다.
 
 Dashboard 설정 순서와 배포 후 확인 항목은 [배포 가이드](docs/deployment.md)를 따릅니다.
