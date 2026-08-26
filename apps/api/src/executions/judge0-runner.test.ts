@@ -42,6 +42,23 @@ describe('Judge0Runner', () => {
     });
   });
 
+  it('spaces consecutive requests after the previous response completes', async () => {
+    const requestTimes: number[] = [];
+    globalThis.fetch = vi.fn().mockImplementation(async () => {
+      requestTimes.push(Date.now());
+      return new Response(JSON.stringify({ stdout: 'ok\n', exit_code: 0, status_id: 3 }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    const runner = new Judge0Runner();
+
+    await runner.execute('print("first")', '');
+    await runner.execute('print("second")', '');
+
+    expect((requestTimes[1] ?? 0) - (requestTimes[0] ?? 0)).toBeGreaterThanOrEqual(950);
+  });
+
   it('rejects an invalid upstream response', async () => {
     const fetchMock = vi.fn().mockImplementation(() =>
       Promise.resolve(

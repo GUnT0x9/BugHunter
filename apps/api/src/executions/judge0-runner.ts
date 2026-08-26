@@ -5,7 +5,7 @@ const CPU_TIME_LIMIT_SECONDS = 3;
 const WALL_TIME_LIMIT_SECONDS = 4;
 const REQUEST_TIMEOUT_MS = 8_000;
 const OUTPUT_LIMIT_BYTES = 64 * 1024;
-const MIN_REQUEST_INTERVAL_MS = 220;
+const MIN_REQUEST_INTERVAL_MS = 1_000;
 const AVAILABILITY_CACHE_MS = 5 * 60_000;
 const MAX_REQUEST_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 400;
@@ -79,10 +79,10 @@ export class Judge0Runner {
     await previous;
     const waitMs = Math.max(0, MIN_REQUEST_INTERVAL_MS - (Date.now() - this.lastRequestAt));
     if (waitMs > 0) await new Promise((resolve) => setTimeout(resolve, waitMs));
-    this.lastRequestAt = Date.now();
     try {
       return await task();
     } finally {
+      this.lastRequestAt = Date.now();
       release();
     }
   }
