@@ -5,8 +5,8 @@ export const chapter7Missions: MissionSeed[] = [
     slug: "chapter-7-mission-1",
     chapterOrder: 7,
     order: 1,
-    title: "0으로 나누기",
-    description: "0으로 나눌 때 프로그램이 죽습니다. `10 // n` 에서 `n=0` 이면 `ZeroDivisionError` 로 크래시됩니다. `try/except ZeroDivisionError` 로 감싸 예외 시 `error` 를 출력하게 하세요.",
+    title: "장애를 삼키지 않는 나눗셈",
+    description: "계산 API의 핵심 로직이 0이라는 단 하나의 입력 때문에 종료됩니다. 정수 n을 받아 10 // n을 출력하되, n이 0일 때만 error를 출력해야 합니다. 정상 입력의 동작은 보존하고 ZeroDivisionError만 정확히 처리하세요. 음수도 정상적인 피연산자입니다.",
     difficulty: 4,
     isBoss: false,
     bugTypeSlug: "exception",
@@ -30,6 +30,18 @@ export const chapter7Missions: MissionSeed[] = [
             "input": "0\n",
             "expectedOutput": "error",
             "isHidden": true
+        },
+        {
+            "order": 4,
+            "input": "-2\n",
+            "expectedOutput": "-5",
+            "isHidden": true
+        },
+        {
+            "order": 5,
+            "input": "1\n",
+            "expectedOutput": "10",
+            "isHidden": true
         }
     ],
     hints: ["0으로 나눌 때 Python이 내는 예외 이름을 확인하세요.","`ZeroDivisionError`를 처리해야 합니다.","`try`/`except ZeroDivisionError`로 감싸세요."],
@@ -41,8 +53,8 @@ export const chapter7Missions: MissionSeed[] = [
     slug: "chapter-7-mission-2",
     chapterOrder: 7,
     order: 2,
-    title: "숫자 변환 안전하게",
-    description: "문자열을 숫자로 바꿀 때 크래시됩니다. `int(\"abc\")`·`int(\"3.5\")` 는 `ValueError` 입니다. `try/except ValueError` 로 감싸 성공 시 `*2` 결과, 실패 시 `not a number` 를 출력하게 하세요.",
+    title: "불완전한 입력 파이프라인",
+    description: "사용자 입력을 정수로 변환해 두 배로 만드는 파이프라인입니다. 정수 문자열은 음수와 주변 공백까지 정상 처리하고, 정수로 해석할 수 없는 값에는 not a number를 출력해야 합니다. 예외 범위를 넓게 잡아 다른 프로그래밍 오류까지 숨기지 말고 ValueError만 처리하세요.",
     difficulty: 5,
     isBoss: false,
     bugTypeSlug: "exception",
@@ -66,6 +78,18 @@ export const chapter7Missions: MissionSeed[] = [
             "input": "3.5\n",
             "expectedOutput": "not a number",
             "isHidden": true
+        },
+        {
+            "order": 4,
+            "input": "-12\n",
+            "expectedOutput": "-24",
+            "isHidden": true
+        },
+        {
+            "order": 5,
+            "input": "0\n",
+            "expectedOutput": "0",
+            "isHidden": true
         }
     ],
     hints: ["`int(\"abc\")`는 ValueError를 발생시킵니다.","`try`/`except ValueError`로 처리하세요.","변환 실패 시 \"not a number\"를 출력하세요."],
@@ -77,8 +101,8 @@ export const chapter7Missions: MissionSeed[] = [
     slug: "chapter-7-mission-3",
     chapterOrder: 7,
     order: 3,
-    title: "파일 없음 처리",
-    description: "입력받은 파일 이름을 열 때 파일이 없으면 프로그램이 중단됩니다. `open(filename)`을 `try/except FileNotFoundError`로 감싸 존재하지 않는 파일에는 `missing`을 출력하세요.",
+    title: "사라진 리소스의 경계",
+    description: "외부 리소스는 언제든 사라질 수 있습니다. 입력받은 경로의 파일을 읽어 출력하되, 파일이 존재하지 않는 경우에만 missing을 출력하세요. with 문을 유지해 열린 파일이 항상 닫히게 하고, FileNotFoundError보다 넓은 예외로 실제 장애 원인을 감추지 마세요.",
     difficulty: 5,
     isBoss: false,
     bugTypeSlug: "exception",
@@ -102,6 +126,18 @@ export const chapter7Missions: MissionSeed[] = [
             "input": "notes.csv\n",
             "expectedOutput": "missing",
             "isHidden": true
+        },
+        {
+            "order": 4,
+            "input": "nested/ghost.txt\n",
+            "expectedOutput": "missing",
+            "isHidden": true
+        },
+        {
+            "order": 5,
+            "input": ".not-found\n",
+            "expectedOutput": "missing",
+            "isHidden": true
         }
     ],
     hints: ["파일이 없으면 FileNotFoundError가 발생합니다.","`try`/`except FileNotFoundError`로 처리하세요.","파일 없음 시 \"missing\"을 출력하세요."],
@@ -113,8 +149,8 @@ export const chapter7Missions: MissionSeed[] = [
     slug: "chapter-7-mission-4",
     chapterOrder: 7,
     order: 4,
-    title: "안전한 리스트 접근",
-    description: "입력이 부족하거나 0 나누기 등 여러 예외가 동시에 가능합니다. `input().split()` 으로 두 수를 나누다 `IndexError/ZeroDivisionError/ValueError` 가 날 수 있습니다. `except (IndexError, ZeroDivisionError, ValueError)` 로 한 번에 `invalid input` 을 출력하게 하세요.",
+    title: "세 갈래 실패를 하나의 계약으로",
+    description: "공백으로 구분된 두 정수를 받아 첫 번째 수를 두 번째 수로 나눕니다. 토큰 부족, 숫자 변환 실패, 0 나눗셈이라는 서로 다른 실패를 invalid input이라는 하나의 사용자 계약으로 변환하세요. 정상적인 음수 연산은 그대로 통과해야 하며, 세 예외만 명시적으로 묶어 처리해야 합니다.",
     difficulty: 5,
     isBoss: false,
     bugTypeSlug: "exception",
@@ -138,6 +174,18 @@ export const chapter7Missions: MissionSeed[] = [
             "input": "abc\n",
             "expectedOutput": "invalid input",
             "isHidden": true
+        },
+        {
+            "order": 4,
+            "input": "9 x\n",
+            "expectedOutput": "invalid input",
+            "isHidden": true
+        },
+        {
+            "order": 5,
+            "input": "-9 2\n",
+            "expectedOutput": "-5",
+            "isHidden": true
         }
     ],
     hints: ["입력이 부족하면 IndexError가 발생합니다.","0으로 나누면 ZeroDivisionError가 발생합니다.","여러 예외를 `except (A, B, C)`로 한 번에 처리할 수 있습니다."],
@@ -149,8 +197,8 @@ export const chapter7Missions: MissionSeed[] = [
     slug: "chapter-7-mission-5",
     chapterOrder: 7,
     order: 5,
-    title: "최종 보스",
-    description: "종합 보스: 빈 입력에서 `ZeroDivisionError`·`ValueError` 가 터집니다. `n=0` 이면 `sum(nums)/len(nums)` 와 `max(nums)` 가 모두 실패합니다. `if n==0: print(\"no data\")` 분기로 빈 입력을 먼저 처리하게 하세요. 그 외에는 합계/평균/최댓값을 출력합니다.",
+    title: "최종 보스: 빈 데이터 보고서",
+    description: "통계 보고서 생성기가 데이터가 없는 날에만 연쇄적으로 실패합니다. n개의 정수를 읽어 합계·평균·최댓값을 출력하고, n=0이면 no data 한 줄만 출력하세요. 빈 컬렉션을 계산 함수에 넘기기 전에 가드 절로 차단해야 하며, 정상 경로의 출력 순서와 실수형 평균 형식은 바꾸면 안 됩니다.",
     difficulty: 5,
     isBoss: true,
     bugTypeSlug: "exception",
@@ -173,6 +221,18 @@ export const chapter7Missions: MissionSeed[] = [
             "order": 3,
             "input": "1\n5\n",
             "expectedOutput": "sum=5\navg=5.0\nmax=5",
+            "isHidden": true
+        },
+        {
+            "order": 4,
+            "input": "4\n-3\n0\n8\n-1\n",
+            "expectedOutput": "sum=4\navg=1.0\nmax=8",
+            "isHidden": true
+        },
+        {
+            "order": 5,
+            "input": "2\n1\n2\n",
+            "expectedOutput": "sum=3\navg=1.5\nmax=2",
             "isHidden": true
         }
     ],

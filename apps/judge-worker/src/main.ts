@@ -87,9 +87,7 @@ async function processExecution(job: Job<JudgeJobData>): Promise<void> {
       : []),
   ]);
 
-  const selectedTests = execution.mission.tests.filter(
-    (test) => execution.kind === ExecutionKind.SUBMIT || !test.isHidden,
-  );
+  const selectedTests = execution.mission.tests;
   let errorKind: ExecutionErrorKind = 'NONE';
   let stdout = '';
   let stderr = '';
@@ -97,8 +95,17 @@ async function processExecution(job: Job<JudgeJobData>): Promise<void> {
   let totalExecutionTimeMs = 0;
   const tests: ExecutionResult['tests'] = [];
 
-  if (selectedTests.length === 0) errorKind = 'INTERNAL_ERROR';
-  for (const test of selectedTests) {
+  if (execution.kind === ExecutionKind.RUN) {
+    const run = await runner.execute(execution.code, execution.customInput ?? '');
+    totalExecutionTimeMs = run.executionTimeMs;
+    stdout = run.stdout;
+    stderr = sanitizePythonStderr(run.stderr);
+    exitCode = run.exitCode;
+    errorKind = classifyRun(run);
+  } else if (selectedTests.length === 0) {
+    errorKind = 'INTERNAL_ERROR';
+  }
+  for (const test of execution.kind === ExecutionKind.SUBMIT ? selectedTests : []) {
     const run = await runner.execute(execution.code, test.input);
     totalExecutionTimeMs += run.executionTimeMs;
     stdout = run.stdout;
@@ -118,11 +125,15 @@ async function processExecution(job: Job<JudgeJobData>): Promise<void> {
     if (errorKind !== 'NONE') break;
   }
 
-  const allPassed = tests.length > 0 && tests.every((test) => test.passed);
+  const allPassed =
+    execution.kind === ExecutionKind.RUN
+      ? errorKind === 'NONE'
+      : tests.length > 0 && tests.every((test) => test.passed);
   const status = executionStatus(errorKind, allPassed);
   const baseResult: ExecutionResult = {
     id: execution.id,
     kind: execution.kind,
+    customInput: execution.kind === ExecutionKind.RUN ? (execution.customInput ?? '') : null,
     status,
     stdout,
     stderr,
@@ -208,6 +219,7 @@ function internalErrorResult(executionId: string, kind: ExecutionKind): Executio
   return {
     id: executionId,
     kind,
+    customInput: null,
     status: ExecutionStatus.ERROR,
     stdout: '',
     stderr: '',

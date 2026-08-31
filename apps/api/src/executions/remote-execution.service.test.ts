@@ -3,15 +3,16 @@ import type { PrismaService } from '../common/prisma.service.js';
 import type { Judge0Runner } from './judge0-runner.js';
 import { RemoteExecutionService } from './remote-execution.service.js';
 
-function executionRecord(attemptCount: number) {
+function executionRecord(attemptCount: number, kind: 'RUN' | 'SUBMIT' = 'RUN') {
   return {
     id: 'execution-1',
     userId: 'user-1',
     missionId: 'mission-1',
-    submissionId: null,
-    kind: 'RUN',
+    submissionId: kind === 'SUBMIT' ? 'submission-1' : null,
+    kind,
     status: 'RUNNING',
     code: 'print("BugHunter")',
+    customInput: '사용자 입력\n',
     attemptCount,
     mission: {
       tests: [
@@ -26,8 +27,12 @@ function executionRecord(attemptCount: number) {
   };
 }
 
-function createService(attemptCount: number, execute: ReturnType<typeof vi.fn>) {
-  const loaded = executionRecord(attemptCount);
+function createService(
+  attemptCount: number,
+  execute: ReturnType<typeof vi.fn>,
+  kind: 'RUN' | 'SUBMIT' = 'RUN',
+) {
+  const loaded = executionRecord(attemptCount, kind);
   const execution = {
     updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     findUniqueOrThrow: vi
@@ -60,12 +65,13 @@ function createService(attemptCount: number, execute: ReturnType<typeof vi.fn>) 
       runner as unknown as Judge0Runner,
     ),
     execution,
+    execute,
   };
 }
 
 describe('RemoteExecutionService', () => {
   it('persists a successful Judge0 result under the claimed lease', async () => {
-    const { service, execution } = createService(
+    const { service, execution, execute } = createService(
       1,
       vi.fn().mockResolvedValue({
         stdout: 'BugHunter\n',
@@ -82,6 +88,47 @@ describe('RemoteExecutionService', () => {
 
     expect(execution.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ status: 'SUCCEEDED' }) }),
+    );
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(execute).toHaveBeenCalledWith('print("BugHunter")', '사용자 입력\n');
+    expect(execution.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          resultJson: expect.objectContaining({ customInput: '사용자 입력\n', tests: [] }),
+        }),
+      }),
+    );
+  });
+
+  it('runs every public and hidden test for SUBMIT', async () => {
+    const execute = vi.fn().mockResolvedValue({
+      stdout: 'wrong\n',
+      stderr: '',
+      exitCode: 0,
+      executionTimeMs: 3,
+      timedOut: false,
+      outputLimited: false,
+    });
+    const { service, execution } = createService(1, execute, 'SUBMIT');
+    const loaded = executionRecord(1, 'SUBMIT');
+    loaded.mission.tests.push({
+      sortOrder: 2,
+      input: 'secret',
+      expectedOutput: 'BugHunter\n',
+      isHidden: true,
+    });
+    execution.findUniqueOrThrow
+      .mockReset()
+      .mockResolvedValueOnce(loaded)
+      .mockResolvedValue({ status: 'RUNNING', attemptCount: 1 });
+
+    service.dispatch('execution-1');
+    await service.onModuleDestroy();
+
+    expect(execute).toHaveBeenCalledTimes(2);
+    expect(execute).toHaveBeenNthCalledWith(2, 'print("BugHunter")', 'secret');
+    expect(execution.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'FAILED' }) }),
     );
   });
 

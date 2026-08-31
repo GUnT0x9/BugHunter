@@ -104,6 +104,7 @@ export const MissionPublicSchema = z.object({
   hints: z.array(HintSchema),
   concepts: z.array(z.string()),
   visibleTests: z.array(PublicTestCaseSchema),
+  totalTestCount: z.number().int().positive(),
   baseXp: z.number().int().positive(),
   isCompleted: z.boolean(),
   isLocked: z.boolean(),
@@ -115,6 +116,15 @@ export const MissionCodeSchema = z.object({
     .min(1)
     .max(64 * 1024)
     .refine((code) => !code.includes('\0'), '코드에는 null 문자를 포함할 수 없습니다.'),
+});
+
+export const MAX_MISSION_RUN_INPUT_LENGTH = 64 * 1024;
+
+export const MissionRunSchema = MissionCodeSchema.extend({
+  input: z
+    .string({ required_error: '표준 입력을 입력해주세요.' })
+    .max(MAX_MISSION_RUN_INPUT_LENGTH, '표준 입력은 64KB 이하여야 합니다.')
+    .refine((input) => !input.includes('\0'), '표준 입력에는 null 문자를 포함할 수 없습니다.'),
 });
 
 export const ExecutionDiagnosticSchema = z.object({
@@ -136,6 +146,7 @@ export const TestResultSchema = z.object({
 export const ExecutionResultSchema = z.object({
   id: z.string(),
   kind: z.enum(EXECUTION_KINDS),
+  customInput: z.string().nullable(),
   status: z.enum(EXECUTION_STATUSES),
   stdout: z.string(),
   stderr: z.string(),
@@ -178,6 +189,7 @@ export type TestCase = z.infer<typeof TestCaseSchema>;
 export type Hint = z.infer<typeof HintSchema>;
 export type MissionPublic = z.infer<typeof MissionPublicSchema>;
 export type MissionCode = z.infer<typeof MissionCodeSchema>;
+export type MissionRun = z.infer<typeof MissionRunSchema>;
 export type ExecutionResult = z.infer<typeof ExecutionResultSchema>;
 export type ExecutionStatus = (typeof EXECUTION_STATUSES)[number];
 export type ExecutionKind = (typeof EXECUTION_KINDS)[number];

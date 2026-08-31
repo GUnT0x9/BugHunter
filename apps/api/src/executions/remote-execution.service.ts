@@ -99,11 +99,7 @@ export class RemoteExecutionService implements OnModuleDestroy {
         current?.status === ExecutionStatus.QUEUED &&
         current.attemptCount >= MAX_REMOTE_EXECUTION_ATTEMPTS
       ) {
-        await this.failExecution(
-          executionId,
-          ExecutionStatus.QUEUED,
-          current.attemptCount,
-        );
+        await this.failExecution(executionId, ExecutionStatus.QUEUED, current.attemptCount);
       }
       return null;
     }
@@ -121,17 +117,29 @@ export class RemoteExecutionService implements OnModuleDestroy {
   }
 
   private async executeTests(execution: LoadedExecution): Promise<ExecutionOutcome> {
-    const selectedTests = execution.mission.tests.filter(
-      (test) => execution.kind === ExecutionKind.SUBMIT || !test.isHidden,
-    );
-    let errorKind: ExecutionErrorKind = selectedTests.length === 0 ? 'INTERNAL_ERROR' : 'NONE';
+    const selectedTests = execution.mission.tests;
+    let errorKind: ExecutionErrorKind =
+      execution.kind === ExecutionKind.SUBMIT && selectedTests.length === 0
+        ? 'INTERNAL_ERROR'
+        : 'NONE';
     let stdout = '';
     let stderr = '';
     let exitCode: number | null = null;
     let executionTimeMs = 0;
     const tests: ExecutionResult['tests'] = [];
 
-    for (const test of selectedTests) {
+    if (execution.kind === ExecutionKind.RUN) {
+      await this.touchExecution(execution.id, execution.attemptCount);
+      const run = await this.runner.execute(execution.code, execution.customInput ?? '');
+      await this.touchExecution(execution.id, execution.attemptCount);
+      executionTimeMs = run.executionTimeMs;
+      stdout = run.stdout;
+      stderr = sanitizePythonStderr(run.stderr);
+      exitCode = run.exitCode;
+      errorKind = classifyRun(run);
+    }
+
+    for (const test of execution.kind === ExecutionKind.SUBMIT ? selectedTests : []) {
       await this.touchExecution(execution.id, execution.attemptCount);
       const run = await this.runner.execute(execution.code, test.input);
       await this.touchExecution(execution.id, execution.attemptCount);
@@ -155,11 +163,14 @@ export class RemoteExecutionService implements OnModuleDestroy {
 
     const status = executionStatus(
       errorKind,
-      tests.length > 0 && tests.every((test) => test.passed),
+      execution.kind === ExecutionKind.RUN
+        ? errorKind === 'NONE'
+        : tests.length > 0 && tests.every((test) => test.passed),
     );
     const baseResult: ExecutionResult = {
       id: execution.id,
       kind: execution.kind,
+      customInput: execution.kind === ExecutionKind.RUN ? (execution.customInput ?? '') : null,
       status,
       stdout,
       stderr,
@@ -289,6 +300,7 @@ export class RemoteExecutionService implements OnModuleDestroy {
       const result: ExecutionResult = {
         id: execution.id,
         kind: execution.kind,
+        customInput: execution.kind === ExecutionKind.RUN ? (execution.customInput ?? '') : null,
         status: 'ERROR',
         stdout: '',
         stderr: '',

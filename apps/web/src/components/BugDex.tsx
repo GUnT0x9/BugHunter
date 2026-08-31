@@ -28,7 +28,7 @@ export function BugDex(): ReactElement {
           ))}
         </div>
       ) : failed ? (
-        <Empty text="버그 도감을 불러오지 못했습니다. 잠시 후 다시 시도해주세요." />
+        <Empty text="버그 도감을 불러오지 못했습니다. 잠시 후 다시 시도해주세요." tone="error" />
       ) : (
         <Empty text="첫 Mission을 완료하면 버그 도감이 채워집니다." />
       )}

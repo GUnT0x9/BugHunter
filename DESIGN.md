@@ -67,6 +67,7 @@ BUGhunter는 **순흑 터미널 위의 온라인 저지(OJ)** 다. 코드업의 
 ### Rules
 - Pretendard 로드 유지. Inter 폴백 금지.
 - 목록 밀도가 심장이다: 행 높이 44-52px, 줄바꿈 금지(truncate), 메타는 mono.
+- 전역 `word-break: keep-all` + `overflow-wrap: break-word` — 한국어 어절 단위 줄바꿈 보장 (코드/콘솔 영역은 자체 break-word 규칙으로 예외).
 
 ## 4. Spacing & Layout
 
@@ -160,3 +161,4 @@ BUGhunter는 **순흑 터미널 위의 온라인 저지(OJ)** 다. 코드업의 
 | admin 스타디오 일부 레거시 헥스(#0f1310 등) 잔존 가능 | Admin* 컴포넌트 | 토큰 전환 우선, 관리자 전용 화면 | 다음 admin 정비 시 토큰화 |
 | 목록 행에서 description truncate 1줄 | ListTable | 밀도 우선, 상세는 Workspace | 필요 시 2줄 clamp |
 | 버튼 터치 타깃 38px (44px 미달) | .btn | 데스크탑 우선 서비스 | 모바일 패딩 확대 패치 |
+| padding/margin 쇼핑핸드 px 유지 | styles.css 전반 | gap/radius 토큰화 1단계 완료, 쇼핑핸드 치환은 2단계 | 다음 스타일 정비 시 --space-* 치환 |

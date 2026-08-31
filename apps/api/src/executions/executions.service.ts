@@ -6,7 +6,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import type { ExecutionResult, MissionCode, User } from '@bughunter/contracts';
+import type { ExecutionResult, MissionCode, MissionRun, User } from '@bughunter/contracts';
 import { MissionRepository } from '../missions/mission.repository.js';
 import { ActiveExecutionError, ExecutionStore } from './execution.store.js';
 import { JudgeProviderService } from './judge-provider.service.js';
@@ -21,8 +21,8 @@ export class ExecutionsService {
     private readonly judgeProvider: JudgeProviderService,
   ) {}
 
-  enqueueRun(user: User, missionId: string, input: MissionCode): Promise<{ executionId: string }> {
-    return this.enqueue(user, missionId, input.code, 'RUN');
+  enqueueRun(user: User, missionId: string, input: MissionRun): Promise<{ executionId: string }> {
+    return this.enqueue(user, missionId, input.code, 'RUN', input.input);
   }
 
   async enqueueSubmission(
@@ -44,6 +44,7 @@ export class ExecutionsService {
     missionId: string,
     code: string,
     kind: 'RUN' | 'SUBMIT',
+    customInput: string | null = null,
   ): Promise<{ executionId: string } | { executionId: string; submissionId: string }> {
     if (!(await this.judgeProvider.isAvailable())) {
       throw new ServiceUnavailableException(
@@ -60,6 +61,7 @@ export class ExecutionsService {
         missionId,
         code,
         kind,
+        customInput,
       });
       void this.dispatcher.dispatchOne(executionId);
       return created.submissionId

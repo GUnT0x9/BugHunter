@@ -30,11 +30,13 @@ function toExecutionResult(record: {
   kind: PrismaExecutionKind;
   status: PrismaExecutionStatus;
   resultJson: Prisma.JsonValue | null;
+  customInput: string | null;
 }): ExecutionResult {
   const result = (record.resultJson ?? {}) as Partial<ExecutionResult>;
   return {
     id: record.id,
     kind: record.kind,
+    customInput: record.kind === PrismaExecutionKind.RUN ? record.customInput : null,
     status: record.status,
     stdout: result.stdout ?? '',
     stderr: result.stderr ?? '',
@@ -58,6 +60,7 @@ export class ExecutionStore {
     missionId: string;
     code: string;
     kind: ExecutionKind;
+    customInput: string | null;
   }): Promise<{ executionId: string; submissionId: string | null }> {
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -86,6 +89,7 @@ export class ExecutionStore {
             submissionId,
             kind: input.kind,
             code: input.code,
+            customInput: input.kind === 'RUN' ? input.customInput : null,
             activeUserId: input.userId,
           },
         });
@@ -168,6 +172,7 @@ export class ExecutionStore {
     return {
       id,
       kind,
+      customInput: null,
       status: 'QUEUED',
       stdout: '',
       stderr: '',

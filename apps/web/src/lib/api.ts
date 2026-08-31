@@ -43,10 +43,10 @@ export const api = {
   logout: () => request<{ ok: true }>('/auth/logout', { method: 'POST' }),
   missions: () => request<MissionPublic[]>('/missions'),
   mission: (id: string) => request<MissionPublic>(`/missions/${id}`),
-  run: (missionId: string, code: string) =>
+  run: (missionId: string, code: string, input: string) =>
     request<{ executionId: string }>(`/missions/${missionId}/runs`, {
       method: 'POST',
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({ code, input }),
     }),
   submit: (missionId: string, code: string) =>
     request<{ executionId: string; submissionId: string }>(`/missions/${missionId}/submissions`, {

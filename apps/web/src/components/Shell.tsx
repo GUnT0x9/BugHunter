@@ -3,9 +3,8 @@ import { NavLink } from 'react-router-dom';
 import {
   Bug,
   BookOpen,
-  ChartNoAxesColumn,
   Code2,
-  LayoutDashboard,
+  Home,
   LogOut,
   Settings2,
   UserRound,
@@ -17,12 +16,10 @@ import { api } from '../lib/api.js';
 export type Progress = Awaited<ReturnType<typeof api.progress>>;
 
 const LEARNING_NAV: Array<{ to: string; label: string; icon: ReactElement }> = [
-  { to: '/', label: '대시보드', icon: <LayoutDashboard size={15} /> },
-  { to: '/roadmap', label: '로드맵', icon: <BookOpen size={15} /> },
-  { to: '/missions', label: '미션', icon: <Code2 size={15} /> },
+  { to: '/', label: '홈', icon: <Home size={15} /> },
+  { to: '/learn', label: '학습하기', icon: <BookOpen size={15} /> },
+  { to: '/problems', label: '문제 풀기', icon: <Code2 size={15} /> },
   { to: '/bugdex', label: '버그 도감', icon: <Bug size={15} /> },
-  { to: '/statistics', label: '통계', icon: <ChartNoAxesColumn size={15} /> },
-  { to: '/profile', label: '프로필', icon: <UserRound size={15} /> },
 ];
 
 type ShellProps = {
@@ -36,9 +33,8 @@ export function Shell({ user, progress, onLogout, children }: ShellProps): React
   const navigation =
     user.role === 'ADMIN'
       ? [
-          ...LEARNING_NAV.slice(0, -1),
+          ...LEARNING_NAV,
           { to: '/admin/missions', label: '관리', icon: <Settings2 size={15} /> },
-          LEARNING_NAV[LEARNING_NAV.length - 1]!,
         ]
       : LEARNING_NAV;
   return (
@@ -64,20 +60,11 @@ export function Shell({ user, progress, onLogout, children }: ShellProps): React
           </nav>
 
           <div className="topbar-right">
-            {user.role === 'ADMIN' ? (
-              <span className="admin-role-badge" title={`${user.username} 계정으로 연결됨`}>
-                ADMIN
-              </span>
-            ) : (
-              <span className="topbar-meta">
-                <span className="topbar-user">
-                  {user.username} · LV.{progress?.level ?? 1}
-                </span>
-                <span className="topbar-xp">
-                  XP <strong>{progress?.totalXp ?? 0}</strong> · {progress?.bugsFixed ?? 0}개 해결
-                </span>
-              </span>
-            )}
+            <NavLink to="/my" className="topbar-account">
+              <UserRound size={15} />
+              <span>{user.role === 'ADMIN' ? 'ADMIN' : '내 학습'}</span>
+              <small>LV.{progress?.level ?? 1}</small>
+            </NavLink>
             <button className="topbar-logout" onClick={onLogout} aria-label="로그아웃">
               <LogOut size={14} /> 로그아웃
             </button>

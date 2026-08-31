@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   LoginInputSchema,
   MissionCodeSchema,
+  MAX_MISSION_RUN_INPUT_LENGTH,
+  MissionRunSchema,
   normalizeOutput,
   redactHiddenTests,
   RegisterInputSchema,
@@ -57,5 +59,19 @@ describe('contracts', () => {
 
   it('rejects code containing a null character', () => {
     expect(MissionCodeSchema.safeParse({ code: 'print(1)\0' }).success).toBe(false);
+  });
+
+  it.each(['', '첫째 줄\n둘째 줄\n', '한글 입력'])('accepts custom stdin: %j', (input) => {
+    expect(MissionRunSchema.parse({ code: 'print(input())', input }).input).toBe(input);
+  });
+
+  it('rejects oversized custom stdin and null characters', () => {
+    expect(
+      MissionRunSchema.safeParse({
+        code: 'pass',
+        input: 'a'.repeat(MAX_MISSION_RUN_INPUT_LENGTH + 1),
+      }).success,
+    ).toBe(false);
+    expect(MissionRunSchema.safeParse({ code: 'pass', input: 'hello\0world' }).success).toBe(false);
   });
 });

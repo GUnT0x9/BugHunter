@@ -126,6 +126,7 @@ export class MissionRepository {
           input: test.input,
           expectedOutput: test.expectedOutput,
         })),
+      totalTestCount: mission.tests.length,
       baseXp: mission.baseXp,
       isCompleted: completed.has(mission.id),
       isLocked,

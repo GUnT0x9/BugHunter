@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import {
   MissionCodeSchema,
+  MissionRunSchema,
   type ExecutionResult,
   type SubmissionResult,
   type User,
@@ -21,7 +22,7 @@ export class ExecutionsController {
 
   @Post('missions/:id/runs')
   run(@Param('id') missionId: string, @Body() body: unknown, @CurrentUser() user: User) {
-    return this.executions.enqueueRun(user, missionId, parseBody(MissionCodeSchema, body));
+    return this.executions.enqueueRun(user, missionId, parseBody(MissionRunSchema, body));
   }
 
   @Post('missions/:id/submissions')

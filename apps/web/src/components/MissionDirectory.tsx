@@ -13,7 +13,7 @@ export function MissionDirectory({ missions, onStart }: MissionDirectoryProps): 
   const navigate = useNavigate();
   const handleStart = (id: string): void => {
     if (onStart) onStart(id);
-    else navigate(`/missions/${id}`);
+    else navigate(`/problems/${id}`);
   };
   const [search, setSearch] = useState('');
   const [chapter, setChapter] = useState('all');
@@ -48,7 +48,7 @@ export function MissionDirectory({ missions, onStart }: MissionDirectoryProps): 
 
   return (
     <section className="page">
-      <h1 className="page-title">미션</h1>
+      <h1 className="page-title">문제 풀기</h1>
       <div className="mission-filters">
         <input
           value={search}

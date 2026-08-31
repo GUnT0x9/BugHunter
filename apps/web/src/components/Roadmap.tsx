@@ -14,14 +14,14 @@ export function Roadmap({ missions, onStart, compact = false }: RoadmapProps): R
   const navigate = useNavigate();
   const handleStart = (id: string): void => {
     if (onStart) onStart(id);
-    else navigate(`/missions/${id}`);
+    else navigate(`/problems/${id}`);
   };
   const chapters = [...new Set(missions.map((mission) => mission.chapterOrder))];
   return (
     <section className={compact ? 'roadmap compact' : 'roadmap page'}>
       {!compact && (
         <h1 className="page-title">
-          로드맵 <span className="page-title-path">· 학습 경로</span>
+          학습하기 <span className="page-title-path">· 학습 경로</span>
         </h1>
       )}
       {chapters.map((chapter) => {

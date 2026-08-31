@@ -84,15 +84,19 @@ function AuthenticatedApp({ user, onLogout }: { user: User; onLogout: () => void
       )}
       <Routes>
         <Route path="/" element={<Dashboard progress={progress} missions={missions} />} />
-        <Route path="/roadmap" element={<Roadmap missions={missions} />} />
-        <Route path="/missions" element={<MissionDirectory missions={missions} />} />
+        <Route path="/learn" element={<Roadmap missions={missions} />} />
+        <Route path="/problems" element={<MissionDirectory missions={missions} />} />
         <Route
-          path="/missions/:id"
+          path="/problems/:id"
           element={<MissionRoute missions={missions} onComplete={() => void refresh()} />}
         />
         <Route path="/bugdex" element={<BugDex />} />
+        <Route path="/my" element={<Profile user={user} progress={progress} />} />
         <Route path="/statistics" element={<Statistics />} />
-        <Route path="/profile" element={<Profile user={user} progress={progress} />} />
+        <Route path="/roadmap" element={<Navigate to="/learn" replace />} />
+        <Route path="/missions" element={<Navigate to="/problems" replace />} />
+        <Route path="/missions/:id" element={<LegacyMissionRedirect />} />
+        <Route path="/profile" element={<Navigate to="/my" replace />} />
         <Route
           path="/admin/missions"
           element={user.role === 'ADMIN' ? <AdminMissionStudio /> : <Navigate to="/" replace />}
@@ -147,13 +151,18 @@ function MissionRoute({
     return (
       <div className="page">
         <p className="form-error">{error || '미션을 찾을 수 없습니다.'}</p>
-        <button className="btn" onClick={() => navigate('/missions')}>
-          미션 목록으로
+        <button className="btn" onClick={() => navigate('/problems')}>
+          문제 목록으로
         </button>
       </div>
     );
 
   return <Workspace mission={mission} onBack={() => navigate(-1)} onComplete={onComplete} />;
+}
+
+function LegacyMissionRedirect(): ReactElement {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={id ? `/problems/${id}` : '/problems'} replace />;
 }
 
 function errorMessage(error: unknown): string {

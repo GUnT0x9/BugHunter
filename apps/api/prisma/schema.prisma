@@ -180,6 +180,7 @@ model Execution {
   kind         ExecutionKind
   status       ExecutionStatus @default(QUEUED)
   code         String
+  customInput  String?
   activeUserId String?         @unique
   attemptCount Int             @default(0)
   enqueuedAt   DateTime?

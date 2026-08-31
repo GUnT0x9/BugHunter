@@ -13,6 +13,39 @@ describe('ExecutionStore initial state', () => {
     });
   });
 
+  it('stores custom stdin for RUN without creating a submission or incrementing attempts', async () => {
+    const executionCreate = vi.fn().mockResolvedValue({});
+    const submissionCreate = vi.fn();
+    const progressUpsert = vi.fn();
+    const transactionClient = {
+      execution: { create: executionCreate },
+      submission: { create: submissionCreate },
+      missionProgress: { upsert: progressUpsert },
+    };
+    const prisma = {
+      $transaction: vi.fn((callback: (client: typeof transactionClient) => Promise<unknown>) =>
+        callback(transactionClient),
+      ),
+    };
+    const store = new ExecutionStore(prisma as unknown as PrismaService);
+
+    await expect(
+      store.create({
+        id: 'run-stdin',
+        userId: 'user-1',
+        missionId: 'mission-1',
+        code: 'print(input())',
+        kind: 'RUN',
+        customInput: '한글\n둘째 줄\n',
+      }),
+    ).resolves.toEqual({ executionId: 'run-stdin', submissionId: null });
+    expect(executionCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ customInput: '한글\n둘째 줄\n', submissionId: null }),
+    });
+    expect(submissionCreate).not.toHaveBeenCalled();
+    expect(progressUpsert).not.toHaveBeenCalled();
+  });
+
   it('returns an interrupted RUNNING execution to the durable queue', async () => {
     const executionUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
     const submissionUpdateMany = vi.fn().mockResolvedValue({ count: 1 });

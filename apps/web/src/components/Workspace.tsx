@@ -1,8 +1,25 @@
 // noqa: SIZE_OK - single screen component with tightly coupled execution state; splitting would fragment prop drilling and is deferred
 import { useEffect, useState, type ReactElement } from 'react';
 import Editor, { type BeforeMount } from '@monaco-editor/react';
-import { CircleHelp, FileCode2, Play, Send, Sparkles } from 'lucide-react';
-import type { ExecutionResult, MissionPublic } from '@bughunter/contracts';
+import {
+  BookOpen,
+  CheckCircle2,
+  CircleHelp,
+  Clock3,
+  FileCode2,
+  FlaskConical,
+  Play,
+  RotateCcw,
+  Send,
+  Target,
+  TerminalSquare,
+  Trophy,
+} from 'lucide-react';
+import {
+  MAX_MISSION_RUN_INPUT_LENGTH,
+  type ExecutionResult,
+  type MissionPublic,
+} from '@bughunter/contracts';
 import { api } from '../lib/api.js';
 import { installBugHunterTheme } from '../lib/monaco-theme.js';
 import { Panel } from './ui/Panel.js';
@@ -27,20 +44,22 @@ const beforeMount: BeforeMount = (monaco) => {
 
 export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): ReactElement {
   const [code, setCode] = useState(mission.initialCode);
+  const [customInput, setCustomInput] = useState(mission.visibleTests[0]?.input ?? '');
   const [result, setResult] = useState<ExecutionResult | null>(null);
   const [hintLevel, setHintLevel] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [guide, setGuide] = useState<'hint' | 'tests' | 'learn'>('hint');
+  const [guide, setGuide] = useState<'problem' | 'hint' | 'tests' | 'learn'>('problem');
 
   useEffect(() => {
     setCode(mission.initialCode);
+    setCustomInput(mission.visibleTests[0]?.input ?? '');
     setResult(null);
     setHintLevel(0);
     setError('');
-    setGuide('hint');
+    setGuide('problem');
     setBusy(false);
-  }, [mission.id, mission.initialCode]);
+  }, [mission.id, mission.initialCode, mission.visibleTests]);
 
   const execute = async (kind: 'run' | 'submit'): Promise<void> => {
     setBusy(true);
@@ -48,7 +67,9 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
     setResult(null);
     try {
       const job =
-        kind === 'run' ? await api.run(mission.id, code) : await api.submit(mission.id, code);
+        kind === 'run'
+          ? await api.run(mission.id, code, customInput)
+          : await api.submit(mission.id, code);
       let next: ExecutionResult | null = null;
       const pollingStartedAt = Date.now();
       let pollingIntervalMs = 500;
@@ -74,87 +95,51 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
   const allPassed = result?.kind === 'SUBMIT' && result.status === 'SUCCEEDED';
   const isPending = result ? ['QUEUED', 'RUNNING'].includes(result.status) : false;
   const statusLed = isPending ? (result?.status === 'RUNNING' ? 'run' : 'queued') : '';
+  const passedCount = result?.tests.filter((test) => test.passed).length ?? 0;
+  const estimatedMinutes = Math.max(5, mission.difficulty * 4 + (mission.isBoss ? 5 : 0));
+  const difficultyLabel = ['입문', '초급', '중급', '고급', '챌린지'][mission.difficulty - 1];
 
   return (
-    <main className="workspace">
+    <main
+      className="workspace"
+      onKeyDown={(event) => {
+        if (busy || !(event.ctrlKey || event.metaKey) || event.key !== 'Enter') return;
+        event.preventDefault();
+        void execute(event.shiftKey ? 'submit' : 'run');
+      }}
+    >
       <header className="workspace-header">
         <button className="btn ghost" onClick={onBack}>
           ← 목록으로
         </button>
         <span className="wh-mission">
-          CH.{mission.chapterOrder}-M.{mission.order}
+          CH.{mission.chapterOrder} / M.{mission.order}
         </span>
         <h1>{mission.title}</h1>
         <span className="wh-right">
           <span className="tag green">{mission.bugType.name}</span>
           {mission.isBoss && <span className="tag amber">보스</span>}
-          <span className="tag">
-            {'★'.repeat(mission.difficulty)}
-            <span className="star-off">{'★'.repeat(5 - mission.difficulty)}</span>
+          <span className="tag difficulty-tag">
+            LV.{mission.difficulty} · {difficultyLabel}
           </span>
           <span className="tag">Python 3.12</span>
         </span>
       </header>
 
       <div className="workspace-grid">
-        <Panel title="문제" className="problem-panel">
-          <h1>{mission.title}</h1>
-          <p className="p-desc" style={{ whiteSpace: 'pre-wrap', wordBreak: 'keep-all' }}>
-            {mission.description}
-          </p>
-          <h3>입력 / 출력 명세</h3>
-          <div style={{ display: 'grid', gap: 8 }}>
-            <div>
-              <div
-                style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 4, fontWeight: 700 }}
-              >
-                입력 예시
-              </div>
-              <pre className="expected-box" style={{ color: 'var(--text-dim)' }}>
-                {mission.visibleTests[0]?.input?.trim()
-                  ? mission.visibleTests[0]?.input
-                  : '(입력 없음)'}
-              </pre>
-            </div>
-            <div>
-              <div
-                style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 4, fontWeight: 700 }}
-              >
-                기대 출력
-              </div>
-              <pre className="expected-box">
-                {mission.visibleTests[0]?.expectedOutput ?? '테스트에서 확인하세요.'}
-              </pre>
-            </div>
-          </div>
-          <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text-faint)' }}>
-            테스트 {mission.visibleTests.length}개 중 {mission.visibleTests.length}개 공개 · 숨김
-            테스트는 제출 시 검증됩니다.
-          </div>
-          <h3>관련 개념</h3>
-          <div className="concept-tags">
-            {mission.concepts.map((concept) => (
-              <span className="tag" key={concept}>
-                {concept}
-              </span>
-            ))}
-          </div>
-        </Panel>
-
         <section className="editor-panel">
           <div className="editor-header">
             <span className="eh-file">
-              <FileCode2 /> main.py
+              <FileCode2 /> main.py <span className="unsaved-dot">●</span>
             </span>
             <button
-              className="btn ghost"
-              style={{ marginLeft: 12, padding: '4px 8px', fontSize: 12 }}
+              className="editor-reset"
               onClick={() => setCode(mission.initialCode)}
               title="버그가 포함된 초기 코드로 되돌립니다"
             >
-              초기 코드로 되돌리기
+              <RotateCcw size={12} /> 초기화
             </button>
-            <span className="eh-right">Python 3.12</span>
+            <span className="eh-right">UTF-8 · Python 3.12</span>
           </div>
           <div className="editor-body">
             <Editor
@@ -178,31 +163,112 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
           </div>
         </section>
 
-        <Panel title="가이드" className="guide-panel">
+        <Panel title="DEBUG ASSISTANT" className="guide-panel">
           <div className="guide-tabs">
-            {(['hint', 'tests', 'learn'] as const).map((tab) => (
+            {(['problem', 'hint', 'tests', 'learn'] as const).map((tab) => (
               <button
                 className={guide === tab ? 'active' : ''}
                 onClick={() => setGuide(tab)}
                 key={tab}
               >
-                {tab === 'hint' ? '힌트' : tab === 'tests' ? '테스트' : '학습'}
+                {tab === 'problem'
+                  ? '문제'
+                  : tab === 'hint'
+                    ? '힌트'
+                    : tab === 'tests'
+                      ? '테스트'
+                      : '학습'}
               </button>
             ))}
           </div>
           <div className="guide-content">
+            {guide === 'problem' && (
+              <div className="workspace-problem-tab">
+                <div className="problem-kicker">DEBUGGING CHALLENGE</div>
+                <h2>{mission.title}</h2>
+                <div className="mission-facts">
+                  <span>
+                    <Clock3 /> 약 {estimatedMinutes}분
+                  </span>
+                  <span>
+                    <Trophy /> {mission.baseXp} XP
+                  </span>
+                  <span>
+                    <FlaskConical /> 테스트 {mission.totalTestCount}개
+                  </span>
+                </div>
+                <h3 className="section-heading">
+                  <Target /> 해결 목표
+                </h3>
+                <p className="problem-tab-description">{mission.description}</p>
+                <div className="debug-rule">
+                  <strong>수정 규칙</strong>
+                  <span>입출력 형식은 유지하고, 버그가 있는 코드만 수정하세요.</span>
+                </div>
+                <h3 className="section-heading">
+                  <FlaskConical /> 입출력 예시
+                </h3>
+                <div className="sample-list">
+                  {mission.visibleTests.map((test) => (
+                    <article className="sample-case" key={test.id}>
+                      <header>
+                        <span>CASE {String(test.order).padStart(2, '0')}</span>
+                        <span>PUBLIC</span>
+                      </header>
+                      <div className="sample-columns">
+                        <div>
+                          <small>INPUT</small>
+                          <button
+                            className="sample-input-copy"
+                            onClick={() => setCustomInput(test.input)}
+                            title="이 입력을 표준 입력 편집기에 복사"
+                          >
+                            <pre>{test.input.trim() || '(입력 없음)'}</pre>
+                          </button>
+                        </div>
+                        <div>
+                          <small>OUTPUT</small>
+                          <pre>{test.expectedOutput || '(빈 출력)'}</pre>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+                <h3 className="section-heading">
+                  <BookOpen /> 관련 개념
+                </h3>
+                <div className="concept-tags">
+                  {mission.concepts.map((concept) => (
+                    <span className="tag" key={concept}>
+                      {concept}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             {guide === 'hint' && (
               <>
-                <h3>
-                  <CircleHelp size={13} /> 힌트 {hintLevel}/3
-                </h3>
+                <div className="guide-summary">
+                  <CircleHelp />
+                  <div>
+                    <strong>단계별 힌트</strong>
+                    <span>정답보다 관찰 순서를 안내합니다.</span>
+                  </div>
+                  <b>{hintLevel}/3</b>
+                </div>
                 {currentHint ? (
                   <>
-                    <span className="hint-chip">힌트 {hintLevel}</span>
+                    <span className="hint-chip">LEVEL {hintLevel}</span>
                     <p>{currentHint.content}</p>
                   </>
                 ) : (
-                  <p>힌트가 아직 해제되지 않았습니다. 버그의 의심 지점을 먼저 찾아보세요.</p>
+                  <div className="hint-locked">
+                    <Target />
+                    <p>
+                      먼저 오류 메시지와 실패한 입력을 비교해 보세요. 막히면 힌트를 한 단계씩
+                      여세요.
+                    </p>
+                  </div>
                 )}
                 <button
                   className="btn"
@@ -213,13 +279,23 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
                     void api.hint(mission.id, next).catch(() => null);
                   }}
                 >
-                  {hintLevel ? '다음 힌트' : '힌트 보기'}
+                  {hintLevel ? '다음 힌트 열기' : '첫 힌트 열기'}
                 </button>
               </>
             )}
             {guide === 'tests' && (
               <>
-                <h3>테스트 결과</h3>
+                <div className="guide-summary">
+                  <FlaskConical />
+                  <div>
+                    <strong>테스트 리포트</strong>
+                    <span>
+                      {result
+                        ? `${passedCount}/${result.tests.length} 통과`
+                        : '실행 후 결과를 분석하세요.'}
+                    </span>
+                  </div>
+                </div>
                 {result?.tests.length ? (
                   <div className="test-list">
                     {result.tests.map((test) => (
@@ -265,7 +341,13 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
             )}
             {guide === 'learn' && (
               <>
-                <h3>관련 개념</h3>
+                <div className="guide-summary">
+                  <BookOpen />
+                  <div>
+                    <strong>학습 노트</strong>
+                    <span>통과 후 원인과 수정 원리를 복습합니다.</span>
+                  </div>
+                </div>
                 <div className="concept-tags" style={{ marginBottom: 16 }}>
                   {mission.concepts.map((concept) => (
                     <span className="tag cyan" key={concept}>
@@ -289,7 +371,9 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
 
       <section className="output-panel">
         <div className="output-header">
-          <span className="oh-title">실행 결과</span>
+          <span className="oh-title">
+            <TerminalSquare size={15} /> CONSOLE
+          </span>
           <span className={`oh-status ${statusLed ? 'live' : ''}`}>
             <span className={`led ${statusLed || ''}`} />
             {isPending
@@ -303,24 +387,57 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
                 : '대기 중'}
           </span>
           <div className="oh-actions">
+            <button
+              className="btn ghost"
+              disabled={busy}
+              onClick={() => setCustomInput(mission.visibleTests[0]?.input ?? '')}
+            >
+              <RotateCcw size={13} /> 입력 초기화
+            </button>
             <button className="btn" disabled={busy} onClick={() => void execute('run')}>
-              <Play size={14} /> 실행
+              <Play size={14} /> {busy ? '실행 중…' : '직접 입력으로 실행'}
             </button>
             <button className="btn primary" disabled={busy} onClick={() => void execute('submit')}>
-              <Send size={14} /> 제출
+              <Send size={14} /> 전체 테스트 제출
             </button>
           </div>
         </div>
         <div className="output-body">
+          <div className="stdin-editor">
+            <label htmlFor="mission-stdin">표준 입력 (stdin)</label>
+            <textarea
+              id="mission-stdin"
+              value={customInput}
+              maxLength={MAX_MISSION_RUN_INPUT_LENGTH}
+              onChange={(event) => setCustomInput(event.target.value)}
+              disabled={busy}
+              spellCheck={false}
+              aria-describedby="mission-stdin-help"
+              placeholder="프로그램에 전달할 입력을 작성하세요. 빈 입력도 실행할 수 있습니다."
+            />
+            <span id="mission-stdin-help" className="stdin-help">
+              여러 줄·한글 입력 지원 · 최대 64KB · Ctrl/Cmd+Enter 실행 · Shift 추가 시 제출
+              <b>
+                {customInput.length.toLocaleString()} /{' '}
+                {MAX_MISSION_RUN_INPUT_LENGTH.toLocaleString()}
+              </b>
+            </span>
+          </div>
           <span className="console-line">
-            <span className="cmd-prompt">$ python main.py</span>
+            <span className="cmd-prompt">표준 출력 (stdout)</span>
           </span>
           {error && <span className="console-line err">오류: {error}</span>}
           {busy && !result && (
-            <span className="console-line info">… 채점 작업이 대기 중입니다.</span>
+            <span className="console-line info">… 안전한 실행 환경을 준비하고 있습니다.</span>
           )}
           {result && !isPending && (
             <>
+              {result.kind === 'RUN' && (
+                <div className="console-input-echo">
+                  <strong>전달한 입력</strong>
+                  <pre>{result.customInput || '(입력 없음)'}</pre>
+                </div>
+              )}
               {result.errorKind !== 'NONE' && (
                 <span className="execution-error-kind">
                   {result.errorKind.replaceAll('_', ' ')}
@@ -336,20 +453,29 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
               {result.kind === 'SUBMIT' &&
                 result.tests.map((test) => (
                   <span className={`console-line ${test.passed ? 'ok' : 'err'}`} key={test.order}>
-                    {test.passed ? '✓' : '✗'} 테스트 {test.order}
+                    {test.passed ? '✓' : '✗'} CASE {String(test.order).padStart(2, '0')}
                     {test.isHidden ? ' (숨김)' : ''} — {test.passed ? '통과' : '실패'}
                   </span>
                 ))}
               {result.errorKind !== 'NONE' ? (
-                <span className="console-line stderr">{result.stderr}</span>
+                <>
+                  {result.stderr && (
+                    <span className="console-line stderr">stderr: {result.stderr}</span>
+                  )}
+                </>
               ) : result.stdout ? (
                 <span className="console-line stdout">{result.stdout}</span>
               ) : !allPassed ? (
                 <span className="console-line info">출력이 없습니다.</span>
               ) : null}
+              {result.executionTimeMs !== null && (
+                <span className="console-line info">
+                  실행 시간: {result.executionTimeMs}ms · 종료 코드: {result.exitCode ?? '-'}
+                </span>
+              )}
               {allPassed && (
                 <div className="success-banner">
-                  <Sparkles />
+                  <CheckCircle2 />
                   <div>
                     <strong>버그를 수정했습니다!</strong>
                     <p>

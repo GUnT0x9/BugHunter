@@ -17,3 +17,15 @@ node_modules/
 *.log
 *.tsbuildinfo
 .DS_Store
+
+# Office / temp
+~$*
+*.tmp
+*.pptx
+*.bak
+*.swp
+
+# Tool caches
+.codegraph/
+.playwright-mcp/
+artifacts/
