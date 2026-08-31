@@ -49,6 +49,11 @@ assert.match(
   /- key: WEB_ORIGIN\s+value: https:\/\/debugrove\.vercel\.app/,
   'Render WEB_ORIGIN must match the production Vercel web origin.',
 );
+assert.match(
+  renderBlueprint,
+  /- key: WEB_ORIGINS\s+value: https:\/\/debugrove\.vercel\.app,https:\/\/bughunter-web\.vercel\.app,https:\/\/codetrace-lab\.vercel\.app/,
+  'Render WEB_ORIGINS must include every stable production web alias.',
+);
 
 const webIndex = readFileSync(new URL('../apps/web/index.html', import.meta.url), 'utf8');
 assert.match(webIndex, /<link rel="canonical" href="https:\/\/debugrove\.vercel\.app\/"/);

@@ -41,6 +41,23 @@ describe('createOriginMiddleware', () => {
     expect(next).toHaveBeenCalledOnce();
   });
 
+  it.each([
+    'https://debugrove.vercel.app',
+    'https://bughunter-web.vercel.app',
+    'https://codetrace-lab.vercel.app',
+  ])('allows the stable production alias %s', (origin) => {
+    const next = vi.fn() as NextFunction;
+    const allowlist = createOriginMiddleware([
+      'https://debugrove.vercel.app',
+      'https://bughunter-web.vercel.app',
+      'https://codetrace-lab.vercel.app',
+    ]);
+
+    allowlist(request('POST', origin), response().response, next);
+
+    expect(next).toHaveBeenCalledOnce();
+  });
+
   it('allows safe requests and non-browser clients without an Origin header', () => {
     const next = vi.fn() as NextFunction;
     middleware(request('GET', 'https://attacker.example'), response().response, next);

@@ -3,10 +3,8 @@ import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import { loadEnvFile } from 'node:process';
 import { AppModule } from './app.module.js';
-import { loadEnv } from './common/env.js';
+import { getTrustedWebOrigins, loadEnv } from './common/env.js';
 import { createOriginMiddleware } from './common/origin.middleware.js';
-
-const PRODUCTION_WEB_ORIGIN = 'https://debugrove.vercel.app';
 
 async function bootstrap(): Promise<void> {
   try {
@@ -15,7 +13,7 @@ async function bootstrap(): Promise<void> {
     if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error;
   }
   const env = loadEnv();
-  const trustedWebOrigins = [...new Set([env.WEB_ORIGIN, PRODUCTION_WEB_ORIGIN])];
+  const trustedWebOrigins = getTrustedWebOrigins(env);
   const app = await NestFactory.create(AppModule, {
     cors: { origin: trustedWebOrigins, credentials: true },
   });
