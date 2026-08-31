@@ -6,6 +6,8 @@ import { AppModule } from './app.module.js';
 import { loadEnv } from './common/env.js';
 import { createOriginMiddleware } from './common/origin.middleware.js';
 
+const PRODUCTION_WEB_ORIGIN = 'https://bughunter-web.vercel.app';
+
 async function bootstrap(): Promise<void> {
   try {
     loadEnvFile();
@@ -13,11 +15,12 @@ async function bootstrap(): Promise<void> {
     if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error;
   }
   const env = loadEnv();
+  const trustedWebOrigins = [...new Set([env.WEB_ORIGIN, PRODUCTION_WEB_ORIGIN])];
   const app = await NestFactory.create(AppModule, {
-    cors: { origin: env.WEB_ORIGIN, credentials: true },
+    cors: { origin: trustedWebOrigins, credentials: true },
   });
   app.use(cookieParser());
-  app.use(createOriginMiddleware(env.WEB_ORIGIN));
+  app.use(createOriginMiddleware(trustedWebOrigins));
   app.setGlobalPrefix('api');
   app.enableShutdownHooks();
   await app.listen(env.PORT, '0.0.0.0');

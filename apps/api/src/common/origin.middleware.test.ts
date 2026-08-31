@@ -25,6 +25,22 @@ describe('createOriginMiddleware', () => {
     expect(next).toHaveBeenCalledOnce();
   });
 
+  it('allows mutations from every explicitly trusted deployment origin', () => {
+    const next = vi.fn() as NextFunction;
+    const allowlist = createOriginMiddleware([
+      'https://preview.example',
+      'https://bughunter-web.vercel.app',
+    ]);
+
+    allowlist(
+      request('POST', 'https://bughunter-web.vercel.app'),
+      response().response,
+      next,
+    );
+
+    expect(next).toHaveBeenCalledOnce();
+  });
+
   it('allows safe requests and non-browser clients without an Origin header', () => {
     const next = vi.fn() as NextFunction;
     middleware(request('GET', 'https://attacker.example'), response().response, next);
