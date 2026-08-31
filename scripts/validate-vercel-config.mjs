@@ -54,6 +54,7 @@ const webIndex = readFileSync(new URL('../apps/web/index.html', import.meta.url)
 assert.match(webIndex, /<link rel="canonical" href="https:\/\/debugrove\.vercel\.app\/"/);
 assert.match(webIndex, /<title>Debugrove \| 파이썬 디버깅 학습 온라인 저지<\/title>/);
 assert.match(webIndex, /<script type="application\/ld\+json">/);
+assert.match(webIndex, /"@type": "WebSite"/);
 
 const robots = readFileSync(new URL('../apps/web/public/robots.txt', import.meta.url), 'utf8');
 assert.match(robots, /Sitemap: https:\/\/debugrove\.vercel\.app\/sitemap\.xml/);

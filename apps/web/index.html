@@ -37,15 +37,25 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "Debugrove",
-        "alternateName": "디버그로브",
-        "url": "https://debugrove.vercel.app/",
-        "image": "https://debugrove.vercel.app/debugrove-icon.png",
-        "applicationCategory": "EducationalApplication",
-        "operatingSystem": "Web",
-        "inLanguage": "ko-KR",
-        "description": "깨진 Python 코드를 직접 수정하고 실행하며 디버깅을 배우는 온라인 저지"
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "name": "Debugrove",
+            "alternateName": "디버그로브",
+            "url": "https://debugrove.vercel.app/",
+            "inLanguage": "ko-KR"
+          },
+          {
+            "@type": "WebApplication",
+            "name": "Debugrove",
+            "url": "https://debugrove.vercel.app/",
+            "image": "https://debugrove.vercel.app/debugrove-icon.png",
+            "applicationCategory": "EducationalApplication",
+            "operatingSystem": "Web",
+            "inLanguage": "ko-KR",
+            "description": "깨진 Python 코드를 직접 수정하고 실행하며 디버깅을 배우는 온라인 저지"
+          }
+        ]
       }
     </script>
   </head>
