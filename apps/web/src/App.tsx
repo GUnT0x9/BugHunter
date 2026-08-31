@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
-import { Bug } from 'lucide-react';
 import type { MissionPublic, User } from '@bughunter/contracts';
 import { api } from './lib/api.js';
 import { AuthScreen } from './components/AuthScreen.js';
@@ -20,7 +19,7 @@ function BootScreen(): ReactElement {
     <main className="boot-screen">
       <div className="boot-box">
         <div className="boot-brand">
-          <Bug size={26} /> BugHunter
+          <img src="/codetrace-icon.png" alt="" /> CodeTrace
         </div>
         <p className="boot-sub">준비 중입니다…</p>
         <ProgressBar value={60} max={100} />

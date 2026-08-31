@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
-import { ArrowLeft, Bug, Check, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Check, Eye, EyeOff } from 'lucide-react';
 import type { User } from '@bughunter/contracts';
 import { api } from '../lib/api.js';
 
@@ -80,9 +80,9 @@ export function AuthScreen({
       <header className="auth-header">
         <button className="auth-logo" type="button" onClick={() => changeMode('login')}>
           <span className="auth-logo-mark">
-            <Bug size={20} strokeWidth={2.3} />
+            <img src="/codetrace-icon.png" alt="" />
           </span>
-          <span>BugHunter</span>
+          <span>CodeTrace</span>
         </button>
         {isRegister && (
           <button className="auth-back" type="button" onClick={() => changeMode('login')}>
@@ -93,7 +93,7 @@ export function AuthScreen({
 
       <section className="auth-content" aria-labelledby="auth-title">
         <div className="auth-heading">
-          <span className="auth-eyebrow">BUGHUNTER ACCOUNT</span>
+          <span className="auth-eyebrow">CODETRACE ACCOUNT</span>
           <h1 id="auth-title">
             {isRegister ? (
               <span className="auth-typewriter auth-typewriter-register">ENTER THE HUNT_</span>

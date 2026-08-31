@@ -1,4 +1,4 @@
-# BugHunter API
+# CodeTrace API
 
 모든 응답은 JSON이며 인증된 요청은 `bughunter.sid` HttpOnly cookie를 사용합니다.
 

@@ -1,4 +1,4 @@
-# BugHunter
+# CodeTrace
 
 버그가 포함된 Python 코드를 고치며 디버깅을 학습하는 45 Mission 웹 플랫폼입니다.
 

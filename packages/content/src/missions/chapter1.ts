@@ -6,33 +6,33 @@ export const chapter1Missions: MissionSeed[] = [
     chapterOrder: 1,
     order: 1,
     title: "닫히지 않은 인사",
-    description: "BugHunter 환영 스크립트가 실행조차 되지 않습니다. 이름 한 줄을 입력받은 뒤 `BugHunter 이름`을 출력해야 하지만 print 함수의 닫는 괄호 `)`가 빠져 SyntaxError가 발생합니다. 괄호를 닫아 정확한 환영 문구를 출력하세요.",
+    description: "CodeTrace 환영 스크립트가 실행조차 되지 않습니다. 이름 한 줄을 입력받은 뒤 `CodeTrace 이름`을 출력해야 하지만 print 함수의 닫는 괄호 `)`가 빠져 SyntaxError가 발생합니다. 괄호를 닫아 정확한 환영 문구를 출력하세요.",
     difficulty: 1,
     isBoss: false,
     bugTypeSlug: "syntax",
-    initialCode: "name = input().strip()\nprint(\"BugHunter\", name\n",
-    referenceSolution: "name = input().strip()\nprint(\"BugHunter\", name)\n",
+    initialCode: "name = input().strip()\nprint(\"CodeTrace\", name\n",
+    referenceSolution: "name = input().strip()\nprint(\"CodeTrace\", name)\n",
     tests: [
         {
             "order": 1,
             "input": "Alice\n",
-            "expectedOutput": "BugHunter Alice",
+            "expectedOutput": "CodeTrace Alice",
             "isHidden": false
         },
         {
             "order": 2,
             "input": "민수\n",
-            "expectedOutput": "BugHunter 민수",
+            "expectedOutput": "CodeTrace 민수",
             "isHidden": false
         },
         {
             "order": 3,
             "input": "Python\n",
-            "expectedOutput": "BugHunter Python",
+            "expectedOutput": "CodeTrace Python",
             "isHidden": true
         }
     ],
-    hints: ["에디터에서 `print` 줄의 괄호 개수를 세어 보세요. `(` 와 `)` 가 짝이 맞나요?","두 번째 인자인 `name` 뒤에 닫는 괄호 `)` 가 빠져 있습니다.","`print(\"BugHunter\", name)` 로 함수 호출을 완성하세요."],
+    hints: ["에디터에서 `print` 줄의 괄호 개수를 세어 보세요. `(` 와 `)` 가 짝이 맞나요?","두 번째 인자인 `name` 뒤에 닫는 괄호 `)` 가 빠져 있습니다.","`print(\"CodeTrace\", name)` 로 함수 호출을 완성하세요."],
     explanation: "Python에서 함수 호출은 여는 괄호와 닫는 괄호가 짝을 이뤄야 합니다. `name` 뒤에 닫는 괄호가 없으면 파서가 문장을 끝내지 못해 SyntaxError가 발생합니다.",
     concepts: ["print()","괄호","SyntaxError"],
     baseXp: 100,
@@ -57,8 +57,8 @@ export const chapter1Missions: MissionSeed[] = [
         },
         {
             "order": 2,
-            "input": "BugHunter\n",
-            "expectedOutput": "Hello BugHunter",
+            "input": "CodeTrace\n",
+            "expectedOutput": "Hello CodeTrace",
             "isHidden": false
         },
         {
@@ -93,8 +93,8 @@ export const chapter1Missions: MissionSeed[] = [
         },
         {
             "order": 2,
-            "input": "BugHunter\n",
-            "expectedOutput": "He said \"BugHunter\"",
+            "input": "CodeTrace\n",
+            "expectedOutput": "He said \"CodeTrace\"",
             "isHidden": false
         },
         {

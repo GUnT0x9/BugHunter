@@ -324,9 +324,11 @@ button:disabled {
   color: var(--text);
 }
 
-.boot-brand svg {
+.boot-brand img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
   vertical-align: -4px;
-  color: var(--green);
 }
 
 .boot-sub {
@@ -760,6 +762,12 @@ button:disabled {
   color: var(--green);
 }
 
+.auth-logo-mark img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
 .auth-back {
   display: inline-flex;
   align-items: center;
@@ -1147,8 +1155,10 @@ button:disabled {
   white-space: nowrap;
 }
 
-.topbar-brand svg {
-  color: var(--green);
+.topbar-brand img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
   flex: 0 0 auto;
 }
 

@@ -36,7 +36,7 @@ services:
       DATABASE_URL: postgresql://bughunter:bughunter@postgres:5432/bughunter?schema=public
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@bughunter.local}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set in .env}
-      ADMIN_USERNAME: ${ADMIN_USERNAME:-BugHunter Admin}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-CodeTrace Admin}
     depends_on:
       postgres:
         condition: service_healthy

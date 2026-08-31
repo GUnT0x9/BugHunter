@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://bughunter-web.vercel.app/sitemap.xml
+Sitemap: https://codetrace.vercel.app/sitemap.xml

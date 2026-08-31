@@ -46,19 +46,19 @@ assert.match(originWithPath.stderr, /without a path/);
 const renderBlueprint = readFileSync(new URL('../render.yaml', import.meta.url), 'utf8');
 assert.match(
   renderBlueprint,
-  /- key: WEB_ORIGIN\s+value: https:\/\/bughunter-web\.vercel\.app/,
+  /- key: WEB_ORIGIN\s+value: https:\/\/codetrace\.vercel\.app/,
   'Render WEB_ORIGIN must match the production Vercel web origin.',
 );
 
 const webIndex = readFileSync(new URL('../apps/web/index.html', import.meta.url), 'utf8');
-assert.match(webIndex, /<link rel="canonical" href="https:\/\/bughunter-web\.vercel\.app\/"/);
+assert.match(webIndex, /<link rel="canonical" href="https:\/\/codetrace\.vercel\.app\/"/);
 assert.match(webIndex, /<script type="application\/ld\+json">/);
 
 const robots = readFileSync(new URL('../apps/web/public/robots.txt', import.meta.url), 'utf8');
-assert.match(robots, /Sitemap: https:\/\/bughunter-web\.vercel\.app\/sitemap\.xml/);
+assert.match(robots, /Sitemap: https:\/\/codetrace\.vercel\.app\/sitemap\.xml/);
 
 const sitemap = readFileSync(new URL('../apps/web/public/sitemap.xml', import.meta.url), 'utf8');
-assert.match(sitemap, /<loc>https:\/\/bughunter-web\.vercel\.app\/<\/loc>/);
+assert.match(sitemap, /<loc>https:\/\/codetrace\.vercel\.app\/<\/loc>/);
 
 const googleVerification = readFileSync(
   new URL('../apps/web/public/google53b40843105df040.html', import.meta.url),
