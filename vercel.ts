@@ -25,6 +25,12 @@ export const config: VercelConfig = {
     routes.rewrite('/(.*)', '/index.html'),
   ],
   headers: [
+    ...['/learn', '/problems', '/problems/(.*)', '/bugdex', '/my', '/statistics', '/admin/(.*)'].map(
+      (source) => ({
+        source,
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      }),
+    ),
     {
       source: '/(.*)',
       headers: [
