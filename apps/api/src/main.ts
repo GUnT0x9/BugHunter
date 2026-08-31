@@ -3,7 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import { loadEnvFile } from 'node:process';
 import { AppModule } from './app.module.js';
-import { getTrustedWebOrigins, loadEnv } from './common/env.js';
+import { loadEnv } from './common/env.js';
 import { createOriginMiddleware } from './common/origin.middleware.js';
 
 async function bootstrap(): Promise<void> {
@@ -13,12 +13,11 @@ async function bootstrap(): Promise<void> {
     if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error;
   }
   const env = loadEnv();
-  const trustedWebOrigins = getTrustedWebOrigins(env);
   const app = await NestFactory.create(AppModule, {
-    cors: { origin: trustedWebOrigins, credentials: true },
+    cors: { origin: env.WEB_ORIGIN, credentials: true },
   });
   app.use(cookieParser());
-  app.use(createOriginMiddleware(trustedWebOrigins));
+  app.use(createOriginMiddleware(env.WEB_ORIGIN));
   app.setGlobalPrefix('api');
   app.enableShutdownHooks();
   await app.listen(env.PORT, '0.0.0.0');

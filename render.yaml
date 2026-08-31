@@ -25,7 +25,8 @@ services:
     branch: main
     dockerContext: .
     dockerfilePath: ./infra/Dockerfile.api
-    healthCheckPath: /api/health/live
+    healthCheckPath: /api/health
+    maxShutdownDelaySeconds: 300
     autoDeployTrigger: commit
     envVars:
       - key: DATABASE_URL
@@ -39,8 +40,6 @@ services:
           property: connectionString
       - key: WEB_ORIGIN
         value: https://debugrove.vercel.app
-      - key: WEB_ORIGINS
-        value: https://debugrove.vercel.app,https://bughunter-web.vercel.app,https://codetrace-lab.vercel.app
       - key: NODE_ENV
         value: production
       - key: SESSION_COOKIE_SAME_SITE

@@ -1,0 +1,26 @@
+name: Backend uptime check
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-uptime
+  cancel-in-progress: true
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify Debugrove API health
+        run: |
+          curl --fail --silent --show-error \
+            --retry 3 \
+            --retry-delay 10 \
+            --max-time 30 \
+            https://bughunter-api-2o5c.onrender.com/api/health

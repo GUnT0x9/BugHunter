@@ -49,11 +49,9 @@ assert.match(
   /- key: WEB_ORIGIN\s+value: https:\/\/debugrove\.vercel\.app/,
   'Render WEB_ORIGIN must match the production Vercel web origin.',
 );
-assert.match(
-  renderBlueprint,
-  /- key: WEB_ORIGINS\s+value: https:\/\/debugrove\.vercel\.app,https:\/\/bughunter-web\.vercel\.app,https:\/\/codetrace-lab\.vercel\.app/,
-  'Render WEB_ORIGINS must include every stable production web alias.',
-);
+assert.doesNotMatch(renderBlueprint, /WEB_ORIGINS/);
+assert.match(renderBlueprint, /healthCheckPath: \/api\/health/);
+assert.match(renderBlueprint, /maxShutdownDelaySeconds: 300/);
 
 const webIndex = readFileSync(new URL('../apps/web/index.html', import.meta.url), 'utf8');
 assert.match(webIndex, /<link rel="canonical" href="https:\/\/debugrove\.vercel\.app\/"/);
@@ -71,9 +69,6 @@ const googleVerification = readFileSync(
   new URL('../apps/web/public/google53b40843105df040.html', import.meta.url),
   'utf8',
 );
-assert.equal(
-  googleVerification.trim(),
-  'google-site-verification: google53b40843105df040.html',
-);
+assert.equal(googleVerification.trim(), 'google-site-verification: google53b40843105df040.html');
 
 process.stdout.write('Vercel deployment config validation passed.\n');

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getTrustedWebOrigins, loadEnv } from './env.js';
+import { loadEnv } from './env.js';
 
 const requiredEnvironment = {
   DATABASE_URL: 'postgresql://bughunter:bughunter@localhost:5432/bughunter',
@@ -13,8 +13,6 @@ describe('loadEnv', () => {
       PORT: 3000,
       SESSION_COOKIE_SAME_SITE: 'lax',
       WEB_ORIGIN: 'http://localhost:5173',
-      WEB_ORIGINS:
-        'https://debugrove.vercel.app,https://bughunter-web.vercel.app,https://codetrace-lab.vercel.app',
       JUDGE_PROVIDER: 'docker',
       JUDGE0_API_URL: 'https://ce.judge0.com',
     });
@@ -41,30 +39,5 @@ describe('loadEnv', () => {
     expect(() => loadEnv({ ...requiredEnvironment, PORT: '70000' })).toThrow(
       'Invalid environment: PORT',
     );
-  });
-});
-
-describe('getTrustedWebOrigins', () => {
-  it('combines, trims, normalizes, and deduplicates configured origins', () => {
-    expect(
-      getTrustedWebOrigins({
-        WEB_ORIGIN: 'https://debugrove.vercel.app/',
-        WEB_ORIGINS:
-          ' https://debugrove.vercel.app, https://bughunter-web.vercel.app/path ,https://codetrace-lab.vercel.app ',
-      }),
-    ).toEqual([
-      'https://debugrove.vercel.app',
-      'https://bughunter-web.vercel.app',
-      'https://codetrace-lab.vercel.app',
-    ]);
-  });
-
-  it('uses the primary web origin when no additional origins are configured', () => {
-    expect(
-      getTrustedWebOrigins({
-        WEB_ORIGIN: 'http://localhost:5173',
-        WEB_ORIGINS: undefined,
-      }),
-    ).toEqual(['http://localhost:5173']);
   });
 });
