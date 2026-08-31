@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
 const importConfigScript = `
   import('./vercel.ts').then(({ config }) => {
@@ -41,5 +42,12 @@ assert.match(insecureOrigin.stderr, /must use HTTPS/);
 const originWithPath = loadConfig('https://api.example.com/api');
 assert.notEqual(originWithPath.status, 0);
 assert.match(originWithPath.stderr, /without a path/);
+
+const renderBlueprint = readFileSync(new URL('../render.yaml', import.meta.url), 'utf8');
+assert.match(
+  renderBlueprint,
+  /- key: WEB_ORIGIN\s+value: https:\/\/bughunter-web\.vercel\.app/,
+  'Render WEB_ORIGIN must match the production Vercel web origin.',
+);
 
 process.stdout.write('Vercel deployment config validation passed.\n');

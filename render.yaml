@@ -38,7 +38,7 @@ services:
           name: bughunter-redis
           property: connectionString
       - key: WEB_ORIGIN
-        value: https://bug-hunter-api.vercel.app
+        value: https://bughunter-web.vercel.app
       - key: NODE_ENV
         value: production
       - key: SESSION_COOKIE_SAME_SITE
