@@ -42,7 +42,7 @@ export function Shell({ user, progress, onLogout, children }: ShellProps): React
       <header className="topbar">
         <div className="topbar-inner">
           <NavLink to="/" className="topbar-brand">
-            <img src="/codetrace-icon.png" alt="" /> CodeTrace
+            <img src="/debugrove-icon.png" alt="" /> Debugrove
           </NavLink>
 
           <nav className="topnav" aria-label="주요 내비게이션">

@@ -29,11 +29,11 @@ describe('createOriginMiddleware', () => {
     const next = vi.fn() as NextFunction;
     const allowlist = createOriginMiddleware([
       'https://preview.example',
-      'https://codetrace-lab.vercel.app',
+      'https://debugrove.vercel.app',
     ]);
 
     allowlist(
-      request('POST', 'https://codetrace-lab.vercel.app'),
+      request('POST', 'https://debugrove.vercel.app'),
       response().response,
       next,
     );

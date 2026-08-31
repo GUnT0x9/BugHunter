@@ -19,7 +19,7 @@ function BootScreen(): ReactElement {
     <main className="boot-screen">
       <div className="boot-box">
         <div className="boot-brand">
-          <img src="/codetrace-icon.png" alt="" /> CodeTrace
+          <img src="/debugrove-icon.png" alt="" /> Debugrove
         </div>
         <p className="boot-sub">준비 중입니다…</p>
         <ProgressBar value={60} max={100} />

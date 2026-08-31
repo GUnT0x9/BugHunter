@@ -834,6 +834,14 @@ button:disabled {
     auth-caret 700ms step-end infinite;
 }
 
+.auth-typewriter-brand {
+  width: auto;
+  overflow: visible;
+  border-right: 0;
+  animation: none;
+  white-space: normal;
+}
+
 @keyframes auth-typing {
   from {
     width: 0;
@@ -871,6 +879,10 @@ button:disabled {
 
   .auth-typewriter-register {
     width: 15ch;
+  }
+
+  .auth-typewriter-brand {
+    width: auto;
   }
 }
 

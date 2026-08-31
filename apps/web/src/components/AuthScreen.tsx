@@ -80,9 +80,9 @@ export function AuthScreen({
       <header className="auth-header">
         <button className="auth-logo" type="button" onClick={() => changeMode('login')}>
           <span className="auth-logo-mark">
-            <img src="/codetrace-icon.png" alt="" />
+            <img src="/debugrove-icon.png" alt="" />
           </span>
-          <span>CodeTrace</span>
+          <span>Debugrove</span>
         </button>
         {isRegister && (
           <button className="auth-back" type="button" onClick={() => changeMode('login')}>
@@ -93,18 +93,18 @@ export function AuthScreen({
 
       <section className="auth-content" aria-labelledby="auth-title">
         <div className="auth-heading">
-          <span className="auth-eyebrow">CODETRACE ACCOUNT</span>
+          <span className="auth-eyebrow">DEBUGROVE · PYTHON DEBUGGING</span>
           <h1 id="auth-title">
             {isRegister ? (
               <span className="auth-typewriter auth-typewriter-register">ENTER THE HUNT_</span>
             ) : (
-              <span className="auth-typewriter">Hello World!!</span>
+              <span className="auth-typewriter auth-typewriter-brand">디버깅으로 배우는 Python</span>
             )}
           </h1>
           <p>
             {isRegister
               ? '계정을 만들고 첫 번째 디버깅 미션에 도전해 보세요.'
-              : '로그인하고 멈췄던 버그 사냥을 계속해 보세요.'}
+              : '깨진 코드를 직접 고치고 실행하며 파이썬 디버깅과 문제 해결력을 키워보세요.'}
           </p>
         </div>
 

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://codetrace-lab.vercel.app/sitemap.xml
+Sitemap: https://debugrove.vercel.app/sitemap.xml

@@ -6,7 +6,7 @@ import { AppModule } from './app.module.js';
 import { loadEnv } from './common/env.js';
 import { createOriginMiddleware } from './common/origin.middleware.js';
 
-const PRODUCTION_WEB_ORIGIN = 'https://codetrace-lab.vercel.app';
+const PRODUCTION_WEB_ORIGIN = 'https://debugrove.vercel.app';
 
 async function bootstrap(): Promise<void> {
   try {

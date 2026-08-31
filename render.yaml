@@ -38,7 +38,7 @@ services:
           name: bughunter-redis
           property: connectionString
       - key: WEB_ORIGIN
-        value: https://codetrace-lab.vercel.app
+        value: https://debugrove.vercel.app
       - key: NODE_ENV
         value: production
       - key: SESSION_COOKIE_SAME_SITE

@@ -115,7 +115,7 @@ export async function seedAdmin(prisma: PrismaClient): Promise<void> {
   }
 
   const passwordHash = await argon2.hash(adminPassword, { type: argon2.argon2id });
-  const username = process.env.ADMIN_USERNAME?.trim() || 'CodeTrace Admin';
+  const username = process.env.ADMIN_USERNAME?.trim() || 'Debugrove Admin';
   await prisma.user.upsert({
     where: { email: adminEmail },
     update: { username, passwordHash, role: UserRole.ADMIN },

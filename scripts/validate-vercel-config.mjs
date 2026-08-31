@@ -46,19 +46,20 @@ assert.match(originWithPath.stderr, /without a path/);
 const renderBlueprint = readFileSync(new URL('../render.yaml', import.meta.url), 'utf8');
 assert.match(
   renderBlueprint,
-  /- key: WEB_ORIGIN\s+value: https:\/\/codetrace-lab\.vercel\.app/,
+  /- key: WEB_ORIGIN\s+value: https:\/\/debugrove\.vercel\.app/,
   'Render WEB_ORIGIN must match the production Vercel web origin.',
 );
 
 const webIndex = readFileSync(new URL('../apps/web/index.html', import.meta.url), 'utf8');
-assert.match(webIndex, /<link rel="canonical" href="https:\/\/codetrace-lab\.vercel\.app\/"/);
+assert.match(webIndex, /<link rel="canonical" href="https:\/\/debugrove\.vercel\.app\/"/);
+assert.match(webIndex, /<title>Debugrove \| 파이썬 디버깅 학습 온라인 저지<\/title>/);
 assert.match(webIndex, /<script type="application\/ld\+json">/);
 
 const robots = readFileSync(new URL('../apps/web/public/robots.txt', import.meta.url), 'utf8');
-assert.match(robots, /Sitemap: https:\/\/codetrace-lab\.vercel\.app\/sitemap\.xml/);
+assert.match(robots, /Sitemap: https:\/\/debugrove\.vercel\.app\/sitemap\.xml/);
 
 const sitemap = readFileSync(new URL('../apps/web/public/sitemap.xml', import.meta.url), 'utf8');
-assert.match(sitemap, /<loc>https:\/\/codetrace-lab\.vercel\.app\/<\/loc>/);
+assert.match(sitemap, /<loc>https:\/\/debugrove\.vercel\.app\/<\/loc>/);
 
 const googleVerification = readFileSync(
   new URL('../apps/web/public/google53b40843105df040.html', import.meta.url),
