@@ -1,9 +1,12 @@
 import type {
   ExecutionResult,
+  CommunityUser,
+  FriendOverview,
   LoginInput,
   MissionPublic,
   ProfileSummary,
   ProfileUpdate,
+  RankingResponse,
   RegisterInput,
   User,
 } from '@bughunter/contracts';
@@ -88,6 +91,16 @@ export const api = {
       executionTimeMs: number;
       bugSkills: Array<{ name: string; fixedCount: number }>;
     }>('/statistics'),
+  rankings: () => request<RankingResponse>('/community/rankings'),
+  searchUsers: (query: string) =>
+    request<CommunityUser[]>(`/community/users?query=${encodeURIComponent(query)}`),
+  friends: () => request<FriendOverview>('/community/friends'),
+  requestFriend: (userId: string) =>
+    request<CommunityUser>(`/community/friends/${userId}`, { method: 'POST' }),
+  acceptFriend: (friendshipId: string) =>
+    request<CommunityUser>(`/community/friendships/${friendshipId}/accept`, { method: 'POST' }),
+  removeFriendship: (friendshipId: string) =>
+    request<{ ok: true }>(`/community/friendships/${friendshipId}`, { method: 'DELETE' }),
   adminMissions: () => request<AdminMission[]>('/admin/missions'),
   updateAdminMission: (id: string, input: AdminMissionDraft) =>
     request<{ id: string }>(`/admin/missions/${id}`, {

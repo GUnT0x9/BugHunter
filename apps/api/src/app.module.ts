@@ -4,6 +4,7 @@ import { AdminModule } from './admin/admin.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { PrismaModule } from './common/prisma.module.js';
 import { RedisModule } from './common/redis.module.js';
+import { CommunityModule } from './community/community.module.js';
 import { RateLimitGuard } from './common/rate-limit.guard.js';
 import { ExecutionsModule } from './executions/executions.module.js';
 import { HealthController } from './health/health.controller.js';
@@ -16,6 +17,7 @@ import { ProgressModule } from './progress/progress.module.js';
     PrismaModule,
     RedisModule,
     AuthModule,
+    CommunityModule,
     MissionsModule,
     ExecutionsModule,
     ProgressModule,

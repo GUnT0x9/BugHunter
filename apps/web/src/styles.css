@@ -870,6 +870,61 @@ button:disabled {
   }
 }
 
+/* ────────────────────────── 커뮤니티 ────────────────────────── */
+.community-page { max-width: 1340px; }
+.community-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding: 28px 0 24px; }
+.community-header .page-title { margin: 3px 0 5px; }
+.community-header p { margin: 0; color: var(--text-dim); font-size: 13px; }
+.page-kicker { color: var(--green); font: 800 10px var(--mono); letter-spacing: .14em; }
+.my-rank-card { display: grid; grid-template-columns: auto auto; align-items: baseline; gap: 2px 14px; min-width: 190px; padding: 14px 16px; border: 1px solid var(--green-mid); border-radius: var(--radius-m); background: var(--green-dim); }
+.my-rank-card span { color: var(--text-dim); font: 700 10px var(--mono); text-transform: uppercase; }
+.my-rank-card strong { justify-self: end; color: var(--green); font: 800 24px var(--mono); }
+.my-rank-card small { grid-column: 1 / -1; color: var(--text-dim); font: 11px var(--mono); }
+.community-error { margin: 0 0 14px; }
+.community-grid { display: grid; grid-template-columns: minmax(380px, .9fr) minmax(500px, 1.1fr); gap: 18px; align-items: start; }
+.community-side { display: grid; gap: 18px; }
+.community-panel { min-width: 0; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-m); background: var(--panel); }
+.community-panel-title { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 0 16px; border-bottom: 1px solid var(--border); }
+.community-panel-title h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; }
+.community-panel-title h2 svg { width: 15px; color: var(--green); }
+.community-panel-title > span { color: var(--text-faint); font: 800 9px var(--mono); letter-spacing: .08em; }
+.ranking-list { max-height: 720px; margin: 0; padding: 0; overflow: auto; list-style: none; }
+.ranking-list li { display: grid; grid-template-columns: 40px 34px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 62px; padding: 8px 14px; border-bottom: 1px solid var(--border); }
+.ranking-list li:last-child { border-bottom: 0; }
+.ranking-list li.is-me { background: var(--green-dim); box-shadow: inset 2px 0 var(--green); }
+.rank-number { color: var(--text-faint); font: 800 11px var(--mono); }
+.rank-number.rank-1 { color: #ffd166; }.rank-number.rank-2 { color: #c4d0cc; }.rank-number.rank-3 { color: #d79b6b; }
+.community-avatar { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 auto; border: 1px solid var(--border-2); border-radius: 50%; background: var(--panel-2); color: var(--green); font: 800 13px var(--mono); }
+.community-user-copy { display: grid; min-width: 0; }
+.community-user-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.community-user-copy strong em { margin-left: 6px; padding: 1px 5px; border: 1px solid var(--green-mid); border-radius: 2px; color: var(--green); font: normal 800 9px var(--mono); }
+.community-user-copy small { overflow: hidden; color: var(--text-faint); font: 10px var(--mono); text-overflow: ellipsis; white-space: nowrap; }
+.rank-xp { color: var(--green); font: 800 11px var(--mono); white-space: nowrap; }
+.community-search { display: flex; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.community-search input { width: 100%; min-width: 0; padding: 0 11px; border: 1px solid var(--border-2); border-radius: var(--radius-m); background: var(--bg-deep); color: var(--text); }
+.community-user-list { display: grid; }
+.search-results:empty { display: none; }
+.community-user-row { display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.community-user-row:last-child { border-bottom: 0; }
+.community-user-actions { display: flex; gap: 6px; margin-left: auto; }
+.community-user-actions .btn { min-height: 32px; padding: 5px 9px; font-size: 11px; }
+.community-user-actions svg { width: 13px; height: 13px; }
+.community-panel .empty { margin: 14px; padding: 24px 16px; }
+
+@media (max-width: 900px) {
+  .community-grid { grid-template-columns: 1fr; }
+  .ranking-list { max-height: 520px; }
+}
+@media (max-width: 600px) {
+  .community-header { align-items: stretch; flex-direction: column; }
+  .my-rank-card { width: 100%; }
+  .community-user-row { align-items: flex-start; flex-wrap: wrap; }
+  .community-user-copy { flex: 1; }
+  .community-user-actions { width: 100%; margin-left: 44px; }
+  .ranking-list li { grid-template-columns: 30px 30px minmax(0, 1fr); padding-inline: 10px; }
+  .rank-xp { grid-column: 3; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .auth-typewriter {
     width: 13ch;

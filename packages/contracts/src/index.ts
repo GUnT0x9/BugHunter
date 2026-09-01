@@ -88,6 +88,37 @@ export const ProfileSummarySchema = z.object({
   averageExecutionTimeMs: z.number().int().nonnegative(),
 });
 
+export const COMMUNITY_RELATIONSHIPS = [
+  'SELF',
+  'NONE',
+  'PENDING_INCOMING',
+  'PENDING_OUTGOING',
+  'FRIEND',
+] as const;
+
+export const CommunityUserSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  totalXp: z.number().int().nonnegative(),
+  level: z.number().int().positive(),
+  solvedCount: z.number().int().nonnegative(),
+  relationship: z.enum(COMMUNITY_RELATIONSHIPS),
+  friendshipId: z.string().nullable(),
+});
+
+export const RankingEntrySchema = CommunityUserSchema.extend({ rank: z.number().int().positive() });
+
+export const RankingResponseSchema = z.object({
+  entries: z.array(RankingEntrySchema),
+  me: RankingEntrySchema,
+});
+
+export const FriendOverviewSchema = z.object({
+  friends: z.array(CommunityUserSchema),
+  incoming: z.array(CommunityUserSchema),
+  outgoing: z.array(CommunityUserSchema),
+});
+
 export const TestCaseSchema = z.object({
   id: z.string(),
   order: z.number().int().positive(),
@@ -208,6 +239,11 @@ export type LoginInput = z.infer<typeof LoginInputSchema>;
 export type RegisterInput = z.infer<typeof RegisterInputSchema>;
 export type ProfileUpdate = z.infer<typeof ProfileUpdateSchema>;
 export type ProfileSummary = z.infer<typeof ProfileSummarySchema>;
+export type CommunityRelationship = (typeof COMMUNITY_RELATIONSHIPS)[number];
+export type CommunityUser = z.infer<typeof CommunityUserSchema>;
+export type RankingEntry = z.infer<typeof RankingEntrySchema>;
+export type RankingResponse = z.infer<typeof RankingResponseSchema>;
+export type FriendOverview = z.infer<typeof FriendOverviewSchema>;
 export type TestCase = z.infer<typeof TestCaseSchema>;
 export type Hint = z.infer<typeof HintSchema>;
 export type MissionPublic = z.infer<typeof MissionPublicSchema>;

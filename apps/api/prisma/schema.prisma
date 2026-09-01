@@ -35,22 +35,45 @@ enum ExecutionStatus {
   TIMED_OUT
 }
 
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+}
+
 model User {
-  id           String            @id @default(cuid())
-  email        String            @unique
-  username     String            @unique
-  passwordHash String
-  role         UserRole          @default(USER)
-  totalXp      Int               @default(0)
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  submissions  Submission[]
-  progress     MissionProgress[]
-  xpEvents     XpEvent[]
-  bugdex       UserBugDex[]
-  learningDays LearningDay[]
-  sessions     AuthSession[]
-  executions   Execution[]
+  id             String            @id @default(cuid())
+  email          String            @unique
+  username       String            @unique
+  passwordHash   String
+  role           UserRole          @default(USER)
+  totalXp        Int               @default(0)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  submissions    Submission[]
+  progress       MissionProgress[]
+  xpEvents       XpEvent[]
+  bugdex         UserBugDex[]
+  learningDays   LearningDay[]
+  sessions       AuthSession[]
+  executions     Execution[]
+  friendshipsAsA Friendship[]      @relation("FriendshipUserA")
+  friendshipsAsB Friendship[]      @relation("FriendshipUserB")
+}
+
+model Friendship {
+  id            String           @id @default(cuid())
+  userAId       String
+  userBId       String
+  requestedById String
+  status        FriendshipStatus @default(PENDING)
+  userA         User             @relation("FriendshipUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB         User             @relation("FriendshipUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@unique([userAId, userBId])
+  @@index([userAId, status])
+  @@index([userBId, status])
 }
 
 model AuthSession {
