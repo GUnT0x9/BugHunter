@@ -2,6 +2,8 @@ import type {
   ExecutionResult,
   LoginInput,
   MissionPublic,
+  ProfileSummary,
+  ProfileUpdate,
   RegisterInput,
   User,
 } from '@bughunter/contracts';
@@ -33,6 +35,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   me: () => request<User>('/auth/me'),
+  updateProfile: (input: ProfileUpdate) =>
+    request<User>('/auth/me', { method: 'PATCH', body: JSON.stringify(input) }),
+  profileSummary: () => request<ProfileSummary>('/profile-summary'),
   login: (input: LoginInput) =>
     request<User>('/auth/login', { method: 'POST', body: JSON.stringify(input) }),
   register: (input: RegisterInput) =>

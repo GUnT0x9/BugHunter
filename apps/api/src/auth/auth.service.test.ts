@@ -31,6 +31,7 @@ function setup() {
     findByEmail: vi.fn(),
     findByUsername: vi.fn(),
     create: vi.fn(),
+    updateUsername: vi.fn(),
   };
   return {
     repository,
@@ -101,5 +102,27 @@ describe('AuthService', () => {
     await expect(
       service.login({ email: 'hunter@example.com', password: 'wrong-password' }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('updates a nickname and returns only public user fields', async () => {
+    const { repository, service } = setup();
+    repository.updateUsername.mockResolvedValue(userRow({ username: '새 디버거' }));
+
+    await expect(service.updateProfile('user-1', { username: '새 디버거' })).resolves.toEqual({
+      id: 'user-1',
+      email: 'hunter@example.com',
+      username: '새 디버거',
+      role: 'USER',
+      totalXp: 0,
+    });
+    expect(repository.updateUsername).toHaveBeenCalledWith('user-1', '새 디버거');
+  });
+
+  it('returns a conflict when an updated nickname is already used', async () => {
+    const { repository, service } = setup();
+    repository.updateUsername.mockRejectedValue({ code: 'P2002' });
+    await expect(
+      service.updateProfile('user-1', { username: '중복 닉네임' }),
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 });

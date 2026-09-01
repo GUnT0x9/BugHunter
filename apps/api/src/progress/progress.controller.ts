@@ -23,4 +23,9 @@ export class ProgressController {
   statistics(@CurrentUser() user: User) {
     return this.progress.statistics(user.id);
   }
+
+  @Get('profile-summary')
+  profileSummary(@CurrentUser() user: User) {
+    return this.progress.profileSummary(user.id);
+  }
 }

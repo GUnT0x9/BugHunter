@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import type { LoginInput, RegisterInput, User } from '@bughunter/contracts';
+import type { LoginInput, ProfileUpdate, RegisterInput, User } from '@bughunter/contracts';
 import { AuthRepository } from './auth.repository.js';
 
 const PASSWORD_HASH_OPTIONS = {
@@ -66,5 +66,16 @@ export class AuthService {
       throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
     }
     return toPublicUser(user);
+  }
+
+  async updateProfile(userId: string, input: ProfileUpdate): Promise<User> {
+    try {
+      return toPublicUser(await this.repository.updateUsername(userId, input.username.trim()));
+    } catch (error: unknown) {
+      if (isUniqueConstraintError(error)) {
+        throw new ConflictException('이미 사용 중인 닉네임입니다.');
+      }
+      throw error;
+    }
   }
 }

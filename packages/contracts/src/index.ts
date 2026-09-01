@@ -55,16 +55,37 @@ export const LoginInputSchema = z.object({
     .max(128, '비밀번호는 128자 이하여야 합니다.'),
 });
 
+export const UsernameSchema = z
+  .string()
+  .trim()
+  .min(2, '닉네임은 2자 이상이어야 합니다.')
+  .max(32, '닉네임은 32자 이하여야 합니다.')
+  .regex(/^[가-힣a-zA-Z0-9_ -]+$/, '닉네임에는 한글, 영문, 숫자, 공백, _, -만 사용할 수 있습니다.');
+
 export const RegisterInputSchema = LoginInputSchema.extend({
-  username: z
-    .string()
-    .trim()
-    .min(2, '닉네임은 2자 이상이어야 합니다.')
-    .max(32, '닉네임은 32자 이하여야 합니다.')
-    .regex(
-      /^[가-힣a-zA-Z0-9_ -]+$/,
-      '닉네임에는 한글, 영문, 숫자, 공백, _, -만 사용할 수 있습니다.',
-    ),
+  username: UsernameSchema,
+});
+
+export const ProfileUpdateSchema = z.object({ username: UsernameSchema });
+
+export const ProfileSummarySchema = z.object({
+  joinedAt: z.string().datetime(),
+  activityDays: z.array(
+    z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), count: z.number().int().positive() }),
+  ),
+  recentActivity: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      detail: z.string(),
+      xp: z.number().int().nonnegative(),
+      occurredAt: z.string().datetime(),
+    }),
+  ),
+  solvedCount: z.number().int().nonnegative(),
+  totalSubmissions: z.number().int().nonnegative(),
+  averageAttempts: z.number().nonnegative(),
+  averageExecutionTimeMs: z.number().int().nonnegative(),
 });
 
 export const TestCaseSchema = z.object({
@@ -185,6 +206,8 @@ export const ChapterSchema = z.object({
 export type User = z.infer<typeof UserSchema>;
 export type LoginInput = z.infer<typeof LoginInputSchema>;
 export type RegisterInput = z.infer<typeof RegisterInputSchema>;
+export type ProfileUpdate = z.infer<typeof ProfileUpdateSchema>;
+export type ProfileSummary = z.infer<typeof ProfileSummarySchema>;
 export type TestCase = z.infer<typeof TestCaseSchema>;
 export type Hint = z.infer<typeof HintSchema>;
 export type MissionPublic = z.infer<typeof MissionPublicSchema>;

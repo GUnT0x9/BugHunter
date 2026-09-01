@@ -24,4 +24,8 @@ export class AuthRepository {
   create(input: { email: string; username: string; passwordHash: string; role?: UserRole }) {
     return this.prisma.user.create({ data: input });
   }
+
+  updateUsername(id: string, username: string) {
+    return this.prisma.user.update({ where: { id }, data: { username } });
+  }
 }

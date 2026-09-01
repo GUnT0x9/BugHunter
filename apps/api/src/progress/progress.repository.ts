@@ -95,4 +95,54 @@ export class ProgressRepository {
       })),
     };
   }
+
+  async profileSummary(userId: string) {
+    const since = new Date();
+    since.setUTCHours(0, 0, 0, 0);
+    since.setUTCDate(since.getUTCDate() - 83);
+    const [user, days, progress, submissions] = await Promise.all([
+      this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { createdAt: true } }),
+      this.prisma.learningDay.findMany({
+        where: { userId, date: { gte: since } },
+        select: { date: true },
+        orderBy: { date: 'asc' },
+      }),
+      this.prisma.missionProgress.findMany({
+        where: { userId },
+        include: { mission: { include: { bugType: true } } },
+        orderBy: { completedAt: 'desc' },
+      }),
+      this.prisma.submission.findMany({
+        where: { userId },
+        select: { executionTimeMs: true },
+      }),
+    ]);
+    const completed = progress.filter(
+      (item): item is typeof item & { completedAt: Date } => item.completedAt !== null,
+    );
+    const executionTimes = submissions.flatMap((item) =>
+      item.executionTimeMs === null ? [] : [item.executionTimeMs],
+    );
+    return {
+      joinedAt: user.createdAt.toISOString(),
+      activityDays: days.map((day) => ({ date: day.date.toISOString().slice(0, 10), count: 1 })),
+      recentActivity: completed.slice(0, 5).map((item) => ({
+        id: item.missionId,
+        title: item.mission.title,
+        detail: `${item.mission.bugType.name} 해결`,
+        xp: item.mission.baseXp,
+        occurredAt: item.completedAt.toISOString(),
+      })),
+      solvedCount: completed.length,
+      totalSubmissions: submissions.length,
+      averageAttempts: completed.length
+        ? Number(
+            (progress.reduce((sum, item) => sum + item.attempts, 0) / completed.length).toFixed(1),
+          )
+        : 0,
+      averageExecutionTimeMs: executionTimes.length
+        ? Math.round(executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length)
+        : 0,
+    };
+  }
 }

@@ -1,6 +1,11 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { LoginInputSchema, RegisterInputSchema, type User } from '@bughunter/contracts';
+import {
+  LoginInputSchema,
+  ProfileUpdateSchema,
+  RegisterInputSchema,
+  type User,
+} from '@bughunter/contracts';
 import { parseBody } from '../common/validation.js';
 import { loadEnv } from '../common/env.js';
 import { CurrentUser } from './current-user.decorator.js';
@@ -65,5 +70,11 @@ export class AuthController {
   @UseGuards(SessionAuthGuard)
   me(@CurrentUser() user: User): User {
     return user;
+  }
+
+  @Patch('me')
+  @UseGuards(SessionAuthGuard)
+  updateProfile(@CurrentUser() user: User, @Body() body: unknown): Promise<User> {
+    return this.auth.updateProfile(user.id, parseBody(ProfileUpdateSchema, body));
   }
 }

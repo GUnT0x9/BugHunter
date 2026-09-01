@@ -43,14 +43,22 @@ export function App(): ReactElement {
   if (isLoading) return <BootScreen />;
   return user ? (
     <BrowserRouter>
-      <AuthenticatedApp user={user} onLogout={() => setUser(null)} />
+      <AuthenticatedApp user={user} onUserUpdated={setUser} onLogout={() => setUser(null)} />
     </BrowserRouter>
   ) : (
     <AuthScreen onAuthenticated={setUser} />
   );
 }
 
-function AuthenticatedApp({ user, onLogout }: { user: User; onLogout: () => void }): ReactElement {
+function AuthenticatedApp({
+  user,
+  onUserUpdated,
+  onLogout,
+}: {
+  user: User;
+  onUserUpdated: (user: User) => void;
+  onLogout: () => void;
+}): ReactElement {
   const [missions, setMissions] = useState<MissionPublic[]>([]);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [error, setError] = useState('');
@@ -90,7 +98,10 @@ function AuthenticatedApp({ user, onLogout }: { user: User; onLogout: () => void
           element={<MissionRoute missions={missions} onComplete={() => void refresh()} />}
         />
         <Route path="/bugdex" element={<BugDex />} />
-        <Route path="/my" element={<Profile user={user} progress={progress} />} />
+        <Route
+          path="/my"
+          element={<Profile user={user} progress={progress} onUserUpdated={onUserUpdated} />}
+        />
         <Route path="/statistics" element={<Statistics />} />
         <Route path="/roadmap" element={<Navigate to="/learn" replace />} />
         <Route path="/missions" element={<Navigate to="/problems" replace />} />

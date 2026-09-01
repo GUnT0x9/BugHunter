@@ -4,6 +4,7 @@ import {
   MissionCodeSchema,
   MAX_MISSION_RUN_INPUT_LENGTH,
   MissionRunSchema,
+  ProfileUpdateSchema,
   normalizeOutput,
   redactHiddenTests,
   RegisterInputSchema,
@@ -55,6 +56,14 @@ describe('contracts', () => {
         password: 'correct-password',
       }).success,
     ).toBe(false);
+  });
+
+  it('uses the registration nickname rules for profile updates', () => {
+    expect(ProfileUpdateSchema.parse({ username: ' 디버그 탐정 ' })).toEqual({
+      username: '디버그 탐정',
+    });
+    expect(ProfileUpdateSchema.safeParse({ username: 'x' }).success).toBe(false);
+    expect(ProfileUpdateSchema.safeParse({ username: 'not/allowed' }).success).toBe(false);
   });
 
   it('rejects code containing a null character', () => {
