@@ -4,6 +4,11 @@ import type { User } from '@bughunter/contracts';
 import { SESSION_TTL_SECONDS } from './session.constants.js';
 import { SessionRepository } from './session.repository.js';
 
+// Avoid turning every authenticated read request into a database write. A session
+// only needs its sliding expiry extended once it has entered the latter half of
+// its lifetime.
+const SESSION_REFRESH_THRESHOLD_MS = (SESSION_TTL_SECONDS * 1_000) / 2;
+
 function sessionExpiry(): Date {
   return new Date(Date.now() + SESSION_TTL_SECONDS * 1_000);
 }
@@ -26,7 +31,9 @@ export class SessionService {
       await this.destroy(id);
       return null;
     }
-    await this.sessions.refresh(id, sessionExpiry());
+    if (session.expiresAt.getTime() - Date.now() <= SESSION_REFRESH_THRESHOLD_MS) {
+      await this.sessions.refresh(id, sessionExpiry());
+    }
     return session.user satisfies User;
   }
 

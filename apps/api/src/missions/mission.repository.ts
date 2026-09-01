@@ -2,13 +2,26 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import type { MissionPublic, User } from '@bughunter/contracts';
 import { PrismaService } from '../common/prisma.service.js';
 
-const publicIncludes = {
-  chapter: true,
-  bugType: true,
-  hints: { orderBy: { level: 'asc' as const } },
-  tests: { orderBy: { sortOrder: 'asc' as const } },
-  concepts: { include: { concept: true } },
-};
+const publicSelect = {
+  id: true,
+  slug: true,
+  sortOrder: true,
+  title: true,
+  description: true,
+  difficulty: true,
+  isBoss: true,
+  initialCode: true,
+  explanation: true,
+  baseXp: true,
+  chapter: { select: { id: true, sortOrder: true } },
+  bugType: { select: { id: true, name: true, description: true } },
+  hints: { select: { id: true, level: true, content: true }, orderBy: { level: 'asc' as const } },
+  tests: {
+    select: { id: true, sortOrder: true, input: true, expectedOutput: true, isHidden: true },
+    orderBy: { sortOrder: 'asc' as const },
+  },
+  concepts: { select: { concept: { select: { name: true } } } },
+} as const;
 
 export function isMissionLocked(
   role: User['role'] | null,
@@ -29,7 +42,7 @@ export class MissionRepository {
   findPublished() {
     return this.prisma.mission.findMany({
       where: { isPublished: true },
-      include: publicIncludes,
+      select: publicSelect,
       orderBy: [{ chapter: { sortOrder: 'asc' } }, { sortOrder: 'asc' }],
     });
   }
@@ -37,7 +50,13 @@ export class MissionRepository {
   findInternal(id: string) {
     return this.prisma.mission.findUnique({
       where: { id },
-      include: { ...publicIncludes, tests: { orderBy: { sortOrder: 'asc' } } },
+      include: {
+        chapter: true,
+        bugType: true,
+        hints: { orderBy: { level: 'asc' } },
+        tests: { orderBy: { sortOrder: 'asc' } },
+        concepts: { include: { concept: true } },
+      },
     });
   }
 

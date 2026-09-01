@@ -28,12 +28,34 @@ export class ProgressRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async dashboard(userId: string) {
-    const [user, progress, days] = await Promise.all([
+    const [user, completedCount, currentProgress, fallbackProgress, days] = await Promise.all([
       this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { totalXp: true } }),
-      this.prisma.missionProgress.findMany({
-        where: { userId },
-        include: { mission: { include: { chapter: true } } },
+      this.prisma.missionProgress.count({ where: { userId, completedAt: { not: null } } }),
+      this.prisma.missionProgress.findFirst({
+        where: { userId, completedAt: null },
+        select: {
+          mission: {
+            select: {
+              id: true,
+              title: true,
+              chapter: { select: { title: true, sortOrder: true } },
+            },
+          },
+        },
         orderBy: { updatedAt: 'desc' },
+      }),
+      this.prisma.missionProgress.findFirst({
+        where: { userId, completedAt: { not: null } },
+        select: {
+          mission: {
+            select: {
+              id: true,
+              title: true,
+              chapter: { select: { title: true, sortOrder: true } },
+            },
+          },
+        },
+        orderBy: { updatedAt: 'asc' },
       }),
       this.prisma.learningDay.findMany({
         where: { userId },
@@ -41,15 +63,13 @@ export class ProgressRepository {
         orderBy: { date: 'desc' },
       }),
     ]);
-    const completed = progress.filter((item) => item.completedAt);
-    const current =
-      progress.find((item) => !item.completedAt)?.mission ?? completed.at(-1)?.mission ?? null;
+    const current = currentProgress?.mission ?? fallbackProgress?.mission ?? null;
     return {
       totalXp: user.totalXp,
       level: Math.floor(user.totalXp / 1_000) + 1,
       xpIntoLevel: user.totalXp % 1_000,
       xpForNextLevel: 1_000,
-      bugsFixed: completed.length,
+      bugsFixed: completedCount,
       streak: calculateStreak(days.map((day) => day.date)),
       continueMission: current
         ? {
@@ -71,24 +91,28 @@ export class ProgressRepository {
   }
 
   async statistics(userId: string) {
-    const [progress, submissions, bugdex] = await Promise.all([
-      this.prisma.missionProgress.findMany({
+    const [completedCount, progressTotals, submissionTotals, bugdex] = await Promise.all([
+      this.prisma.missionProgress.count({ where: { userId, completedAt: { not: null } } }),
+      this.prisma.missionProgress.aggregate({
         where: { userId },
-        include: { mission: { include: { bugType: true } } },
+        _sum: { attempts: true },
       }),
-      this.prisma.submission.findMany({
+      this.prisma.submission.aggregate({
         where: { userId },
-        select: { createdAt: true, executionTimeMs: true },
+        _count: { _all: true },
+        _sum: { executionTimeMs: true },
       }),
-      this.prisma.userBugDex.findMany({ where: { userId }, include: { bugType: true } }),
+      this.prisma.userBugDex.findMany({
+        where: { userId },
+        select: { discoveredCount: true, bugType: { select: { name: true } } },
+      }),
     ]);
-    const completed = progress.filter((item) => item.completedAt);
-    const totalAttempts = progress.reduce((sum, item) => sum + item.attempts, 0);
+    const totalAttempts = progressTotals._sum.attempts ?? 0;
     return {
-      solvedCount: completed.length,
-      totalSubmissions: submissions.length,
-      averageAttempts: completed.length ? Number((totalAttempts / completed.length).toFixed(1)) : 0,
-      executionTimeMs: submissions.reduce((sum, item) => sum + (item.executionTimeMs ?? 0), 0),
+      solvedCount: completedCount,
+      totalSubmissions: submissionTotals._count._all,
+      averageAttempts: completedCount ? Number((totalAttempts / completedCount).toFixed(1)) : 0,
+      executionTimeMs: submissionTotals._sum.executionTimeMs ?? 0,
       bugSkills: bugdex.map((entry) => ({
         name: entry.bugType.name,
         fixedCount: entry.discoveredCount,
@@ -100,7 +124,8 @@ export class ProgressRepository {
     const since = new Date();
     since.setUTCHours(0, 0, 0, 0);
     since.setUTCDate(since.getUTCDate() - 83);
-    const [user, days, progress, submissions] = await Promise.all([
+    const [user, days, recentActivity, completedCount, progressTotals, submissionTotals] =
+      await Promise.all([
       this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { createdAt: true } }),
       this.prisma.learningDay.findMany({
         where: { userId, date: { gte: since } },
@@ -108,41 +133,41 @@ export class ProgressRepository {
         orderBy: { date: 'asc' },
       }),
       this.prisma.missionProgress.findMany({
-        where: { userId },
-        include: { mission: { include: { bugType: true } } },
+        where: { userId, completedAt: { not: null } },
+        select: {
+          missionId: true,
+          completedAt: true,
+          mission: {
+            select: { title: true, baseXp: true, bugType: { select: { name: true } } },
+          },
+        },
         orderBy: { completedAt: 'desc' },
+        take: 5,
       }),
-      this.prisma.submission.findMany({
+      this.prisma.missionProgress.count({ where: { userId, completedAt: { not: null } } }),
+      this.prisma.missionProgress.aggregate({ where: { userId }, _sum: { attempts: true } }),
+      this.prisma.submission.aggregate({
         where: { userId },
-        select: { executionTimeMs: true },
+        _count: { _all: true, executionTimeMs: true },
+        _avg: { executionTimeMs: true },
       }),
     ]);
-    const completed = progress.filter(
-      (item): item is typeof item & { completedAt: Date } => item.completedAt !== null,
-    );
-    const executionTimes = submissions.flatMap((item) =>
-      item.executionTimeMs === null ? [] : [item.executionTimeMs],
-    );
     return {
       joinedAt: user.createdAt.toISOString(),
       activityDays: days.map((day) => ({ date: day.date.toISOString().slice(0, 10), count: 1 })),
-      recentActivity: completed.slice(0, 5).map((item) => ({
+      recentActivity: recentActivity.map((item) => ({
         id: item.missionId,
         title: item.mission.title,
         detail: `${item.mission.bugType.name} 해결`,
         xp: item.mission.baseXp,
-        occurredAt: item.completedAt.toISOString(),
+        occurredAt: item.completedAt!.toISOString(),
       })),
-      solvedCount: completed.length,
-      totalSubmissions: submissions.length,
-      averageAttempts: completed.length
-        ? Number(
-            (progress.reduce((sum, item) => sum + item.attempts, 0) / completed.length).toFixed(1),
-          )
+      solvedCount: completedCount,
+      totalSubmissions: submissionTotals._count._all,
+      averageAttempts: completedCount
+        ? Number(((progressTotals._sum.attempts ?? 0) / completedCount).toFixed(1))
         : 0,
-      averageExecutionTimeMs: executionTimes.length
-        ? Math.round(executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length)
-        : 0,
+      averageExecutionTimeMs: Math.round(submissionTotals._avg.executionTimeMs ?? 0),
     };
   }
 }

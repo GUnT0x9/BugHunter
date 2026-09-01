@@ -167,6 +167,9 @@ model Submission {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   execution       Execution?
+
+  @@index([userId])
+  @@index([missionId])
 }
 
 model Execution {
@@ -207,6 +210,7 @@ model MissionProgress {
   updatedAt   DateTime  @updatedAt
 
   @@id([userId, missionId])
+  @@index([userId, completedAt, updatedAt])
 }
 
 model XpEvent {

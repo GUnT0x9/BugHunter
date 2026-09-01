@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactElement } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactElement,
+} from 'react';
 import { ArrowRight, CalendarDays, Check, Pencil, Terminal, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { ProfileSummary, User } from '@bughunter/contracts';
@@ -55,6 +62,19 @@ export function Profile({ user, progress, onUserUpdated }: ProfileProps): ReactE
     }
   }
 
+  function cancelEditing(): void {
+    if (saving) return;
+    setUsername(user.username);
+    setSaveError('');
+    setEditing(false);
+  }
+
+  function handleEditorKeyDown(event: KeyboardEvent<HTMLFormElement>): void {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    cancelEditing();
+  }
+
   return (
     <section className="page profile-page">
       <header className="profile-identity">
@@ -62,19 +82,57 @@ export function Profile({ user, progress, onUserUpdated }: ProfileProps): ReactE
           {user.username.charAt(0).toUpperCase()}
         </div>
         <div className="profile-heading">
-          <div className="profile-name-row">
-            <h1>{user.username}</h1>
-            <button
-              className="profile-edit-button"
-              type="button"
-              onClick={() => {
-                setUsername(user.username);
-                setSaveError('');
-                setEditing(true);
-              }}
-            >
-              <Pencil aria-hidden="true" /> 프로필 편집
-            </button>
+          <div className="profile-name-editor">
+            {editing ? (
+              <form
+                className="profile-name-form"
+                onSubmit={(event) => void save(event)}
+                onKeyDown={handleEditorKeyDown}
+              >
+                <input
+                  id="profile-username"
+                  aria-label="프로필 이름"
+                  aria-describedby={saveError ? 'profile-save-error' : undefined}
+                  value={username}
+                  maxLength={32}
+                  autoComplete="nickname"
+                  autoFocus
+                  disabled={saving}
+                  onChange={(event) => setUsername(event.target.value)}
+                />
+                <button className="btn primary profile-name-action" type="submit" disabled={saving}>
+                  <Check aria-hidden="true" /> {saving ? '저장 중…' : '저장'}
+                </button>
+                <button
+                  className="btn ghost profile-name-action"
+                  type="button"
+                  onClick={cancelEditing}
+                  disabled={saving}
+                >
+                  <X aria-hidden="true" /> 취소
+                </button>
+              </form>
+            ) : (
+              <div className="profile-name-row">
+                <h1>{user.username}</h1>
+                <button
+                  className="profile-edit-button"
+                  type="button"
+                  onClick={() => {
+                    setUsername(user.username);
+                    setSaveError('');
+                    setEditing(true);
+                  }}
+                >
+                  <Pencil aria-hidden="true" /> 편집
+                </button>
+              </div>
+            )}
+            {editing && saveError && (
+              <p id="profile-save-error" className="form-error" aria-live="polite">
+                {saveError}
+              </p>
+            )}
           </div>
           <p>
             LV.{progress?.level ?? 1} · {user.role === 'ADMIN' ? '관리자' : '디버거'}
@@ -94,39 +152,6 @@ export function Profile({ user, progress, onUserUpdated }: ProfileProps): ReactE
           학습 계속하기 <ArrowRight aria-hidden="true" />
         </Link>
       </header>
-
-      {editing && (
-        <form className="profile-editor" onSubmit={(event) => void save(event)}>
-          <div>
-            <label htmlFor="profile-username">닉네임</label>
-            <p id="profile-username-help">2~32자 · 한글, 영문, 숫자, 공백, _, - 사용 가능</p>
-          </div>
-          <input
-            id="profile-username"
-            value={username}
-            maxLength={32}
-            aria-describedby="profile-username-help profile-save-error"
-            autoFocus
-            onChange={(event) => setUsername(event.target.value)}
-          />
-          <div className="profile-editor-actions">
-            <button className="btn primary" type="submit" disabled={saving}>
-              <Check aria-hidden="true" /> {saving ? '저장 중…' : '저장'}
-            </button>
-            <button
-              className="btn ghost"
-              type="button"
-              onClick={() => setEditing(false)}
-              disabled={saving}
-            >
-              <X aria-hidden="true" /> 취소
-            </button>
-          </div>
-          <p id="profile-save-error" className="form-error" aria-live="polite">
-            {saveError}
-          </p>
-        </form>
-      )}
 
       {loadError && <p className="form-error">{loadError}</p>}
       <div className="profile-content">

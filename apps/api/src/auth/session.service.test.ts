@@ -39,6 +39,23 @@ describe('SessionService', () => {
     expect(sessions.refresh).toHaveBeenCalledWith('session-1', expect.any(Date));
   });
 
+  it('does not write to the database when an active session has ample lifetime remaining', async () => {
+    const { sessions, service } = setup();
+    sessions.findById.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 6 * 24 * 60 * 60 * 1_000),
+      user: {
+        id: 'user-1',
+        email: 'hunter@example.com',
+        username: '버그탐정',
+        role: 'USER',
+        totalXp: 120,
+      },
+    });
+
+    await expect(service.get('session-1')).resolves.toMatchObject({ totalXp: 120 });
+    expect(sessions.refresh).not.toHaveBeenCalled();
+  });
+
   it('removes expired sessions', async () => {
     const { sessions, service } = setup();
     sessions.findById.mockResolvedValue({
