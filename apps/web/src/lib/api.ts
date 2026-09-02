@@ -158,6 +158,23 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ questKey }),
     }),
+  cooperativeChallenge: () =>
+    request<{
+      key: string;
+      title: string;
+      description: string;
+      startsAt: string;
+      endsAt: string;
+      globalProgress: number;
+      globalTarget: number;
+      contribution: number;
+      contributorCount: number;
+      rewardXp: number;
+      completed: boolean;
+      claimed: boolean;
+    }>('/challenges/cooperative'),
+  claimCooperativeChallenge: () =>
+    request<{ ok: true; awardedXp: number }>('/challenges/cooperative/claim', { method: 'POST' }),
   statistics: () =>
     request<{
       solvedCount: number;

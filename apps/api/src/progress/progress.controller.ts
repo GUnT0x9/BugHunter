@@ -42,6 +42,16 @@ export class ProgressController {
     );
   }
 
+  @Get('challenges/cooperative')
+  cooperativeChallenge(@CurrentUser() user: User) {
+    return this.progress.cooperativeChallenge(user.id);
+  }
+
+  @Post('challenges/cooperative/claim')
+  claimCooperativeChallenge(@CurrentUser() user: User) {
+    return this.progress.claimCooperativeChallenge(user.id);
+  }
+
   @Get('statistics')
   statistics(@CurrentUser() user: User) {
     return this.progress.statistics(user.id);

@@ -199,7 +199,6 @@ export const BASE_ACHIEVEMENTS: AchievementDefinition[] = [
     target: 1,
     title: '공동 전선',
     description: '협동 목표 참여',
-    comingSoon: true,
   },
   {
     code: 'SEASON_START',

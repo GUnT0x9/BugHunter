@@ -255,6 +255,7 @@ export class ProgressRepository {
         ? 1
         : 0,
       totalAttempts: progress.reduce((sum, item) => sum + item.attempts, 0),
+      coop: progress.some((item) => item.completedAt! >= questPeriods().weekly.startsAt) ? 1 : 0,
     };
     const items = evaluateAchievements(
       metrics,
@@ -413,6 +414,78 @@ export class ProgressRepository {
       throw error;
     }
     return { ok: true as const, awardedXp: quest.rewardXp };
+  }
+
+  async cooperativeChallenge(userId: string) {
+    const { weekly } = questPeriods();
+    const [globalProgress, contribution, contributors, claim] = await Promise.all([
+      this.prisma.missionProgress.count({
+        where: { completedAt: { gte: weekly.startsAt, lt: weekly.endsAt } },
+      }),
+      this.prisma.missionProgress.count({
+        where: { userId, completedAt: { gte: weekly.startsAt, lt: weekly.endsAt } },
+      }),
+      this.prisma.missionProgress.findMany({
+        where: { completedAt: { gte: weekly.startsAt, lt: weekly.endsAt } },
+        distinct: ['userId'],
+        select: { userId: true },
+      }),
+      this.prisma.questRewardClaim.findUnique({
+        where: {
+          userId_questKey_periodKey: {
+            userId,
+            questKey: 'COOP_WEEKLY_100',
+            periodKey: weekly.key,
+          },
+        },
+        select: { amount: true },
+      }),
+    ]);
+    return {
+      key: 'COOP_WEEKLY_100',
+      periodKey: weekly.key,
+      title: '주간 공동 디버깅 작전',
+      description: '모든 디버거가 함께 문제 100개를 해결하세요.',
+      startsAt: weekly.startsAt.toISOString(),
+      endsAt: weekly.endsAt.toISOString(),
+      globalProgress: Math.min(globalProgress, 100),
+      globalTarget: 100,
+      contribution,
+      contributorCount: contributors.length,
+      rewardXp: Math.min(contribution * 20, 500),
+      completed: globalProgress >= 100,
+      claimed: Boolean(claim),
+    };
+  }
+
+  async claimCooperativeChallenge(userId: string) {
+    const challenge = await this.cooperativeChallenge(userId);
+    if (!challenge.completed)
+      throw new BadRequestException('공동 목표가 아직 완료되지 않았습니다.');
+    if (challenge.contribution === 0)
+      throw new BadRequestException('이번 공동 목표에 기여한 기록이 없습니다.');
+    if (challenge.claimed) throw new ConflictException('이미 받은 협동 보상입니다.');
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.questRewardClaim.create({
+          data: {
+            userId,
+            questKey: challenge.key,
+            periodKey: challenge.periodKey,
+            amount: challenge.rewardXp,
+          },
+        });
+        await tx.user.update({
+          where: { id: userId },
+          data: { totalXp: { increment: challenge.rewardXp } },
+        });
+      });
+    } catch (error: unknown) {
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002')
+        throw new ConflictException('이미 받은 협동 보상입니다.');
+      throw error;
+    }
+    return { ok: true as const, awardedXp: challenge.rewardXp };
   }
 
   async statistics(userId: string) {
