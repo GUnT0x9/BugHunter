@@ -1,5 +1,5 @@
 // noqa: SIZE_OK - single screen component with tightly coupled execution state; splitting would fragment prop drilling and is deferred
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import Editor, { type BeforeMount } from '@monaco-editor/react';
 import {
   BookOpen,
@@ -43,6 +43,7 @@ const beforeMount: BeforeMount = (monaco) => {
 };
 
 export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): ReactElement {
+  const activeMissionId = useRef(mission.id);
   const [code, setCode] = useState(mission.initialCode);
   const [customInput, setCustomInput] = useState(mission.visibleTests[0]?.input ?? '');
   const [result, setResult] = useState<ExecutionResult | null>(null);
@@ -52,6 +53,10 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
   const [guide, setGuide] = useState<'problem' | 'hint' | 'tests' | 'learn'>('problem');
 
   useEffect(() => {
+    // Completing a mission refreshes its progress data and replaces the mission object.
+    // Keep the terminal result intact unless the user actually navigates to another mission.
+    if (activeMissionId.current === mission.id) return;
+    activeMissionId.current = mission.id;
     setCode(mission.initialCode);
     setCustomInput(mission.visibleTests[0]?.input ?? '');
     setResult(null);
