@@ -310,8 +310,7 @@ export class DuelService {
               })
             : 0,
         ]);
-        const remaining = Math.max(0, DAILY_XP_CAP - (daily._sum.amount ?? 0));
-        const amount = repeatCount < SAME_OPPONENT_REWARD_LIMIT ? Math.min(WIN_XP, remaining) : 0;
+        const amount = duelRewardAmount(daily._sum.amount ?? 0, repeatCount);
         await tx.duelReward.create({ data: { roomId, userId: winnerId, amount } });
         await tx.duelRoom.update({ where: { id: roomId }, data: { rewardXp: amount } });
         if (amount)
@@ -325,7 +324,12 @@ export class DuelService {
   }
 }
 
-function koreanDayStart(now: Date): Date {
+export function duelRewardAmount(dailyXp: number, sameOpponentRewards: number): number {
+  const remaining = Math.max(0, DAILY_XP_CAP - dailyXp);
+  return sameOpponentRewards < SAME_OPPONENT_REWARD_LIMIT ? Math.min(WIN_XP, remaining) : 0;
+}
+
+export function koreanDayStart(now: Date): Date {
   const shifted = new Date(now.getTime() + 9 * 60 * 60 * 1000);
   shifted.setUTCHours(0, 0, 0, 0);
   return new Date(shifted.getTime() - 9 * 60 * 60 * 1000);
