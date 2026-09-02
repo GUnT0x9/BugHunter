@@ -130,6 +130,18 @@ function AuthenticatedApp({
           path="/challenges"
           element={<Challenges missions={missions} onReward={() => void refresh()} />}
         />
+        <Route
+          path="/challenges/duel"
+          element={<Challenges mode="duel" missions={missions} onReward={() => void refresh()} />}
+        />
+        <Route
+          path="/challenges/co-op"
+          element={<Challenges mode="coop" missions={missions} onReward={() => void refresh()} />}
+        />
+        <Route
+          path="/challenges/event"
+          element={<Challenges mode="event" missions={missions} onReward={() => void refresh()} />}
+        />
         <Route path="/community/users/:id" element={<PublicProfile />} />
         <Route path="/roadmap" element={<Navigate to="/learn" replace />} />
         <Route path="/missions" element={<Navigate to="/problems" replace />} />

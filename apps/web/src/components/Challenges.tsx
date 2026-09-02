@@ -1,5 +1,15 @@
 import { useEffect, useState, type ReactElement } from 'react';
-import { CalendarDays, Check, Flag, Gift, Star, Swords, Users } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  CalendarDays,
+  Check,
+  Flag,
+  Gift,
+  Star,
+  Swords,
+  Users,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import type { DuelRoom } from '../lib/api.js';
@@ -12,9 +22,11 @@ const dateLabel = (value: string) =>
 export function Challenges({
   onReward,
   missions,
+  mode,
 }: {
   onReward: () => void;
   missions: MissionPublic[];
+  mode?: 'duel' | 'coop' | 'event';
 }): ReactElement {
   const [coop, setCoop] = useState<Awaited<ReturnType<typeof api.cooperativeChallenge>> | null>(
     null,
@@ -35,20 +47,22 @@ export function Challenges({
     setEvent(nextEvent);
   }
   useEffect(() => {
+    if (mode !== 'coop' && mode !== 'event') return;
     void load().catch((reason: unknown) =>
       setError(reason instanceof Error ? reason.message : '챌린지를 불러오지 못했습니다.'),
     );
-  }, []);
+  }, [mode]);
   useEffect(() => {
     const firstUnlocked = missions.find((mission) => !mission.isLocked);
     if (!missionId && firstUnlocked) setMissionId(firstUnlocked.id);
   }, [missionId, missions]);
   useEffect(() => {
+    if (mode !== 'duel') return;
     void api
       .activeDuel()
       .then(setDuel)
       .catch(() => null);
-  }, []);
+  }, [mode]);
   useEffect(() => {
     if (!duel || !['WAITING', 'ACTIVE'].includes(duel.status)) return;
     const timer = window.setInterval(
@@ -124,18 +138,40 @@ export function Challenges({
     }
   }
   const percentage = coop ? Math.round((coop.globalProgress / coop.globalTarget) * 100) : 0;
+  if (!mode) return <ChallengeSystemSelect />;
   return (
     <section className="page challenges-page">
       <header className="challenges-hero">
         <div>
-          <span className="page-kicker">LIVE OPERATIONS</span>
-          <h1>챌린지</h1>
-          <p>혼자 쌓은 실력을 공동 목표와 경쟁 기록으로 확장합니다.</p>
+          <Link className="challenge-back" to="/challenges">
+            <ArrowLeft /> SYSTEM SELECT
+          </Link>
+          <span className="page-kicker">
+            {mode === 'duel'
+              ? 'SYSTEM 01 / HEAD TO HEAD'
+              : mode === 'coop'
+                ? 'SYSTEM 02 / WEEKLY CO-OP'
+                : 'SYSTEM 03 / CATEGORY EVENT'}
+          </span>
+          <h1>
+            {mode === 'duel'
+              ? '1대1 문제 대결'
+              : mode === 'coop'
+                ? '주간 협동 작전'
+                : '카테고리 이벤트'}
+          </h1>
+          <p>
+            {mode === 'duel'
+              ? '같은 문제를 동시에 해결하고 먼저 정답에 도달하세요.'
+              : mode === 'coop'
+                ? '모든 디버거와 함께 주간 목표를 완수하세요.'
+                : '이번 주 지정 카테고리에서 순위와 보상을 획득하세요.'}
+          </p>
         </div>
         <Swords />
       </header>
       {error && <Empty tone="error" text={error} />}
-      {coop && (
+      {mode === 'coop' && coop && (
         <section className={`coop-operation ${coop.completed ? 'completed' : ''}`}>
           <header>
             <div>
@@ -205,7 +241,7 @@ export function Challenges({
           </footer>
         </section>
       )}
-      {event && (
+      {mode === 'event' && event && (
         <section className={`community-event category-${event.category.slug}`}>
           <header>
             <div>
@@ -279,25 +315,97 @@ export function Challenges({
           </div>
         </section>
       )}
-      <DuelPanel
-        duel={duel}
-        missions={missions}
-        missionId={missionId}
-        joinCode={joinCode}
-        busy={duelBusy}
-        onMission={setMissionId}
-        onCode={(value) =>
-          setJoinCode(
-            value
-              .toUpperCase()
-              .replace(/[^A-F0-9]/g, '')
-              .slice(0, 6),
-          )
-        }
-        onCreate={() => void createDuel()}
-        onJoin={() => void joinDuel()}
-        onCancel={() => void cancelDuel()}
-      />
+      {mode === 'duel' && (
+        <DuelPanel
+          duel={duel}
+          missions={missions}
+          missionId={missionId}
+          joinCode={joinCode}
+          busy={duelBusy}
+          onMission={setMissionId}
+          onCode={(value) =>
+            setJoinCode(
+              value
+                .toUpperCase()
+                .replace(/[^A-F0-9]/g, '')
+                .slice(0, 6),
+            )
+          }
+          onCreate={() => void createDuel()}
+          onJoin={() => void joinDuel()}
+          onCancel={() => void cancelDuel()}
+        />
+      )}
+    </section>
+  );
+}
+
+function ChallengeSystemSelect(): ReactElement {
+  const systems = [
+    {
+      number: '01',
+      to: '/challenges/duel',
+      icon: <Swords />,
+      eyebrow: 'HEAD TO HEAD',
+      title: '1대1 문제 대결',
+      description: '같은 문제, 같은 제한 시간. 먼저 버그를 해결한 디버거가 승리합니다.',
+      meta: '2 PLAYERS · 15 MIN',
+    },
+    {
+      number: '02',
+      to: '/challenges/co-op',
+      icon: <Users />,
+      eyebrow: 'WEEKLY CO-OP',
+      title: '주간 협동 작전',
+      description: '모든 디버거의 해결 기록을 모아 공동 목표와 XP 보상을 해제합니다.',
+      meta: 'GLOBAL · WEEKLY',
+    },
+    {
+      number: '03',
+      to: '/challenges/event',
+      icon: <Star />,
+      eyebrow: 'CATEGORY EVENT',
+      title: '카테고리 이벤트',
+      description: '매주 바뀌는 버그 카테고리에서 별을 모으고 순위를 경쟁합니다.',
+      meta: 'ROTATING · RANKED',
+    },
+  ];
+  return (
+    <section className="page system-select-page">
+      <header>
+        <span>SYSTEM SELECT</span>
+        <h1>원하는 시스템을 선택하세요</h1>
+        <p>각 시스템은 독립된 작전 화면에서 진행됩니다.</p>
+      </header>
+      <div className="system-select-frame">
+        <div className="system-select-cards">
+          {systems.map((system) => (
+            <Link
+              className={`system-card system-${system.number}`}
+              to={system.to}
+              key={system.number}
+            >
+              <div className="system-card-scanline" />
+              <span className="system-number">SYSTEM {system.number}</span>
+              <span className="system-icon">{system.icon}</span>
+              <div>
+                <small>{system.eyebrow}</small>
+                <h2>{system.title}</h2>
+                <p>{system.description}</p>
+              </div>
+              <footer>
+                <span>{system.meta}</span>
+                <b>
+                  ENTER <ArrowRight />
+                </b>
+              </footer>
+            </Link>
+          ))}
+        </div>
+      </div>
+      <small className="system-select-status">
+        <i /> ALL SYSTEMS ONLINE
+      </small>
     </section>
   );
 }
