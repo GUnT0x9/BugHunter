@@ -32,12 +32,16 @@ function setup() {
     deleteFollow: vi.fn(),
     profileCounts: vi.fn(),
     recentPublicActivity: vi.fn(),
+    weeklyComparisonUsers: vi.fn(),
   };
   return {
     repository,
-    service: new CommunityService(repository as unknown as CommunityRepository, {
-      featuredAchievements: vi.fn().mockResolvedValue([]),
-    } as unknown as ProgressRepository),
+    service: new CommunityService(
+      repository as unknown as CommunityRepository,
+      {
+        featuredAchievements: vi.fn().mockResolvedValue([]),
+      } as unknown as ProgressRepository,
+    ),
   };
 }
 
@@ -85,5 +89,33 @@ describe('CommunityService', () => {
       followsMe: true,
     });
     expect(result).not.toHaveProperty('email');
+  });
+
+  it('ranks followed users by weekly solves and uses stars as the tie-breaker', async () => {
+    const { repository, service } = setup();
+    repository.followsForUser.mockResolvedValue([{ followerId: 'user-a', followingId: 'user-b' }]);
+    repository.weeklyComparisonUsers.mockResolvedValue([
+      {
+        id: 'user-a',
+        username: '알파',
+        progress: [
+          { attempts: 2, highestHint: 1 },
+          { attempts: 2, highestHint: 1 },
+        ],
+      },
+      {
+        id: 'user-b',
+        username: '베타',
+        progress: [
+          { attempts: 2, highestHint: 0 },
+          { attempts: 2, highestHint: 0 },
+        ],
+      },
+    ]);
+
+    const result = await service.weeklyComparison('user-a');
+
+    expect(result.entries.map((entry) => entry.id)).toEqual(['user-b', 'user-a']);
+    expect(result.entries[0]).toMatchObject({ solvedCount: 2, earnedStars: 4, rank: 1 });
   });
 });

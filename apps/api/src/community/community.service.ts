@@ -10,8 +10,10 @@ import type {
   PublicProfile,
   RankingResponse,
 } from '@bughunter/contracts';
+import { missionRating } from '@bughunter/contracts';
 import { CommunityRepository } from './community.repository.js';
 import { ProgressRepository } from '../progress/progress.repository.js';
+import { questPeriods } from '../progress/quest-policy.js';
 
 type CommunityUserRow = NonNullable<Awaited<ReturnType<CommunityRepository['findCommunityUser']>>>;
 type FollowRow = { followerId: string; followingId: string };
@@ -74,6 +76,42 @@ export class CommunityService {
       this.repository.followsForUser(currentUserId),
     ]);
     return users.map((user) => toCommunityUser(user, currentUserId, follows));
+  }
+
+  async weeklyComparison(currentUserId: string) {
+    const { weekly } = questPeriods();
+    const follows = await this.repository.followsForUser(currentUserId);
+    const followingIds = follows
+      .filter((item) => item.followerId === currentUserId)
+      .map((item) => item.followingId);
+    const users = await this.repository.weeklyComparisonUsers(
+      [currentUserId, ...followingIds],
+      weekly.startsAt,
+      weekly.endsAt,
+    );
+    const entries = users
+      .map((user) => ({
+        id: user.id,
+        username: user.username,
+        isSelf: user.id === currentUserId,
+        solvedCount: user.progress.length,
+        earnedStars: user.progress.reduce(
+          (sum, progress) => sum + missionRating(progress.attempts, progress.highestHint).stars,
+          0,
+        ),
+      }))
+      .sort(
+        (left, right) =>
+          right.solvedCount - left.solvedCount ||
+          right.earnedStars - left.earnedStars ||
+          left.username.localeCompare(right.username, 'ko'),
+      )
+      .map((entry, index) => ({ ...entry, rank: index + 1 }));
+    return {
+      startsAt: weekly.startsAt.toISOString(),
+      endsAt: weekly.endsAt.toISOString(),
+      entries,
+    };
   }
   async profile(currentUserId: string, userId: string): Promise<PublicProfile> {
     const [user, follows, counts, activity, featuredAchievements] = await Promise.all([

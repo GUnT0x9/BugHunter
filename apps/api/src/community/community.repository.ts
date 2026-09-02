@@ -78,4 +78,18 @@ export class CommunityRepository {
       take: 10,
     });
   }
+
+  weeklyComparisonUsers(userIds: string[], startsAt: Date, endsAt: Date) {
+    return this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: {
+        id: true,
+        username: true,
+        progress: {
+          where: { completedAt: { gte: startsAt, lt: endsAt } },
+          select: { attempts: true, highestHint: true },
+        },
+      },
+    });
+  }
 }

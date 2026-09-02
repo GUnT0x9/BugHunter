@@ -167,6 +167,19 @@ export const api = {
       bugSkills: Array<{ name: string; fixedCount: number }>;
     }>('/statistics'),
   rankings: () => request<RankingResponse>('/community/rankings'),
+  weeklyComparison: () =>
+    request<{
+      startsAt: string;
+      endsAt: string;
+      entries: Array<{
+        id: string;
+        username: string;
+        isSelf: boolean;
+        solvedCount: number;
+        earnedStars: number;
+        rank: number;
+      }>;
+    }>('/community/weekly-comparison'),
   searchUsers: (query: string) =>
     request<CommunityUser[]>(`/community/users?query=${encodeURIComponent(query)}`),
   adminMissions: () => request<AdminMission[]>('/admin/missions'),
