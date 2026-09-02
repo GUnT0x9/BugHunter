@@ -47,6 +47,7 @@ model User {
   passwordHash   String
   role           UserRole          @default(USER)
   totalXp        Int               @default(0)
+  bio            String            @default("")
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
   submissions    Submission[]
@@ -58,6 +59,20 @@ model User {
   executions     Execution[]
   friendshipsAsA Friendship[]      @relation("FriendshipUserA")
   friendshipsAsB Friendship[]      @relation("FriendshipUserB")
+  following      Follow[]          @relation("FollowFollower")
+  followers      Follow[]          @relation("FollowFollowing")
+}
+
+model Follow {
+  followerId  String
+  followingId String
+  follower    User     @relation("FollowFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("FollowFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@id([followerId, followingId])
+  @@index([followingId, createdAt])
+  @@index([followerId, createdAt])
 }
 
 model Friendship {

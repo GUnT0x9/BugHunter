@@ -2,7 +2,7 @@ import { routes, type VercelConfig } from '@vercel/config/v1';
 
 const DEFAULT_RENDER_API_ORIGIN = 'https://bughunter-api-2o5c.onrender.com';
 
-function getRenderApiOrigin(value: string | undefined): string {
+export function getRenderApiOrigin(value: string | undefined): string {
   const url = new URL(value ?? DEFAULT_RENDER_API_ORIGIN);
   if (url.protocol !== 'https:') {
     throw new Error('RENDER_API_ORIGIN must use HTTPS.');
@@ -25,7 +25,7 @@ export const config: VercelConfig = {
     routes.rewrite('/(.*)', '/index.html'),
   ],
   headers: [
-    ...['/learn', '/problems', '/problems/(.*)', '/bugdex', '/my', '/statistics', '/community', '/admin/(.*)'].map(
+    ...['/learn', '/problems', '/problems/(.*)', '/bugdex', '/my', '/statistics', '/community', '/community/(.*)', '/admin/(.*)'].map(
       (source) => ({
         source,
         headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],

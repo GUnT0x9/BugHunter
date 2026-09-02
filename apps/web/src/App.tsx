@@ -11,6 +11,7 @@ import { BugDex } from './components/BugDex.js';
 import { Statistics } from './components/Statistics.js';
 import { Profile } from './components/Profile.js';
 import { Community } from './components/Community.js';
+import { PublicProfile } from './components/PublicProfile.js';
 import { Workspace } from './components/Workspace.js';
 import { ProgressBar } from './components/ui/ProgressBar.js';
 import { AdminMissionStudio } from './components/admin/AdminMissionStudio.js';
@@ -105,6 +106,7 @@ function AuthenticatedApp({
         />
         <Route path="/statistics" element={<Statistics />} />
         <Route path="/community" element={<Community />} />
+        <Route path="/community/users/:id" element={<PublicProfile />} />
         <Route path="/roadmap" element={<Navigate to="/learn" replace />} />
         <Route path="/missions" element={<Navigate to="/problems" replace />} />
         <Route path="/missions/:id" element={<LegacyMissionRedirect />} />

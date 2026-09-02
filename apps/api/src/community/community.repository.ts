@@ -6,6 +6,8 @@ const communityUserSelect = {
   id: true,
   username: true,
   totalXp: true,
+  bio: true,
+  createdAt: true,
   _count: { select: { progress: { where: { completedAt: { not: null } } } } },
 } as const;
 
@@ -55,6 +57,62 @@ export class CommunityRepository {
       where: { OR: [{ userAId: userId }, { userBId: userId }] },
       include: friendshipInclude,
       orderBy: { updatedAt: 'desc' },
+    });
+  }
+
+  followsForUser(userId: string) {
+    return this.prisma.follow.findMany({
+      where: { OR: [{ followerId: userId }, { followingId: userId }] },
+      select: { followerId: true, followingId: true },
+    });
+  }
+
+  followOverview(userId: string) {
+    return Promise.all([
+      this.prisma.follow.findMany({
+        where: { followingId: userId },
+        select: { follower: { select: communityUserSelect } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.follow.findMany({
+        where: { followerId: userId },
+        select: { following: { select: communityUserSelect } },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+  }
+
+  createFollow(followerId: string, followingId: string) {
+    return this.prisma.follow.create({ data: { followerId, followingId } });
+  }
+
+  deleteFollow(followerId: string, followingId: string) {
+    return this.prisma.follow.deleteMany({ where: { followerId, followingId } });
+  }
+
+  profileCounts(userId: string) {
+    return Promise.all([
+      this.prisma.follow.count({ where: { followingId: userId } }),
+      this.prisma.follow.count({ where: { followerId: userId } }),
+      this.prisma.friendship.count({
+        where: {
+          status: FriendshipStatus.ACCEPTED,
+          OR: [{ userAId: userId }, { userBId: userId }],
+        },
+      }),
+    ]);
+  }
+
+  recentPublicActivity(userId: string) {
+    return this.prisma.missionProgress.findMany({
+      where: { userId, completedAt: { not: null } },
+      select: {
+        missionId: true,
+        completedAt: true,
+        mission: { select: { title: true, baseXp: true, bugType: { select: { name: true } } } },
+      },
+      orderBy: { completedAt: 'desc' },
+      take: 10,
     });
   }
 

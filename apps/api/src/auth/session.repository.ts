@@ -5,6 +5,7 @@ const publicUserSelect = {
   id: true,
   email: true,
   username: true,
+  bio: true,
   role: true,
   totalXp: true,
 } as const;

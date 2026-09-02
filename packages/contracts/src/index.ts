@@ -38,6 +38,7 @@ export const UserSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   username: z.string().min(2).max(32),
+  bio: z.string(),
   role: z.enum(USER_ROLES),
   totalXp: z.number().int().nonnegative(),
 });
@@ -66,7 +67,10 @@ export const RegisterInputSchema = LoginInputSchema.extend({
   username: UsernameSchema,
 });
 
-export const ProfileUpdateSchema = z.object({ username: UsernameSchema });
+export const ProfileUpdateSchema = z.object({
+  username: UsernameSchema,
+  bio: z.string().trim().max(160, '자기소개는 160자 이하여야 합니다.'),
+});
 
 export const ProfileSummarySchema = z.object({
   joinedAt: z.string().datetime(),
@@ -104,6 +108,22 @@ export const CommunityUserSchema = z.object({
   solvedCount: z.number().int().nonnegative(),
   relationship: z.enum(COMMUNITY_RELATIONSHIPS),
   friendshipId: z.string().nullable(),
+  isFollowing: z.boolean(),
+  followsMe: z.boolean(),
+});
+
+export const PublicProfileSchema = CommunityUserSchema.extend({
+  bio: z.string(),
+  joinedAt: z.string().datetime(),
+  followerCount: z.number().int().nonnegative(),
+  followingCount: z.number().int().nonnegative(),
+  friendCount: z.number().int().nonnegative(),
+  recentActivity: ProfileSummarySchema.shape.recentActivity,
+});
+
+export const FollowOverviewSchema = z.object({
+  followers: z.array(CommunityUserSchema),
+  following: z.array(CommunityUserSchema),
 });
 
 export const RankingEntrySchema = CommunityUserSchema.extend({ rank: z.number().int().positive() });
@@ -244,6 +264,8 @@ export type CommunityUser = z.infer<typeof CommunityUserSchema>;
 export type RankingEntry = z.infer<typeof RankingEntrySchema>;
 export type RankingResponse = z.infer<typeof RankingResponseSchema>;
 export type FriendOverview = z.infer<typeof FriendOverviewSchema>;
+export type PublicProfile = z.infer<typeof PublicProfileSchema>;
+export type FollowOverview = z.infer<typeof FollowOverviewSchema>;
 export type TestCase = z.infer<typeof TestCaseSchema>;
 export type Hint = z.infer<typeof HintSchema>;
 export type MissionPublic = z.infer<typeof MissionPublicSchema>;

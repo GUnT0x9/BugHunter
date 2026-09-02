@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { SubmissionStatus } from '@prisma/client';
+import { Prisma, SubmissionStatus } from '@prisma/client';
 import {
   redactHiddenTests,
   type ExecutionResult,
@@ -28,7 +28,7 @@ export class SubmissionRepository {
     id: string,
     status: SubmissionStatus,
     executionTimeMs: number | null,
-    resultJson: object,
+    resultJson: Prisma.InputJsonValue,
   ) {
     return this.prisma.submission.update({
       data: { status, executionTimeMs, resultJson },

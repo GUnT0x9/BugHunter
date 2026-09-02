@@ -2,9 +2,11 @@ import type {
   ExecutionResult,
   CommunityUser,
   FriendOverview,
+  FollowOverview,
   LoginInput,
   MissionPublic,
   ProfileSummary,
+  PublicProfile,
   ProfileUpdate,
   RankingResponse,
   RegisterInput,
@@ -41,6 +43,12 @@ export const api = {
   updateProfile: (input: ProfileUpdate) =>
     request<User>('/auth/me', { method: 'PATCH', body: JSON.stringify(input) }),
   profileSummary: () => request<ProfileSummary>('/profile-summary'),
+  publicProfile: (userId: string) => request<PublicProfile>(`/community/users/${userId}`),
+  follows: (userId: string) => request<FollowOverview>(`/community/users/${userId}/follows`),
+  follow: (userId: string) =>
+    request<{ ok: true }>(`/community/users/${userId}/follow`, { method: 'POST' }),
+  unfollow: (userId: string) =>
+    request<{ ok: true }>(`/community/users/${userId}/follow`, { method: 'DELETE' }),
   login: (input: LoginInput) =>
     request<User>('/auth/login', { method: 'POST', body: JSON.stringify(input) }),
   register: (input: RegisterInput) =>

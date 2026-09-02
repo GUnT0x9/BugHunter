@@ -18,6 +18,7 @@ function toPublicUser(user: {
   id: string;
   email: string;
   username: string;
+  bio: string;
   role: User['role'];
   totalXp: number;
 }): User {
@@ -25,6 +26,7 @@ function toPublicUser(user: {
     id: user.id,
     email: user.email,
     username: user.username,
+    bio: user.bio,
     role: user.role,
     totalXp: user.totalXp,
   };
@@ -70,7 +72,9 @@ export class AuthService {
 
   async updateProfile(userId: string, input: ProfileUpdate): Promise<User> {
     try {
-      return toPublicUser(await this.repository.updateUsername(userId, input.username.trim()));
+      return toPublicUser(
+        await this.repository.updateProfile(userId, input.username.trim(), input.bio.trim()),
+      );
     } catch (error: unknown) {
       if (isUniqueConstraintError(error)) {
         throw new ConflictException('이미 사용 중인 닉네임입니다.');

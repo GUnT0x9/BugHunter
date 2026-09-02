@@ -27,6 +27,7 @@ export function Profile({ user, progress, onUserUpdated }: ProfileProps): ReactE
   const [loadError, setLoadError] = useState('');
   const [editing, setEditing] = useState(false);
   const [username, setUsername] = useState(user.username);
+  const [bio, setBio] = useState(user.bio);
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -53,7 +54,7 @@ export function Profile({ user, progress, onUserUpdated }: ProfileProps): ReactE
     setSaving(true);
     setSaveError('');
     try {
-      onUserUpdated(await api.updateProfile({ username }));
+      onUserUpdated(await api.updateProfile({ username, bio }));
       setEditing(false);
     } catch (error: unknown) {
       setSaveError(errorMessage(error));
@@ -65,6 +66,7 @@ export function Profile({ user, progress, onUserUpdated }: ProfileProps): ReactE
   function cancelEditing(): void {
     if (saving) return;
     setUsername(user.username);
+    setBio(user.bio);
     setSaveError('');
     setEditing(false);
   }
@@ -100,6 +102,14 @@ export function Profile({ user, progress, onUserUpdated }: ProfileProps): ReactE
                   disabled={saving}
                   onChange={(event) => setUsername(event.target.value)}
                 />
+                <textarea
+                  aria-label="자기소개"
+                  value={bio}
+                  maxLength={160}
+                  disabled={saving}
+                  placeholder="어떤 디버거인지 소개해주세요."
+                  onChange={(event) => setBio(event.target.value)}
+                />
                 <button className="btn primary profile-name-action" type="submit" disabled={saving}>
                   <Check aria-hidden="true" /> {saving ? '저장 중…' : '저장'}
                 </button>
@@ -120,6 +130,7 @@ export function Profile({ user, progress, onUserUpdated }: ProfileProps): ReactE
                   type="button"
                   onClick={() => {
                     setUsername(user.username);
+                    setBio(user.bio);
                     setSaveError('');
                     setEditing(true);
                   }}
@@ -137,6 +148,7 @@ export function Profile({ user, progress, onUserUpdated }: ProfileProps): ReactE
           <p>
             LV.{progress?.level ?? 1} · {user.role === 'ADMIN' ? '관리자' : '디버거'}
           </p>
+          <p className="profile-bio">{user.bio || '아직 자기소개가 없습니다.'}</p>
           <ProgressBar
             label="현재 레벨 경험치"
             value={progress?.xpIntoLevel ?? 0}

@@ -59,11 +59,17 @@ describe('contracts', () => {
   });
 
   it('uses the registration nickname rules for profile updates', () => {
-    expect(ProfileUpdateSchema.parse({ username: ' 디버그 탐정 ' })).toEqual({
+    expect(
+      ProfileUpdateSchema.parse({ username: ' 디버그 탐정 ', bio: ' 버그를 추적합니다. ' }),
+    ).toEqual({
       username: '디버그 탐정',
+      bio: '버그를 추적합니다.',
     });
-    expect(ProfileUpdateSchema.safeParse({ username: 'x' }).success).toBe(false);
-    expect(ProfileUpdateSchema.safeParse({ username: 'not/allowed' }).success).toBe(false);
+    expect(ProfileUpdateSchema.safeParse({ username: 'x', bio: '' }).success).toBe(false);
+    expect(ProfileUpdateSchema.safeParse({ username: 'not/allowed', bio: '' }).success).toBe(false);
+    expect(
+      ProfileUpdateSchema.safeParse({ username: '사용자', bio: 'x'.repeat(161) }).success,
+    ).toBe(false);
   });
 
   it('rejects code containing a null character', () => {

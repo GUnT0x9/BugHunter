@@ -17,7 +17,7 @@ export class AuthRepository {
   findPublicById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
-      select: { id: true, email: true, username: true, role: true, totalXp: true },
+      select: { id: true, email: true, username: true, bio: true, role: true, totalXp: true },
     });
   }
 
@@ -25,7 +25,7 @@ export class AuthRepository {
     return this.prisma.user.create({ data: input });
   }
 
-  updateUsername(id: string, username: string) {
-    return this.prisma.user.update({ where: { id }, data: { username } });
+  updateProfile(id: string, username: string, bio: string) {
+    return this.prisma.user.update({ where: { id }, data: { username, bio } });
   }
 }

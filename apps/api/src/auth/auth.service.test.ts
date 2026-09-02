@@ -12,12 +12,13 @@ beforeAll(async () => {
 });
 
 function userRow(
-  overrides: Partial<{ email: string; username: string; passwordHash: string }> = {},
+  overrides: Partial<{ email: string; username: string; bio: string; passwordHash: string }> = {},
 ) {
   return {
     id: 'user-1',
     email: overrides.email ?? 'hunter@example.com',
     username: overrides.username ?? '버그탐정',
+    bio: overrides.bio ?? '',
     passwordHash: overrides.passwordHash ?? passwordHash,
     role: 'USER' as const,
     totalXp: 0,
@@ -31,7 +32,7 @@ function setup() {
     findByEmail: vi.fn(),
     findByUsername: vi.fn(),
     create: vi.fn(),
-    updateUsername: vi.fn(),
+    updateProfile: vi.fn(),
   };
   return {
     repository,
@@ -63,6 +64,7 @@ describe('AuthService', () => {
       id: 'user-1',
       email: 'hunter@example.com',
       username: '버그탐정',
+      bio: '',
       role: 'USER',
       totalXp: 0,
     });
@@ -106,23 +108,26 @@ describe('AuthService', () => {
 
   it('updates a nickname and returns only public user fields', async () => {
     const { repository, service } = setup();
-    repository.updateUsername.mockResolvedValue(userRow({ username: '새 디버거' }));
+    repository.updateProfile.mockResolvedValue(userRow({ username: '새 디버거', bio: '소개' }));
 
-    await expect(service.updateProfile('user-1', { username: '새 디버거' })).resolves.toEqual({
+    await expect(
+      service.updateProfile('user-1', { username: '새 디버거', bio: '소개' }),
+    ).resolves.toEqual({
       id: 'user-1',
       email: 'hunter@example.com',
       username: '새 디버거',
+      bio: '소개',
       role: 'USER',
       totalXp: 0,
     });
-    expect(repository.updateUsername).toHaveBeenCalledWith('user-1', '새 디버거');
+    expect(repository.updateProfile).toHaveBeenCalledWith('user-1', '새 디버거', '소개');
   });
 
   it('returns a conflict when an updated nickname is already used', async () => {
     const { repository, service } = setup();
-    repository.updateUsername.mockRejectedValue({ code: 'P2002' });
+    repository.updateProfile.mockRejectedValue({ code: 'P2002' });
     await expect(
-      service.updateProfile('user-1', { username: '중복 닉네임' }),
+      service.updateProfile('user-1', { username: '중복 닉네임', bio: '' }),
     ).rejects.toBeInstanceOf(ConflictException);
   });
 });
