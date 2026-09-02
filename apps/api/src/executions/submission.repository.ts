@@ -59,6 +59,7 @@ export class SubmissionRepository {
       tests: redactHiddenTests(result?.tests ?? []),
       awardedXp: result?.awardedXp ?? 0,
       completed: result?.completed ?? false,
+      rating: result?.rating ?? null,
     };
   }
 }

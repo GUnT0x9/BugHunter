@@ -5,12 +5,28 @@ import {
   MAX_MISSION_RUN_INPUT_LENGTH,
   MissionRunSchema,
   ProfileUpdateSchema,
+  missionRating,
   normalizeOutput,
   redactHiddenTests,
   RegisterInputSchema,
 } from './index.js';
 
 describe('contracts', () => {
+  it('rates a clear by completion, no hint, and first submission', () => {
+    expect(missionRating(1, 0)).toEqual({
+      stars: 3,
+      cleared: true,
+      noHint: true,
+      firstTry: true,
+    });
+    expect(missionRating(3, 2)).toEqual({
+      stars: 1,
+      cleared: true,
+      noHint: false,
+      firstTry: false,
+    });
+  });
+
   it('normalizes platform output without removing intentional line breaks', () => {
     expect(normalizeOutput('one\r\ntwo  \n')).toBe('one\ntwo');
   });

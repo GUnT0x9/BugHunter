@@ -181,6 +181,7 @@ export class RemoteExecutionService implements OnModuleDestroy {
       tests,
       awardedXp: 0,
       completed: false,
+      rating: null,
     };
     return { result: baseResult, status, executionTimeMs };
   }
@@ -200,7 +201,7 @@ export class RemoteExecutionService implements OnModuleDestroy {
       const award =
         execution.kind === ExecutionKind.SUBMIT && outcome.status === ExecutionStatus.SUCCEEDED
           ? await awardFirstCompletion(tx, execution.userId, execution.missionId)
-          : { awardedXp: 0, completed: false };
+          : { awardedXp: 0, completed: false, rating: null };
       const result = { ...outcome.result, ...award };
       await tx.execution.update({
         where: { id: execution.id },
@@ -311,6 +312,7 @@ export class RemoteExecutionService implements OnModuleDestroy {
         tests: [],
         awardedXp: 0,
         completed: false,
+        rating: null,
       };
       const updated = await tx.execution.updateMany({
         where: {

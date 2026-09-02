@@ -1,4 +1,5 @@
 import type { Prisma } from '@prisma/client';
+import { missionRating, type MissionRating } from '@bughunter/contracts';
 
 function seoulDate(now: Date): Date {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -15,7 +16,7 @@ export async function awardFirstCompletion(
   tx: Prisma.TransactionClient,
   userId: string,
   missionId: string,
-): Promise<{ awardedXp: number; completed: boolean }> {
+): Promise<{ awardedXp: number; completed: boolean; rating: MissionRating }> {
   const mission = await tx.mission.findUniqueOrThrow({
     where: { id: missionId },
     select: { baseXp: true, bugTypeId: true },
@@ -23,7 +24,13 @@ export async function awardFirstCompletion(
   const progress = await tx.missionProgress.findUnique({
     where: { userId_missionId: { userId, missionId } },
   });
-  if (progress?.completedAt) return { awardedXp: 0, completed: false };
+  if (progress?.completedAt) {
+    return {
+      awardedXp: 0,
+      completed: false,
+      rating: missionRating(progress.attempts, progress.highestHint),
+    };
+  }
   const awardedXp =
     mission.baseXp +
     (progress?.highestHint === 0 ? 30 : 0) +
@@ -47,5 +54,9 @@ export async function awardFirstCompletion(
     create: { userId, date, completedAt: now },
     update: { completedAt: now },
   });
-  return { awardedXp, completed: true };
+  return {
+    awardedXp,
+    completed: true,
+    rating: missionRating(progress?.attempts ?? 1, progress?.highestHint ?? 0),
+  };
 }

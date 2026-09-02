@@ -1,5 +1,24 @@
 import { z } from 'zod';
 
+export type MissionRating = {
+  stars: number;
+  cleared: boolean;
+  noHint: boolean;
+  firstTry: boolean;
+};
+
+export function missionRating(attempts: number, highestHint: number): MissionRating {
+  const cleared = attempts > 0;
+  const noHint = cleared && highestHint === 0;
+  const firstTry = cleared && attempts === 1;
+  return {
+    stars: Number(cleared) + Number(noHint) + Number(firstTry),
+    cleared,
+    noHint,
+    firstTry,
+  };
+}
+
 export const USER_ROLES = ['USER', 'ADMIN'] as const;
 export const EXECUTION_STATUSES = [
   'QUEUED',
@@ -199,6 +218,13 @@ export const TestResultSchema = z.object({
   isHidden: z.boolean(),
 });
 
+export const MissionRatingSchema = z.object({
+  stars: z.number().int().min(1).max(3),
+  cleared: z.boolean(),
+  noHint: z.boolean(),
+  firstTry: z.boolean(),
+});
+
 export const ExecutionResultSchema = z.object({
   id: z.string(),
   kind: z.enum(EXECUTION_KINDS),
@@ -213,6 +239,7 @@ export const ExecutionResultSchema = z.object({
   tests: z.array(TestResultSchema),
   awardedXp: z.number().int().nonnegative(),
   completed: z.boolean(),
+  rating: MissionRatingSchema.nullable(),
 });
 
 export const SubmissionResultSchema = z.object({
@@ -226,6 +253,7 @@ export const SubmissionResultSchema = z.object({
   tests: z.array(TestResultSchema),
   awardedXp: z.number().int().nonnegative(),
   completed: z.boolean(),
+  rating: MissionRatingSchema.nullable(),
 });
 
 export const ChapterSchema = z.object({

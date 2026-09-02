@@ -91,6 +91,8 @@ export const api = {
       Array<{
         completedAt: string;
         attempts: number;
+        highestHint: number;
+        rating: { stars: number; cleared: boolean; noHint: boolean; firstTry: boolean };
         mission: {
           id: string;
           title: string;

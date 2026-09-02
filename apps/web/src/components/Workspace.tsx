@@ -11,6 +11,7 @@ import {
   Play,
   RotateCcw,
   Send,
+  Star,
   Target,
   TerminalSquare,
   Trophy,
@@ -488,6 +489,22 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
                         ? `+${result.awardedXp} XP 획득`
                         : '이미 완료한 Mission입니다.'}
                     </p>
+                    {result.rating && (
+                      <div className="completion-rating" aria-label={`별 ${result.rating.stars}개`}>
+                        <div className="mission-stars">
+                          {[1, 2, 3].map((star) => (
+                            <Star
+                              key={star}
+                              className={star <= result.rating!.stars ? 'earned' : ''}
+                            />
+                          ))}
+                          <b>{result.rating.stars}/3</b>
+                        </div>
+                        <span className={result.rating.cleared ? 'earned' : ''}>클리어</span>
+                        <span className={result.rating.noHint ? 'earned' : ''}>힌트 미사용</span>
+                        <span className={result.rating.firstTry ? 'earned' : ''}>첫 제출 성공</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

@@ -47,6 +47,7 @@ function toExecutionResult(record: {
     tests: redactHiddenTests(result.tests ?? []),
     awardedXp: result.awardedXp ?? 0,
     completed: result.completed ?? false,
+    rating: result.rating ?? null,
   };
 }
 
@@ -183,6 +184,7 @@ export class ExecutionStore {
       tests: [],
       awardedXp: 0,
       completed: false,
+      rating: null,
     };
   }
 }

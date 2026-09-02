@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
-import { ArrowUpRight, Crown, Target } from 'lucide-react';
+import { ArrowUpRight, Crown, Star, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { Empty } from './ui/Empty.js';
@@ -15,6 +15,7 @@ export function BugDex(): ReactElement {
       .catch(() => setFailed(true));
   }, []);
   const totalXp = items.reduce((sum, item) => sum + item.mission.baseXp, 0);
+  const earnedStars = items.reduce((sum, item) => sum + item.rating.stars, 0);
   const categories = useMemo(
     () =>
       Array.from(
@@ -38,6 +39,9 @@ export function BugDex(): ReactElement {
         </div>
         <div className="bugdex-summary">
           <span>완료 {items.length}문제</span>
+          <span>
+            별 {earnedStars}/{items.length * 3}
+          </span>
           <span>{totalXp.toLocaleString()} XP</span>
         </div>
       </header>
@@ -84,6 +88,16 @@ export function BugDex(): ReactElement {
               <div className="bugdex-card-copy">
                 <span>{item.mission.bugType.name}</span>
                 <h2>{item.mission.title}</h2>
+                <div
+                  className="mission-stars"
+                  aria-label={`별 ${item.rating.stars}개 중 3개`}
+                  title="클리어 · 힌트 미사용 · 첫 제출 성공"
+                >
+                  {[1, 2, 3].map((star) => (
+                    <Star key={star} className={star <= item.rating.stars ? 'earned' : ''} />
+                  ))}
+                  <small>{item.rating.stars}/3</small>
+                </div>
                 <p>{item.mission.description}</p>
               </div>
               <footer>

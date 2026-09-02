@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { missionRating } from '@bughunter/contracts';
 import { PrismaService } from '../common/prisma.service.js';
 
 function currentSeoulDate(): string {
@@ -88,6 +89,7 @@ export class ProgressRepository {
       select: {
         completedAt: true,
         attempts: true,
+        highestHint: true,
         mission: {
           select: {
             id: true,
@@ -103,7 +105,12 @@ export class ProgressRepository {
         },
       },
       orderBy: { completedAt: 'desc' },
-    });
+    }).then((items) =>
+      items.map((item) => ({
+        ...item,
+        rating: missionRating(item.attempts, item.highestHint),
+      })),
+    );
   }
 
   async statistics(userId: string) {

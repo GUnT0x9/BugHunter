@@ -2017,6 +2017,10 @@ button:disabled {
 .bugdex-card-number.category-exception { color: var(--category-exception); }
 .bugdex-card-copy > span { color: var(--text-faint); font: 700 10px var(--mono); letter-spacing: .06em; }
 .bugdex-card-copy h2 { margin: 7px 0 10px; font-size: 21px; line-height: 1.25; letter-spacing: -.02em; }
+.mission-stars { display: flex; align-items: center; gap: 4px; margin: 0 0 10px; color: var(--text-faint); }
+.mission-stars svg { width: 15px; height: 15px; fill: transparent; stroke-width: 1.8; }
+.mission-stars svg.earned { fill: currentColor; color: var(--text); }
+.mission-stars small, .mission-stars b { margin-left: 4px; color: var(--text-dim); font: 800 10px var(--mono); }
 .bugdex-card-copy p { display: -webkit-box; margin: 0; overflow: hidden; color: var(--text-dim); font-size: 12.5px; line-height: 1.65; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .bugdex-card > footer { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 10px; margin-top: 24px; padding-top: 15px; border-top: 1px solid var(--border); color: var(--text-faint); font: 700 10px var(--mono); }
 .bugdex-card > footer span { display: flex; align-items: center; gap: 4px; }
@@ -3144,6 +3148,24 @@ button:disabled {
   color: var(--text-dim);
   font-size: 12.5px;
 }
+
+.completion-rating {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.completion-rating .mission-stars { margin: 0 5px 0 0; }
+.completion-rating .mission-stars svg { width: 16px; height: 16px; }
+.completion-rating > span {
+  padding: 3px 7px;
+  border: 1px solid var(--border-2);
+  color: var(--text-faint);
+  font: 750 10px var(--mono);
+}
+.completion-rating > span.earned { border-color: currentColor; color: var(--text); }
 
 @keyframes success-pop {
   from {
