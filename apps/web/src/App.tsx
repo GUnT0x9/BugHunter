@@ -16,6 +16,7 @@ import { Workspace } from './components/Workspace.js';
 import { ProgressBar } from './components/ui/ProgressBar.js';
 import { AdminMissionStudio } from './components/admin/AdminMissionStudio.js';
 import { Achievements } from './components/Achievements.js';
+import { QuestBoard } from './components/QuestBoard.js';
 
 function BootScreen(): ReactElement {
   return (
@@ -102,6 +103,7 @@ function AuthenticatedApp({
         />
         <Route path="/bugdex" element={<BugDex />} />
         <Route path="/achievements" element={<Achievements />} />
+        <Route path="/quests" element={<QuestBoard onReward={() => void refresh()} />} />
         <Route
           path="/my"
           element={<Profile user={user} progress={progress} onUserUpdated={onUserUpdated} />}

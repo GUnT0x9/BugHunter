@@ -135,6 +135,27 @@ export const api = {
         unlocked: boolean;
       }>;
     }>('/achievements'),
+  quests: () =>
+    request<{
+      dailyEndsAt: string;
+      weeklyEndsAt: string;
+      quests: Array<{
+        key: string;
+        period: 'DAILY' | 'WEEKLY';
+        title: string;
+        description: string;
+        progress: number;
+        target: number;
+        rewardXp: number;
+        completed: boolean;
+        claimed: boolean;
+      }>;
+    }>('/quests'),
+  claimQuest: (questKey: string) =>
+    request<{ ok: true; awardedXp: number }>('/quests/claim', {
+      method: 'POST',
+      body: JSON.stringify({ questKey }),
+    }),
   statistics: () =>
     request<{
       solvedCount: number;

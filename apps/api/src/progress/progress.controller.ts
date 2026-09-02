@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import type { User } from '@bughunter/contracts';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { SessionAuthGuard } from '../auth/session-auth.guard.js';
@@ -27,6 +27,19 @@ export class ProgressController {
   @Get('achievements')
   achievements(@CurrentUser() user: User) {
     return this.progress.achievements(user.id);
+  }
+
+  @Get('quests')
+  quests(@CurrentUser() user: User) {
+    return this.progress.quests(user.id);
+  }
+
+  @Post('quests/claim')
+  claimQuest(@CurrentUser() user: User, @Body() body: { questKey?: unknown }) {
+    return this.progress.claimQuest(
+      user.id,
+      typeof body.questKey === 'string' ? body.questKey : '',
+    );
   }
 
   @Get('statistics')

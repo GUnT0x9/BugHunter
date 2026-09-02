@@ -10,6 +10,7 @@ import {
   UserRound,
   Users,
   Medal,
+  ListChecks,
 } from 'lucide-react';
 import type { User } from '@bughunter/contracts';
 
@@ -23,6 +24,7 @@ const LEARNING_NAV: Array<{ to: string; label: string; icon: ReactElement }> = [
   { to: '/problems', label: '문제 풀기', icon: <Code2 size={15} /> },
   { to: '/bugdex', label: '버그 도감', icon: <Bug size={15} /> },
   { to: '/achievements', label: '업적', icon: <Medal size={15} /> },
+  { to: '/quests', label: '퀘스트', icon: <ListChecks size={15} /> },
   { to: '/community', label: '커뮤니티', icon: <Users size={15} /> },
 ];
 

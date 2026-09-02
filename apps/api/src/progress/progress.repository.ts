@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { missionRating } from '@bughunter/contracts';
 import { PrismaService } from '../common/prisma.service.js';
 import { evaluateAchievements } from './achievement-engine.js';
+import { questPeriods } from './quest-policy.js';
 
 export function masteryPercentage(earnedStars: number, missionCount: number): number {
   if (missionCount === 0) return 0;
@@ -268,6 +270,138 @@ export class ProgressRepository {
         secret: secret ?? false,
         rarity,
       }));
+  }
+
+  async quests(userId: string, now = new Date()) {
+    const periods = questPeriods(now);
+    const [progress, submissions, claims] = await Promise.all([
+      this.prisma.missionProgress.findMany({
+        where: { userId, completedAt: { gte: periods.weekly.startsAt, lt: periods.weekly.endsAt } },
+        select: {
+          completedAt: true,
+          attempts: true,
+          highestHint: true,
+          mission: { select: { bugTypeId: true } },
+        },
+      }),
+      this.prisma.submission.findMany({
+        where: { userId, createdAt: { gte: periods.weekly.startsAt, lt: periods.weekly.endsAt } },
+        select: { createdAt: true },
+      }),
+      this.prisma.questRewardClaim.findMany({
+        where: { userId, periodKey: { in: [periods.daily.key, periods.weekly.key] } },
+        select: { questKey: true, periodKey: true },
+      }),
+    ]);
+    const dailyProgress = progress.filter((item) => item.completedAt! >= periods.daily.startsAt);
+    const dailySubmissions = submissions.filter((item) => item.createdAt >= periods.daily.startsAt);
+    const weeklyStars = progress.reduce(
+      (sum, item) => sum + missionRating(item.attempts, item.highestHint).stars,
+      0,
+    );
+    const definitions = [
+      {
+        key: 'DAILY_SOLVE_1',
+        period: 'DAILY' as const,
+        title: '오늘의 첫 수정',
+        description: '문제 1개 해결',
+        progress: dailyProgress.length,
+        target: 1,
+        rewardXp: 50,
+        periodKey: periods.daily.key,
+      },
+      {
+        key: 'DAILY_SUBMIT_3',
+        period: 'DAILY' as const,
+        title: '로그를 남겨라',
+        description: '코드 3회 제출',
+        progress: dailySubmissions.length,
+        target: 3,
+        rewardXp: 50,
+        periodKey: periods.daily.key,
+      },
+      {
+        key: 'DAILY_NO_HINT_1',
+        period: 'DAILY' as const,
+        title: '독립 조사',
+        description: '힌트 없이 문제 1개 해결',
+        progress: dailyProgress.filter((item) => item.highestHint === 0).length,
+        target: 1,
+        rewardXp: 50,
+        periodKey: periods.daily.key,
+      },
+      {
+        key: 'WEEKLY_SOLVE_5',
+        period: 'WEEKLY' as const,
+        title: '주간 정비',
+        description: '이번 주 문제 5개 해결',
+        progress: progress.length,
+        target: 5,
+        rewardXp: 200,
+        periodKey: periods.weekly.key,
+      },
+      {
+        key: 'WEEKLY_STARS_10',
+        period: 'WEEKLY' as const,
+        title: '별 수집 주간',
+        description: '이번 주 별 10개 획득',
+        progress: weeklyStars,
+        target: 10,
+        rewardXp: 200,
+        periodKey: periods.weekly.key,
+      },
+      {
+        key: 'WEEKLY_CATEGORIES_3',
+        period: 'WEEKLY' as const,
+        title: '영역 확장',
+        description: '서로 다른 카테고리 3개 해결',
+        progress: new Set(progress.map((item) => item.mission.bugTypeId)).size,
+        target: 3,
+        rewardXp: 200,
+        periodKey: periods.weekly.key,
+      },
+    ];
+    return {
+      dailyEndsAt: periods.daily.endsAt.toISOString(),
+      weeklyEndsAt: periods.weekly.endsAt.toISOString(),
+      quests: definitions.map((quest) => ({
+        ...quest,
+        progress: Math.min(quest.progress, quest.target),
+        completed: quest.progress >= quest.target,
+        claimed: claims.some(
+          (claim) => claim.questKey === quest.key && claim.periodKey === quest.periodKey,
+        ),
+      })),
+    };
+  }
+
+  async claimQuest(userId: string, questKey: string) {
+    const board = await this.quests(userId);
+    const quest = board.quests.find((item) => item.key === questKey);
+    if (!quest) throw new BadRequestException('유효하지 않은 퀘스트입니다.');
+    if (!quest.completed) throw new BadRequestException('아직 완료하지 않은 퀘스트입니다.');
+    if (quest.claimed) throw new ConflictException('이미 받은 퀘스트 보상입니다.');
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.questRewardClaim.create({
+          data: {
+            userId,
+            questKey: quest.key,
+            periodKey: quest.periodKey,
+            amount: quest.rewardXp,
+          },
+        });
+        await tx.user.update({
+          where: { id: userId },
+          data: { totalXp: { increment: quest.rewardXp } },
+        });
+      });
+    } catch (error: unknown) {
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002')
+        throw new ConflictException('이미 받은 퀘스트 보상입니다.');
+      throw error;
+    }
+    return { ok: true as const, awardedXp: quest.rewardXp };
   }
 
   async statistics(userId: string) {
