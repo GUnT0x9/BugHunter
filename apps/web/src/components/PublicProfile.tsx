@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactElement } from 'react';
-import { ArrowLeft, CalendarDays, Terminal, UserMinus, UserPlus } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Medal, Terminal, UserMinus, UserPlus } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import type { FollowOverview, PublicProfile as PublicProfileData } from '@bughunter/contracts';
 import { api } from '../lib/api.js';
@@ -111,6 +111,26 @@ export function PublicProfile(): ReactElement {
           <dd>{profile.followingCount}</dd>
         </button>
       </dl>
+      {profile.featuredAchievements.length > 0 && (
+        <section className="featured-achievements" aria-labelledby="featured-achievements-title">
+          <header>
+            <h2 id="featured-achievements-title">대표 업적</h2>
+            <span>자동 선정</span>
+          </header>
+          <div>
+            {profile.featuredAchievements.map((achievement) => (
+              <article key={achievement.code}>
+                <Medal />
+                <div>
+                  <span>{achievement.group}</span>
+                  <strong>{achievement.title}</strong>
+                  <small>{achievement.description}</small>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
       <section className="community-panel public-profile-content">
         <div className="guide-tabs public-profile-tabs">
           <button className={tab === 'activity' ? 'active' : ''} onClick={() => setTab('activity')}>

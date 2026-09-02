@@ -11,6 +11,7 @@ import type {
   RankingResponse,
 } from '@bughunter/contracts';
 import { CommunityRepository } from './community.repository.js';
+import { ProgressRepository } from '../progress/progress.repository.js';
 
 type CommunityUserRow = NonNullable<Awaited<ReturnType<CommunityRepository['findCommunityUser']>>>;
 type FollowRow = { followerId: string; followingId: string };
@@ -37,7 +38,10 @@ function toCommunityUser(
 
 @Injectable()
 export class CommunityService {
-  constructor(private readonly repository: CommunityRepository) {}
+  constructor(
+    private readonly repository: CommunityRepository,
+    private readonly progress: ProgressRepository,
+  ) {}
   async rankings(currentUserId: string): Promise<RankingResponse> {
     const [users, me, follows] = await Promise.all([
       this.repository.topUsers(),
@@ -72,11 +76,12 @@ export class CommunityService {
     return users.map((user) => toCommunityUser(user, currentUserId, follows));
   }
   async profile(currentUserId: string, userId: string): Promise<PublicProfile> {
-    const [user, follows, counts, activity] = await Promise.all([
+    const [user, follows, counts, activity, featuredAchievements] = await Promise.all([
       this.repository.findCommunityUser(userId),
       this.repository.followsForUser(currentUserId),
       this.repository.profileCounts(userId),
       this.repository.recentPublicActivity(userId),
+      this.progress.featuredAchievements(userId),
     ]);
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
     const [followerCount, followingCount] = counts;
@@ -86,6 +91,7 @@ export class CommunityService {
       joinedAt: user.createdAt.toISOString(),
       followerCount,
       followingCount,
+      featuredAchievements,
       recentActivity: activity.map((item) => ({
         id: item.missionId,
         title: item.mission.title,

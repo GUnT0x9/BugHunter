@@ -118,6 +118,22 @@ export const api = {
         percentage: number;
       }>
     >('/mastery'),
+  achievements: () =>
+    request<{
+      unlockedCount: number;
+      totalCount: number;
+      items: Array<{
+        code: string;
+        group: string;
+        title: string;
+        description: string;
+        target: number;
+        progress: number;
+        secret?: boolean;
+        comingSoon?: boolean;
+        unlocked: boolean;
+      }>;
+    }>('/achievements'),
   statistics: () =>
     request<{
       solvedCount: number;

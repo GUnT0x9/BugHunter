@@ -2,6 +2,7 @@ import { ConflictException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import { CommunityRepository } from './community.repository.js';
 import { CommunityService } from './community.service.js';
+import type { ProgressRepository } from '../progress/progress.repository.js';
 
 const userA = {
   id: 'user-a',
@@ -34,7 +35,9 @@ function setup() {
   };
   return {
     repository,
-    service: new CommunityService(repository as unknown as CommunityRepository),
+    service: new CommunityService(repository as unknown as CommunityRepository, {
+      featuredAchievements: vi.fn().mockResolvedValue([]),
+    } as unknown as ProgressRepository),
   };
 }
 

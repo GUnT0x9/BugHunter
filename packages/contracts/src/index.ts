@@ -128,6 +128,15 @@ export const PublicProfileSchema = CommunityUserSchema.extend({
   followerCount: z.number().int().nonnegative(),
   followingCount: z.number().int().nonnegative(),
   recentActivity: ProfileSummarySchema.shape.recentActivity,
+  featuredAchievements: z.array(
+    z.object({
+      code: z.string(),
+      group: z.string(),
+      title: z.string(),
+      description: z.string(),
+      secret: z.boolean(),
+    }),
+  ),
 });
 
 export const FollowOverviewSchema = z.object({

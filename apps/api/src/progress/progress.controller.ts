@@ -24,6 +24,11 @@ export class ProgressController {
     return this.progress.mastery(user.id);
   }
 
+  @Get('achievements')
+  achievements(@CurrentUser() user: User) {
+    return this.progress.achievements(user.id);
+  }
+
   @Get('statistics')
   statistics(@CurrentUser() user: User) {
     return this.progress.statistics(user.id);

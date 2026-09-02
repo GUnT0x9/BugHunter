@@ -7,5 +7,6 @@ import { ProgressRepository } from './progress.repository.js';
   imports: [AuthModule],
   controllers: [ProgressController],
   providers: [ProgressRepository],
+  exports: [ProgressRepository],
 })
 export class ProgressModule {}

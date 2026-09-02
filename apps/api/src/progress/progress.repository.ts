@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { missionRating } from '@bughunter/contracts';
 import { PrismaService } from '../common/prisma.service.js';
+import { evaluateAchievements } from './achievement-engine.js';
 
 export function masteryPercentage(earnedStars: number, missionCount: number): number {
   if (missionCount === 0) return 0;
@@ -27,6 +28,20 @@ function calculateStreak(dates: Date[]): number {
     cursor.setUTCDate(cursor.getUTCDate() - 1);
   }
   return streak;
+}
+
+function maximumStreak(dates: Date[]): number {
+  const days = [...new Set(dates.map((date) => date.toISOString().slice(0, 10)))].sort();
+  let longest = 0;
+  let current = 0;
+  let previous: Date | null = null;
+  for (const day of days) {
+    const date = new Date(`${day}T00:00:00.000Z`);
+    current = previous && date.getTime() - previous.getTime() === 86_400_000 ? current + 1 : 1;
+    longest = Math.max(longest, current);
+    previous = date;
+  }
+  return longest;
 }
 
 @Injectable()
@@ -89,33 +104,35 @@ export class ProgressRepository {
   }
 
   async bugdex(userId: string) {
-    return this.prisma.missionProgress.findMany({
-      where: { userId, completedAt: { not: null } },
-      select: {
-        completedAt: true,
-        attempts: true,
-        highestHint: true,
-        mission: {
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            difficulty: true,
-            isBoss: true,
-            baseXp: true,
-            sortOrder: true,
-            chapter: { select: { sortOrder: true, title: true } },
-            bugType: { select: { slug: true, name: true } },
+    return this.prisma.missionProgress
+      .findMany({
+        where: { userId, completedAt: { not: null } },
+        select: {
+          completedAt: true,
+          attempts: true,
+          highestHint: true,
+          mission: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              difficulty: true,
+              isBoss: true,
+              baseXp: true,
+              sortOrder: true,
+              chapter: { select: { sortOrder: true, title: true } },
+              bugType: { select: { slug: true, name: true } },
+            },
           },
         },
-      },
-      orderBy: { completedAt: 'desc' },
-    }).then((items) =>
-      items.map((item) => ({
-        ...item,
-        rating: missionRating(item.attempts, item.highestHint),
-      })),
-    );
+        orderBy: { completedAt: 'desc' },
+      })
+      .then((items) =>
+        items.map((item) => ({
+          ...item,
+          rating: missionRating(item.attempts, item.highestHint),
+        })),
+      );
   }
 
   async mastery(userId: string) {
@@ -151,6 +168,105 @@ export class ProgressRepository {
         percentage: masteryPercentage(earnedStars, category.missions.length),
       };
     });
+  }
+
+  async achievements(userId: string) {
+    const [user, progress, days, following, followers, mastery] = await Promise.all([
+      this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { totalXp: true } }),
+      this.prisma.missionProgress.findMany({
+        where: { userId, completedAt: { not: null } },
+        select: {
+          attempts: true,
+          highestHint: true,
+          completedAt: true,
+          mission: {
+            select: {
+              isBoss: true,
+              chapterId: true,
+              bugType: { select: { slug: true } },
+            },
+          },
+        },
+      }),
+      this.prisma.learningDay.findMany({ where: { userId }, select: { date: true } }),
+      this.prisma.follow.count({ where: { followerId: userId } }),
+      this.prisma.follow.count({ where: { followingId: userId } }),
+      this.mastery(userId),
+    ]);
+    const ratings = progress.map((item) => missionRating(item.attempts, item.highestHint));
+    const dailyCounts = new Map<string, number>();
+    const dailyCategories = new Map<string, Set<string>>();
+    for (const item of progress) {
+      const key = item.completedAt!.toISOString().slice(0, 10);
+      dailyCounts.set(key, (dailyCounts.get(key) ?? 0) + 1);
+      const categories = dailyCategories.get(key) ?? new Set<string>();
+      categories.add(item.mission.bugType.slug);
+      dailyCategories.set(key, categories);
+    }
+    const metrics = {
+      solved: progress.length,
+      stars: ratings.reduce((sum, rating) => sum + rating.stars, 0),
+      perfect: ratings.filter((rating) => rating.stars === 3).length,
+      noHint: ratings.filter((rating) => rating.noHint).length,
+      firstTry: ratings.filter((rating) => rating.firstTry).length,
+      bossSolved: progress.filter((item) => item.mission.isBoss).length,
+      bossPerfect: progress.filter(
+        (item) => item.mission.isBoss && missionRating(item.attempts, item.highestHint).stars === 3,
+      ).length,
+      maxStreak: maximumStreak(days.map((day) => day.date)),
+      level: Math.floor(user.totalXp / 1_000) + 1,
+      xp: user.totalXp,
+      comebacks: progress.filter((item) => item.attempts > 1).length,
+      dailyBest: Math.max(0, ...dailyCounts.values()),
+      touchedCategories: new Set(progress.map((item) => item.mission.bugType.slug)).size,
+      touchedChapters: new Set(progress.map((item) => item.mission.chapterId)).size,
+      following,
+      followers,
+      midnight: progress.some((item) => {
+        const hour = Number(
+          new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Seoul',
+            hour: '2-digit',
+            hourCycle: 'h23',
+          }).format(item.completedAt!),
+        );
+        return hour >= 0 && hour < 2;
+      })
+        ? 1
+        : 0,
+      seventhTry: progress.some((item) => item.attempts === 7) ? 1 : 0,
+      dailyCategories: Math.max(0, ...[...dailyCategories.values()].map((set) => set.size)),
+      perfectBoss: progress.some(
+        (item) => item.mission.isBoss && missionRating(item.attempts, item.highestHint).stars === 3,
+      )
+        ? 1
+        : 0,
+      totalAttempts: progress.reduce((sum, item) => sum + item.attempts, 0),
+    };
+    const items = evaluateAchievements(
+      metrics,
+      mastery.map((item) => ({ slug: item.slug, name: item.name, percentage: item.percentage })),
+    );
+    const unlockedCount = items.filter((item) => item.unlocked).length;
+    return { unlockedCount, totalCount: items.length, items };
+  }
+
+  async featuredAchievements(userId: string) {
+    const { items } = await this.achievements(userId);
+    return items
+      .filter((item) => item.unlocked)
+      .sort((left, right) => {
+        const secretDifference = Number(right.secret ?? false) - Number(left.secret ?? false);
+        return secretDifference || right.target - left.target;
+      })
+      .slice(0, 3)
+      .map(({ code, group, title, description, secret }) => ({
+        code,
+        group,
+        title,
+        description,
+        secret: secret ?? false,
+      }));
   }
 
   async statistics(userId: string) {

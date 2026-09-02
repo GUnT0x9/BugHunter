@@ -15,6 +15,7 @@ import { PublicProfile } from './components/PublicProfile.js';
 import { Workspace } from './components/Workspace.js';
 import { ProgressBar } from './components/ui/ProgressBar.js';
 import { AdminMissionStudio } from './components/admin/AdminMissionStudio.js';
+import { Achievements } from './components/Achievements.js';
 
 function BootScreen(): ReactElement {
   return (
@@ -100,6 +101,7 @@ function AuthenticatedApp({
           element={<MissionRoute missions={missions} onComplete={() => void refresh()} />}
         />
         <Route path="/bugdex" element={<BugDex />} />
+        <Route path="/achievements" element={<Achievements />} />
         <Route
           path="/my"
           element={<Profile user={user} progress={progress} onUserUpdated={onUserUpdated} />}

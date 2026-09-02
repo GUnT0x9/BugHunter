@@ -9,6 +9,7 @@ import {
   Settings2,
   UserRound,
   Users,
+  Medal,
 } from 'lucide-react';
 import type { User } from '@bughunter/contracts';
 
@@ -21,6 +22,7 @@ const LEARNING_NAV: Array<{ to: string; label: string; icon: ReactElement }> = [
   { to: '/learn', label: '학습하기', icon: <BookOpen size={15} /> },
   { to: '/problems', label: '문제 풀기', icon: <Code2 size={15} /> },
   { to: '/bugdex', label: '버그 도감', icon: <Bug size={15} /> },
+  { to: '/achievements', label: '업적', icon: <Medal size={15} /> },
   { to: '/community', label: '커뮤니티', icon: <Users size={15} /> },
 ];
 
@@ -34,10 +36,7 @@ type ShellProps = {
 export function Shell({ user, progress, onLogout, children }: ShellProps): ReactElement {
   const navigation =
     user.role === 'ADMIN'
-      ? [
-          ...LEARNING_NAV,
-          { to: '/admin/missions', label: '관리', icon: <Settings2 size={15} /> },
-        ]
+      ? [...LEARNING_NAV, { to: '/admin/missions', label: '관리', icon: <Settings2 size={15} /> }]
       : LEARNING_NAV;
   return (
     <div className="app-top-layout">
