@@ -175,6 +175,41 @@ export const api = {
     }>('/challenges/cooperative'),
   claimCooperativeChallenge: () =>
     request<{ ok: true; awardedXp: number }>('/challenges/cooperative/claim', { method: 'POST' }),
+  communityEvent: () =>
+    request<{
+      key: string;
+      title: string;
+      description: string;
+      category: { slug: string; name: string };
+      startsAt: string;
+      endsAt: string;
+      target: number;
+      rewardXp: number;
+      completed: boolean;
+      claimed: boolean;
+      me: {
+        id: string;
+        username: string;
+        isSelf: boolean;
+        solvedCount: number;
+        earnedStars: number;
+        totalAttempts: number;
+        rank: number;
+      };
+      entries: Array<{
+        id: string;
+        username: string;
+        isSelf: boolean;
+        solvedCount: number;
+        earnedStars: number;
+        totalAttempts: number;
+        rank: number;
+      }>;
+    }>('/challenges/community-event'),
+  claimCommunityEvent: () =>
+    request<{ ok: true; awardedXp: number }>('/challenges/community-event/claim', {
+      method: 'POST',
+    }),
   statistics: () =>
     request<{
       solvedCount: number;

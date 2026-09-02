@@ -488,6 +488,112 @@ export class ProgressRepository {
     return { ok: true as const, awardedXp: challenge.rewardXp };
   }
 
+  async communityEvent(userId: string) {
+    const { weekly } = questPeriods();
+    const categories = await this.prisma.bugType.findMany({
+      where: { missions: { some: { isPublished: true } } },
+      select: { id: true, slug: true, name: true, description: true },
+      orderBy: { slug: 'asc' },
+    });
+    if (categories.length === 0)
+      throw new BadRequestException('공개된 이벤트 카테고리가 없습니다.');
+    const rotationAnchor = Date.parse('2026-08-30T15:00:00.000Z');
+    const weekIndex = Math.max(
+      0,
+      Math.floor((weekly.startsAt.getTime() - rotationAnchor) / (7 * 86_400_000)),
+    );
+    const category = categories[weekIndex % categories.length]!;
+    const [users, claim] = await Promise.all([
+      this.prisma.user.findMany({
+        select: {
+          id: true,
+          username: true,
+          progress: {
+            where: {
+              completedAt: { gte: weekly.startsAt, lt: weekly.endsAt },
+              mission: { bugTypeId: category.id },
+            },
+            select: { attempts: true, highestHint: true },
+          },
+        },
+      }),
+      this.prisma.questRewardClaim.findUnique({
+        where: {
+          userId_questKey_periodKey: {
+            userId,
+            questKey: `COMMUNITY_EVENT_${category.slug.toUpperCase()}`,
+            periodKey: weekly.key,
+          },
+        },
+        select: { amount: true },
+      }),
+    ]);
+    const ranked = users
+      .map((user) => ({
+        id: user.id,
+        username: user.username,
+        isSelf: user.id === userId,
+        solvedCount: user.progress.length,
+        earnedStars: user.progress.reduce(
+          (sum, progress) => sum + missionRating(progress.attempts, progress.highestHint).stars,
+          0,
+        ),
+        totalAttempts: user.progress.reduce((sum, progress) => sum + progress.attempts, 0),
+      }))
+      .filter((entry) => entry.solvedCount > 0 || entry.isSelf)
+      .sort(
+        (left, right) =>
+          right.earnedStars - left.earnedStars ||
+          right.solvedCount - left.solvedCount ||
+          left.totalAttempts - right.totalAttempts ||
+          left.username.localeCompare(right.username, 'ko'),
+      )
+      .map((entry, index) => ({ ...entry, rank: index + 1 }));
+    const me = ranked.find((entry) => entry.id === userId)!;
+    return {
+      key: `COMMUNITY_EVENT_${category.slug.toUpperCase()}`,
+      periodKey: weekly.key,
+      title: `${category.name.replace(' Bug', '')} 집중 수사`,
+      description: category.description,
+      category: { slug: category.slug, name: category.name },
+      startsAt: weekly.startsAt.toISOString(),
+      endsAt: weekly.endsAt.toISOString(),
+      target: 3,
+      rewardXp: 150,
+      completed: me.solvedCount >= 3,
+      claimed: Boolean(claim),
+      me,
+      entries: ranked.slice(0, 20),
+    };
+  }
+
+  async claimCommunityEvent(userId: string) {
+    const event = await this.communityEvent(userId);
+    if (!event.completed) throw new BadRequestException('이벤트 목표를 아직 완료하지 않았습니다.');
+    if (event.claimed) throw new ConflictException('이미 받은 이벤트 보상입니다.');
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.questRewardClaim.create({
+          data: {
+            userId,
+            questKey: event.key,
+            periodKey: event.periodKey,
+            amount: event.rewardXp,
+          },
+        });
+        await tx.user.update({
+          where: { id: userId },
+          data: { totalXp: { increment: event.rewardXp } },
+        });
+      });
+    } catch (error: unknown) {
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002')
+        throw new ConflictException('이미 받은 이벤트 보상입니다.');
+      throw error;
+    }
+    return { ok: true as const, awardedXp: event.rewardXp };
+  }
+
   async statistics(userId: string) {
     const [completedCount, progressTotals, submissionTotals, bugdex] = await Promise.all([
       this.prisma.missionProgress.count({ where: { userId, completedAt: { not: null } } }),

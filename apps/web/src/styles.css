@@ -1007,7 +1007,7 @@ button:disabled {
 .challenge-mode-grid h2 { margin: 6px 0 9px; font-size: 19px; }
 .challenge-mode-grid p { margin: 0; color: var(--text-dim); font-size: 12px; line-height: 1.65; }
 .challenge-mode-grid small { align-self: end; margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--border); color: var(--text-faint); font: 700 9px var(--mono); }
-.challenge-mode-grid.two-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.challenge-mode-grid.one-mode { grid-template-columns: minmax(0, 1fr); }
 .coop-operation { display: grid; gap: 20px; padding: 24px; border: 1px solid var(--border-hover); background: var(--panel); }
 .coop-operation.completed { border-color: var(--green-mid); }
 .coop-operation > header { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
@@ -1030,6 +1030,33 @@ button:disabled {
 .coop-stats dd { margin: 6px 0 0; color: var(--text); font: 900 17px var(--mono); }
 .coop-operation > footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding-top: 3px; }
 .coop-operation > footer p { margin: 0; color: var(--text-faint); font-size: 10px; }
+.community-event { display: grid; border: 1px solid color-mix(in srgb, var(--category-color) 45%, var(--border)); background: var(--panel); }
+.community-event > header { display: flex; align-items: start; justify-content: space-between; gap: 18px; padding: 20px 22px; border-bottom: 1px solid var(--border); }
+.community-event > header span { color: var(--category-color); font: 800 9px var(--mono); letter-spacing: .12em; }
+.community-event > header h2 { margin: 5px 0 6px; font-size: 22px; }
+.community-event > header p { margin: 0; color: var(--text-dim); font-size: 12px; }
+.event-rank { display: grid; justify-items: end; }
+.event-rank small { color: var(--text-faint); font: 700 9px var(--mono); }
+.event-rank strong { color: var(--category-color); font: 900 26px var(--mono); }
+.event-layout { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(360px, 1.2fr); }
+.event-objective { display: grid; align-content: start; padding: 22px; border-right: 1px solid var(--border); }
+.event-objective > span { color: var(--text-faint); font: 800 9px var(--mono); letter-spacing: .1em; }
+.event-objective > strong { margin: 10px 0 12px; color: var(--category-color); font: 950 38px var(--mono); }
+.event-objective > strong small { color: var(--text-faint); font-size: 13px; }
+.event-objective > div { height: 5px; background: var(--border-2); }
+.event-objective > div i { display: block; height: 100%; background: var(--category-color); box-shadow: 0 0 8px color-mix(in srgb, var(--category-color) 38%, transparent); }
+.event-objective dl { display: grid; grid-template-columns: repeat(3, 1fr); margin: 18px 0; }
+.event-objective dl div { padding-right: 10px; }
+.event-objective dt { color: var(--text-faint); font: 700 8px var(--mono); }
+.event-objective dd { margin: 4px 0 0; color: var(--text); font: 800 11px var(--mono); }
+.event-objective .btn { justify-self: start; margin-top: auto; }
+.event-ranking { margin: 0; padding: 0; list-style: none; }
+.event-ranking li { display: grid; grid-template-columns: 36px minmax(0, 1fr) 60px 45px; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-bottom: 1px solid var(--border); color: var(--text-faint); font: 700 9px var(--mono); }
+.event-ranking li:last-child { border-bottom: 0; }
+.event-ranking li.is-me { background: color-mix(in srgb, var(--category-color) 7%, var(--panel)); }
+.event-ranking a { overflow: hidden; color: var(--text); text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.event-ranking strong { display: flex; align-items: center; justify-content: end; gap: 3px; color: var(--category-color); }
+.event-ranking strong svg { width: 10px; fill: currentColor; }
 .community-error {
   margin: 0 0 14px;
 }
@@ -1217,7 +1244,9 @@ a.community-avatar {
   }
   .community-network-grid { grid-template-columns: 1fr; }
   .challenge-mode-grid { grid-template-columns: 1fr; }
-  .challenge-mode-grid.two-modes { grid-template-columns: 1fr; }
+  .challenge-mode-grid.one-mode { grid-template-columns: 1fr; }
+  .event-layout { grid-template-columns: 1fr; }
+  .event-objective { border-right: 0; border-bottom: 1px solid var(--border); }
   .ranking-list {
     max-height: 520px;
   }
@@ -1232,6 +1261,8 @@ a.community-avatar {
   }
   .rankings-hero, .challenges-hero { align-items: stretch; flex-direction: column; }
   .coop-operation > header, .coop-operation > footer { align-items: stretch; flex-direction: column; }
+  .community-event > header { align-items: stretch; flex-direction: column; }
+  .event-rank { justify-items: start; }
   .coop-stats { grid-template-columns: 1fr; }
   .coop-stats > div { border-right: 0; border-bottom: 1px solid var(--border); }
   .coop-stats > div:last-child { border-bottom: 0; }
