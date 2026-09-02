@@ -19,6 +19,11 @@ export class ProgressController {
     return this.progress.bugdex(user.id);
   }
 
+  @Get('mastery')
+  mastery(@CurrentUser() user: User) {
+    return this.progress.mastery(user.id);
+  }
+
   @Get('statistics')
   statistics(@CurrentUser() user: User) {
     return this.progress.statistics(user.id);

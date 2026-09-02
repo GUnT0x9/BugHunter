@@ -2,6 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { missionRating } from '@bughunter/contracts';
 import { PrismaService } from '../common/prisma.service.js';
 
+export function masteryPercentage(earnedStars: number, missionCount: number): number {
+  if (missionCount === 0) return 0;
+  return Math.round((earnedStars / (missionCount * 3)) * 100);
+}
+
 function currentSeoulDate(): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Seoul',
@@ -111,6 +116,41 @@ export class ProgressRepository {
         rating: missionRating(item.attempts, item.highestHint),
       })),
     );
+  }
+
+  async mastery(userId: string) {
+    const categories = await this.prisma.bugType.findMany({
+      where: { missions: { some: { isPublished: true } } },
+      select: {
+        slug: true,
+        name: true,
+        missions: {
+          where: { isPublished: true },
+          select: {
+            progress: {
+              where: { userId, completedAt: { not: null } },
+              select: { attempts: true, highestHint: true },
+            },
+          },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+    return categories.map((category) => {
+      const ratings = category.missions.flatMap((mission) =>
+        mission.progress.map((progress) => missionRating(progress.attempts, progress.highestHint)),
+      );
+      const earnedStars = ratings.reduce((sum, rating) => sum + rating.stars, 0);
+      return {
+        slug: category.slug,
+        name: category.name,
+        missionCount: category.missions.length,
+        completedCount: ratings.length,
+        earnedStars,
+        totalStars: category.missions.length * 3,
+        percentage: masteryPercentage(earnedStars, category.missions.length),
+      };
+    });
   }
 
   async statistics(userId: string) {

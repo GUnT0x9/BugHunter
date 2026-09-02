@@ -6,12 +6,15 @@ import { Empty } from './ui/Empty.js';
 
 export function BugDex(): ReactElement {
   const [items, setItems] = useState<Awaited<ReturnType<typeof api.bugdex>>>([]);
+  const [mastery, setMastery] = useState<Awaited<ReturnType<typeof api.mastery>>>([]);
   const [failed, setFailed] = useState(false);
   const [category, setCategory] = useState('all');
   useEffect(() => {
-    void api
-      .bugdex()
-      .then(setItems)
+    void Promise.all([api.bugdex(), api.mastery()])
+      .then(([nextItems, nextMastery]) => {
+        setItems(nextItems);
+        setMastery(nextMastery);
+      })
       .catch(() => setFailed(true));
   }, []);
   const totalXp = items.reduce((sum, item) => sum + item.mission.baseXp, 0);
@@ -45,6 +48,45 @@ export function BugDex(): ReactElement {
           <span>{totalXp.toLocaleString()} XP</span>
         </div>
       </header>
+      {mastery.length > 0 && (
+        <section className="mastery-section" aria-labelledby="mastery-title">
+          <header>
+            <div>
+              <span>CATEGORY MASTERY</span>
+              <h2 id="mastery-title">카테고리 숙련도</h2>
+            </div>
+            <p>획득한 별을 기준으로 계산됩니다.</p>
+          </header>
+          <div className="mastery-grid">
+            {mastery.map((item) => (
+              <article className="mastery-item" key={item.slug}>
+                <header>
+                  <strong>{item.name.replace(' Bug', '')}</strong>
+                  <b>{item.percentage}%</b>
+                </header>
+                <div
+                  className="mastery-track"
+                  role="progressbar"
+                  aria-label={`${item.name} 숙련도`}
+                  aria-valuenow={item.percentage}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  <span style={{ width: `${item.percentage}%` }} />
+                </div>
+                <footer>
+                  <span>
+                    별 {item.earnedStars}/{item.totalStars}
+                  </span>
+                  <span>
+                    완료 {item.completedCount}/{item.missionCount}
+                  </span>
+                </footer>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
       {items.length > 0 && (
         <nav className="bugdex-filters" aria-label="문제 카테고리 필터">
           <button

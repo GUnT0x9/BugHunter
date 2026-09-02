@@ -106,6 +106,18 @@ export const api = {
         };
       }>
     >('/bugdex'),
+  mastery: () =>
+    request<
+      Array<{
+        slug: string;
+        name: string;
+        missionCount: number;
+        completedCount: number;
+        earnedStars: number;
+        totalStars: number;
+        percentage: number;
+      }>
+    >('/mastery'),
   statistics: () =>
     request<{
       solvedCount: number;
