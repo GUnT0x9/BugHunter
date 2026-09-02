@@ -47,7 +47,7 @@ export function PublicProfile(): ReactElement {
   if (!profile)
     return (
       <section className="page">
-        <Link className="btn ghost" to="/community">
+        <Link className="btn ghost" to="/search">
           <ArrowLeft /> 커뮤니티
         </Link>
         <p className={error ? 'form-error' : 'muted'}>{error || '프로필을 불러오는 중입니다…'}</p>
@@ -56,7 +56,7 @@ export function PublicProfile(): ReactElement {
   const listedUsers = tab === 'followers' ? follows?.followers : follows?.following;
   return (
     <section className="page public-profile-page">
-      <Link className="btn ghost public-profile-back" to="/community">
+      <Link className="btn ghost public-profile-back" to="/search">
         <ArrowLeft /> 커뮤니티로
       </Link>
       {error && <p className="form-error">{error}</p>}

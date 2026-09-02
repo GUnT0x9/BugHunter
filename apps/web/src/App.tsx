@@ -10,7 +10,7 @@ import { MissionDirectory } from './components/MissionDirectory.js';
 import { BugDex } from './components/BugDex.js';
 import { Statistics } from './components/Statistics.js';
 import { Profile } from './components/Profile.js';
-import { Community } from './components/Community.js';
+import { UserSearch } from './components/UserSearch.js';
 import { PublicProfile } from './components/PublicProfile.js';
 import { Workspace } from './components/Workspace.js';
 import { ProgressBar } from './components/ui/ProgressBar.js';
@@ -124,7 +124,8 @@ function AuthenticatedApp({
           element={<Profile user={user} progress={progress} onUserUpdated={onUserUpdated} />}
         />
         <Route path="/statistics" element={<Statistics />} />
-        <Route path="/community" element={<Community />} />
+        <Route path="/search" element={<UserSearch />} />
+        <Route path="/community" element={<Navigate to="/search" replace />} />
         <Route path="/rankings" element={<Rankings />} />
         <Route
           path="/challenges"

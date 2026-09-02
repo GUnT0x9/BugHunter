@@ -8,7 +8,7 @@ import {
   LogOut,
   Settings2,
   UserRound,
-  Users,
+  Search,
   Medal,
   ListChecks,
   Trophy,
@@ -21,14 +21,16 @@ import { api } from '../lib/api.js';
 
 export type Progress = Awaited<ReturnType<typeof api.progress>>;
 
-const LEARNING_NAV: Array<{ to: string; label: string; icon: ReactElement }> = [
+type NavigationItem = { to: string; label: string; icon: ReactElement; iconOnly?: boolean };
+
+const LEARNING_NAV: NavigationItem[] = [
   { to: '/', label: '홈', icon: <Home size={15} /> },
   { to: '/learn', label: '학습하기', icon: <BookOpen size={15} /> },
   { to: '/problems', label: '문제 풀기', icon: <Code2 size={15} /> },
   { to: '/bugdex', label: '버그 도감', icon: <Bug size={15} /> },
   { to: '/achievements', label: '업적', icon: <Medal size={15} /> },
   { to: '/quests', label: '퀘스트', icon: <ListChecks size={15} /> },
-  { to: '/community', label: '커뮤니티', icon: <Users size={15} /> },
+  { to: '/search', label: '사용자 검색', icon: <Search size={16} />, iconOnly: true },
   { to: '/rankings', label: '랭킹', icon: <Trophy size={15} /> },
   { to: '/challenges', label: '챌린지', icon: <Swords size={15} /> },
 ];
@@ -41,7 +43,7 @@ type ShellProps = {
 };
 
 export function Shell({ user, progress, onLogout, children }: ShellProps): ReactElement {
-  const navigation =
+  const navigation: NavigationItem[] =
     user.role === 'ADMIN'
       ? [
           ...LEARNING_NAV,
@@ -63,10 +65,14 @@ export function Shell({ user, progress, onLogout, children }: ShellProps): React
                 key={item.to}
                 to={item.to}
                 end={item.to === '/'}
-                className={({ isActive }) => (isActive ? 'topnav-item active' : 'topnav-item')}
+                className={({ isActive }) =>
+                  `${isActive ? 'topnav-item active' : 'topnav-item'}${item.iconOnly ? ' icon-only' : ''}`
+                }
+                aria-label={item.label}
+                title={item.label}
               >
                 {item.icon}
-                {item.label}
+                {!item.iconOnly && item.label}
               </NavLink>
             ))}
           </nav>
