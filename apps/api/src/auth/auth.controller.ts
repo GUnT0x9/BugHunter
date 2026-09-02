@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { z } from 'zod';
 import {
   LoginInputSchema,
   ProfileUpdateSchema,
@@ -76,5 +77,26 @@ export class AuthController {
   @UseGuards(SessionAuthGuard)
   updateProfile(@CurrentUser() user: User, @Body() body: unknown): Promise<User> {
     return this.auth.updateProfile(user.id, parseBody(ProfileUpdateSchema, body));
+  }
+
+  @Delete('me')
+  @UseGuards(SessionAuthGuard)
+  async deleteAccount(
+    @CurrentUser() user: User,
+    @Body() body: unknown,
+    @Req() request: RequestWithCookies,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<{ ok: true }> {
+    const { password } = parseBody(z.object({ password: z.string().min(8).max(128) }), body);
+    await this.auth.deleteAccount(user.id, password);
+    await this.sessions.destroy(request.cookies?.[SESSION_COOKIE_NAME]);
+    const sessionCookieOptions = createSessionCookieOptions(loadEnv());
+    response.clearCookie(SESSION_COOKIE_NAME, {
+      httpOnly: true,
+      sameSite: sessionCookieOptions.sameSite,
+      secure: sessionCookieOptions.secure,
+      path: sessionCookieOptions.path,
+    });
+    return { ok: true };
   }
 }

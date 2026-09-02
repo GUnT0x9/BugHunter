@@ -30,9 +30,11 @@ function userRow(
 function setup() {
   const repository = {
     findByEmail: vi.fn(),
+    findById: vi.fn(),
     findByUsername: vi.fn(),
     create: vi.fn(),
     updateProfile: vi.fn(),
+    deleteAccount: vi.fn(),
   };
   return {
     repository,
@@ -129,5 +131,17 @@ describe('AuthService', () => {
     await expect(
       service.updateProfile('user-1', { username: '중복 닉네임', bio: '' }),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('deletes an account only after verifying its password', async () => {
+    const { repository, service } = setup();
+    repository.findById.mockResolvedValue(userRow());
+
+    await service.deleteAccount('user-1', PASSWORD);
+    expect(repository.deleteAccount).toHaveBeenCalledWith('user-1');
+
+    await expect(service.deleteAccount('user-1', 'wrong-password')).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
   });
 });

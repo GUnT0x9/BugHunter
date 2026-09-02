@@ -10,6 +10,10 @@ export class AuthRepository {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
+  findById(id: string) {
+    return this.prisma.user.findUnique({ where: { id } });
+  }
+
   findByUsername(username: string) {
     return this.prisma.user.findUnique({ where: { username } });
   }
@@ -27,5 +31,12 @@ export class AuthRepository {
 
   updateProfile(id: string, username: string, bio: string) {
     return this.prisma.user.update({ where: { id }, data: { username, bio } });
+  }
+
+  async deleteAccount(id: string): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.duelRoom.deleteMany({ where: { participants: { some: { userId: id } } } }),
+      this.prisma.user.delete({ where: { id } }),
+    ]);
   }
 }

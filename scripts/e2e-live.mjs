@@ -97,6 +97,13 @@ try {
     await first.context.delete(`/api/community/users/${second.user.id}/follow`),
     '언팔로우',
   );
+  await json(await first.context.get(`/api/community/users/${second.user.id}`), '공개 프로필');
+  await json(await first.context.get('/api/admin/missions'), '일반 사용자 관리자 권한 차단', 403);
+  await json(
+    await first.context.get('/api/admin/submissions?page=1&limit=10'),
+    '일반 사용자 제출 로그 권한 차단',
+    403,
+  );
 
   const run = await json(
     await first.context.post(`/api/missions/${mission.id}/runs`, {
@@ -133,6 +140,7 @@ try {
     }),
     '관리자 로그인',
   );
+  await json(await admin.get('/api/challenges/community-event'), '관리자 이벤트 조회');
   const adminMissions = await json(await admin.get('/api/admin/missions'), '관리자 문제 목록');
   assert(adminMissions.length > 0, '관리자 문제 목록이 비었습니다.');
   const draft = await json(
@@ -198,10 +206,76 @@ try {
   }
   assert(browserErrors.length === 0, `브라우저 오류:\n${browserErrors.join('\n')}`);
   await browserContext.close();
+
+  const userContext = await browser.newContext({
+    storageState: await first.context.storageState(),
+    viewport: { width: 1280, height: 900 },
+  });
+  const userPage = await userContext.newPage();
+  await userPage.goto(`${baseURL}/search`, { waitUntil: 'networkidle' });
+  await userPage.getByLabel('사용자 이름').fill(second.user.username);
+  await userPage.getByRole('button', { name: 'SEARCH' }).click();
+  await userPage.getByText(second.user.username, { exact: true }).first().waitFor();
+  await userPage.getByRole('button', { name: '팔로우', exact: true }).click();
+  await userPage.getByRole('button', { name: '팔로잉', exact: true }).waitFor();
+  checks.push('사용자 검색 UI');
+  await first.context.delete(`/api/community/users/${second.user.id}/follow`);
+
+  await userPage.goto(`${baseURL}/problems/${mission.id}`, {
+    waitUntil: 'networkidle',
+    timeout: 60_000,
+  });
+  await userPage.getByRole('button', { name: /전체 테스트 제출/ }).click();
+  const testResult = userPage.locator('.output-body .console-line').filter({ hasText: /CASE 0/ });
+  await testResult.first().waitFor({ state: 'visible', timeout: 90_000 });
+  const resultText = await testResult.first().textContent();
+  await userPage.waitForTimeout(2_000);
+  assert(await testResult.first().isVisible(), '제출 결과가 2초 안에 사라졌습니다.');
+  assert(Boolean(resultText?.trim()), '제출 결과 내용이 비었습니다.');
+  checks.push('문제 제출 결과 유지 UI');
+  await userContext.close();
+
+  const loginContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const loginPage = await loginContext.newPage();
+  await loginPage.goto(baseURL, { waitUntil: 'networkidle' });
+  await loginPage.getByLabel('이메일').fill(first.user.email);
+  await loginPage.getByLabel('비밀번호', { exact: true }).fill(password);
+  await loginPage.getByRole('button', { name: '로그인', exact: true }).click();
+  await loginPage.getByRole('button', { name: '로그아웃' }).waitFor();
+  await loginPage.getByRole('button', { name: '로그아웃' }).click();
+  await loginPage.getByRole('button', { name: '로그인', exact: true }).waitFor();
+  checks.push('로그인·로그아웃 UI');
+  await loginContext.close();
+
+  const mobileContext = await browser.newContext({
+    storageState: await first.context.storageState(),
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+  });
+  const mobilePage = await mobileContext.newPage();
+  for (const route of ['/', '/problems', '/rankings', '/challenges', '/my']) {
+    const response = await mobilePage.goto(`${baseURL}${route}`, {
+      waitUntil: 'networkidle',
+      timeout: 60_000,
+    });
+    assert(response?.status() === 200, `모바일 화면 ${route}: HTTP ${response?.status()}`);
+    await mobilePage.locator('main, section.page').first().waitFor({ timeout: 20_000 });
+    assert(
+      await mobilePage.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth + 1,
+      ),
+      `모바일 화면 ${route}: 가로 스크롤이 발생합니다.`,
+    );
+    checks.push(`모바일 화면 ${route}`);
+  }
+  await mobileContext.close();
   await admin.dispose();
   console.log(`E2E PASS: ${checks.length} checks (${baseURL})`);
 } finally {
   await browser?.close();
+  for (const account of [first, second]) {
+    await account.context.delete('/api/auth/me', { data: { password } }).catch(() => null);
+  }
   await first.context.dispose();
   await second.context.dispose();
 }

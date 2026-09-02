@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as argon2 from 'argon2';
 import type { LoginInput, ProfileUpdate, RegisterInput, User } from '@bughunter/contracts';
 import { AuthRepository } from './auth.repository.js';
@@ -81,5 +86,14 @@ export class AuthService {
       }
       throw error;
     }
+  }
+
+  async deleteAccount(userId: string, password: string): Promise<void> {
+    const user = await this.repository.findById(userId);
+    if (!user || !(await argon2.verify(user.passwordHash, password))) {
+      throw new UnauthorizedException('비밀번호가 올바르지 않습니다.');
+    }
+    if (user.role === 'ADMIN') throw new ForbiddenException('관리자 계정은 삭제할 수 없습니다.');
+    await this.repository.deleteAccount(userId);
   }
 }
