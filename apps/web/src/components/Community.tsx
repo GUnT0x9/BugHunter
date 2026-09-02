@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
 import type { CommunityUser, FollowOverview, RankingResponse } from '@bughunter/contracts';
-import { Search, Trophy, UserMinus, UserPlus, Users } from 'lucide-react';
+import { CalendarDays, Search, Star, Trophy, UserMinus, UserPlus, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { Empty } from './ui/Empty.js';
@@ -11,6 +11,9 @@ const messageOf = (error: unknown): string =>
 export function Community(): ReactElement {
   const [ranking, setRanking] = useState<RankingResponse | null>(null);
   const [network, setNetwork] = useState<FollowOverview>({ followers: [], following: [] });
+  const [weekly, setWeekly] = useState<Awaited<ReturnType<typeof api.weeklyComparison>> | null>(
+    null,
+  );
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<CommunityUser[]>([]);
   const [searched, setSearched] = useState(false);
@@ -19,10 +22,11 @@ export function Community(): ReactElement {
   const [error, setError] = useState('');
 
   async function loadOverview(): Promise<void> {
-    const nextRanking = await api.rankings();
+    const [nextRanking, nextWeekly] = await Promise.all([api.rankings(), api.weeklyComparison()]);
     const nextNetwork = await api.follows(nextRanking.me.id);
     setRanking(nextRanking);
     setNetwork(nextNetwork);
+    setWeekly(nextWeekly);
   }
   useEffect(() => {
     void loadOverview()
@@ -83,6 +87,7 @@ export function Community(): ReactElement {
           {error}
         </p>
       )}
+      {weekly && <WeeklyPodium data={weekly} />}
       <div className="community-grid">
         <section className="community-panel ranking-panel" aria-labelledby="ranking-title">
           <div className="community-panel-title">
@@ -158,6 +163,77 @@ export function Community(): ReactElement {
           />
         </div>
       </div>
+    </section>
+  );
+}
+
+function WeeklyPodium({
+  data,
+}: {
+  data: Awaited<ReturnType<typeof api.weeklyComparison>>;
+}): ReactElement {
+  const podium = [data.entries[1], data.entries[0], data.entries[2]].filter(
+    (entry): entry is (typeof data.entries)[number] => Boolean(entry),
+  );
+  const rest = data.entries.slice(3);
+  const period = `${new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(
+    new Date(data.startsAt),
+  )} – ${new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(
+    new Date(new Date(data.endsAt).getTime() - 1),
+  )}`;
+  return (
+    <section className="weekly-podium-panel" aria-labelledby="weekly-podium-title">
+      <header>
+        <div>
+          <span className="page-kicker">FOLLOWING WEEKLY</span>
+          <h2 id="weekly-podium-title">이번 주 디버거</h2>
+        </div>
+        <small>
+          <CalendarDays /> {period} · 해결 문제 기준
+        </small>
+      </header>
+      <div className="weekly-podium">
+        {podium.map((entry) => (
+          <Link
+            className={`podium-place place-${entry.rank} ${entry.isSelf ? 'is-me' : ''}`}
+            to={`/community/users/${entry.id}`}
+            key={entry.id}
+          >
+            <span className="podium-rank">#{entry.rank}</span>
+            <span className="podium-avatar">{entry.username.charAt(0).toUpperCase()}</span>
+            <strong>
+              {entry.username} {entry.isSelf && <em>나</em>}
+            </strong>
+            <b>
+              {entry.solvedCount}
+              <small>문제</small>
+            </b>
+            <span className="podium-stars">
+              <Star /> {entry.earnedStars} 별
+            </span>
+            <i aria-hidden="true" />
+          </Link>
+        ))}
+      </div>
+      {rest.length > 0 && (
+        <ol className="weekly-rest">
+          {rest.map((entry) => (
+            <li className={entry.isSelf ? 'is-me' : ''} key={entry.id}>
+              <b>#{entry.rank}</b>
+              <Link to={`/community/users/${entry.id}`}>{entry.username}</Link>
+              <span>{entry.solvedCount}문제</span>
+              <small>
+                <Star /> {entry.earnedStars}
+              </small>
+            </li>
+          ))}
+        </ol>
+      )}
+      {data.entries.length === 1 && (
+        <p className="weekly-podium-empty">
+          팔로잉을 추가하면 이번 주 기록을 함께 비교할 수 있습니다.
+        </p>
+      )}
     </section>
   );
 }
