@@ -67,8 +67,6 @@ export class AdminController {
 
   @Patch(':id/publish')
   async publish(@Param('id') id: string) {
-    const validation = await this.validate(id);
-    if (!validation.ready) throw new BadRequestException(validation.issues);
     return this.admin.publish(id);
   }
 
