@@ -16,22 +16,30 @@ describe('Mission content', () => {
   it.each(missions.map((mission) => [mission.slug, mission] as const))(
     '%s has a passing reference solution and a failing initial version',
     (_slug, mission) => {
-      const referencePasses = mission.tests.every((test) => {
+      const referenceResults = mission.tests.map((test) => {
         const result = runPython(mission.referenceSolution, test.input);
         return (
           result.status === 0 &&
           normalizeOutput(result.output) === normalizeOutput(test.expectedOutput)
         );
       });
-      const initialFails = mission.tests.some((test) => {
+      const initialCache = new Map<string, boolean>();
+      const initialFailsTest = (test: (typeof mission.tests)[number]): boolean => {
+        const cached = initialCache.get(test.input);
+        if (cached !== undefined) return cached;
         const result = runPython(mission.initialCode, test.input);
-        return (
+        const failed =
           result.status !== 0 ||
-          normalizeOutput(result.output) !== normalizeOutput(test.expectedOutput)
-        );
-      });
-      expect(referencePasses).toBe(true);
+          normalizeOutput(result.output) !== normalizeOutput(test.expectedOutput);
+        initialCache.set(test.input, failed);
+        return failed;
+      };
+      const initialFails = mission.tests.some(initialFailsTest);
+      const hiddenCatchesBug = mission.tests.filter((test) => test.isHidden).some(initialFailsTest);
+      expect(referenceResults.every(Boolean)).toBe(true);
       expect(initialFails).toBe(true);
+      expect(hiddenCatchesBug).toBe(true);
     },
+    10_000,
   );
 });
