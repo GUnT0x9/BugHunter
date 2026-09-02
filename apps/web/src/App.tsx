@@ -17,6 +17,8 @@ import { ProgressBar } from './components/ui/ProgressBar.js';
 import { AdminMissionStudio } from './components/admin/AdminMissionStudio.js';
 import { Achievements } from './components/Achievements.js';
 import { QuestBoard } from './components/QuestBoard.js';
+import { Rankings } from './components/Rankings.js';
+import { Challenges } from './components/Challenges.js';
 
 function BootScreen(): ReactElement {
   return (
@@ -110,6 +112,8 @@ function AuthenticatedApp({
         />
         <Route path="/statistics" element={<Statistics />} />
         <Route path="/community" element={<Community />} />
+        <Route path="/rankings" element={<Rankings />} />
+        <Route path="/challenges" element={<Challenges />} />
         <Route path="/community/users/:id" element={<PublicProfile />} />
         <Route path="/roadmap" element={<Navigate to="/learn" replace />} />
         <Route path="/missions" element={<Navigate to="/problems" replace />} />

@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
-import type { CommunityUser, FollowOverview, RankingResponse } from '@bughunter/contracts';
-import { CalendarDays, Search, Star, Trophy, UserMinus, UserPlus, Users } from 'lucide-react';
+import type { CommunityUser, FollowOverview } from '@bughunter/contracts';
+import { Search, UserMinus, UserPlus, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { Empty } from './ui/Empty.js';
@@ -9,11 +9,8 @@ const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : '요청을 처리하지 못했습니다.';
 
 export function Community(): ReactElement {
-  const [ranking, setRanking] = useState<RankingResponse | null>(null);
   const [network, setNetwork] = useState<FollowOverview>({ followers: [], following: [] });
-  const [weekly, setWeekly] = useState<Awaited<ReturnType<typeof api.weeklyComparison>> | null>(
-    null,
-  );
+  const [myId, setMyId] = useState('');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<CommunityUser[]>([]);
   const [searched, setSearched] = useState(false);
@@ -22,11 +19,10 @@ export function Community(): ReactElement {
   const [error, setError] = useState('');
 
   async function loadOverview(): Promise<void> {
-    const [nextRanking, nextWeekly] = await Promise.all([api.rankings(), api.weeklyComparison()]);
-    const nextNetwork = await api.follows(nextRanking.me.id);
-    setRanking(nextRanking);
+    const me = await api.me();
+    const nextNetwork = await api.follows(me.id);
+    setMyId(me.id);
     setNetwork(nextNetwork);
-    setWeekly(nextWeekly);
   }
   useEffect(() => {
     void loadOverview()
@@ -72,83 +68,52 @@ export function Community(): ReactElement {
           <h1 className="page-title">함께 성장하기</h1>
           <p>관심 있는 디버거를 팔로우하고 서로의 성장 기록을 확인하세요.</p>
         </div>
-        {ranking?.me && (
-          <div className="my-rank-card">
-            <span>내 랭킹</span>
-            <strong>#{ranking.me.rank}</strong>
-            <small>
-              LV.{ranking.me.level} · {ranking.me.totalXp.toLocaleString()} XP
-            </small>
-          </div>
-        )}
+        <div className="community-network-count">
+          <span>
+            팔로워 <b>{network.followers.length}</b>
+          </span>
+          <span>
+            팔로잉 <b>{network.following.length}</b>
+          </span>
+        </div>
       </header>
       {error && (
         <p className="form-error community-error" aria-live="polite">
           {error}
         </p>
       )}
-      {weekly && <WeeklyPodium data={weekly} />}
-      <div className="community-grid">
-        <section className="community-panel ranking-panel" aria-labelledby="ranking-title">
+      <div className="community-network-grid">
+        <section className="community-panel">
           <div className="community-panel-title">
-            <h2 id="ranking-title">
-              <Trophy /> XP 랭킹
+            <h2>
+              <Search /> 유저 검색
             </h2>
-            <span>TOP 50</span>
           </div>
-          <ol className="ranking-list">
-            {ranking?.entries.map((entry) => (
-              <li key={entry.id} className={entry.isSelf ? 'is-me' : ''}>
-                <b className={`rank-number rank-${entry.rank}`}>#{entry.rank}</b>
-                <Link className="community-avatar" to={`/community/users/${entry.id}`}>
-                  {entry.username.charAt(0).toUpperCase()}
-                </Link>
-                <Link className="community-user-copy" to={`/community/users/${entry.id}`}>
-                  <strong>
-                    {entry.username}
-                    {entry.isSelf && <em>나</em>}
-                  </strong>
-                  <small>
-                    LV.{entry.level} · 미션 {entry.solvedCount}개 해결
-                  </small>
-                </Link>
-                <b className="rank-xp">{entry.totalXp.toLocaleString()} XP</b>
-              </li>
+          <form className="community-search" onSubmit={(event) => void search(event)}>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="닉네임으로 검색"
+              aria-label="유저 닉네임 검색"
+              maxLength={32}
+            />
+            <button className="btn primary" type="submit">
+              검색
+            </button>
+          </form>
+          <div className="community-user-list search-results">
+            {results.map((user) => (
+              <UserRow
+                key={user.id}
+                user={user}
+                busy={busyId === user.id}
+                onToggle={toggleFollow}
+              />
             ))}
-          </ol>
-          {!loading && !ranking?.entries.length && <Empty text="아직 랭킹 데이터가 없습니다." />}
+            {searched && !results.length && <Empty text="일치하는 유저가 없습니다." />}
+          </div>
         </section>
         <div className="community-side">
-          <section className="community-panel">
-            <div className="community-panel-title">
-              <h2>
-                <Search /> 유저 검색
-              </h2>
-            </div>
-            <form className="community-search" onSubmit={(event) => void search(event)}>
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="닉네임으로 검색"
-                aria-label="유저 닉네임 검색"
-                maxLength={32}
-              />
-              <button className="btn primary" type="submit">
-                검색
-              </button>
-            </form>
-            <div className="community-user-list search-results">
-              {results.map((user) => (
-                <UserRow
-                  key={user.id}
-                  user={user}
-                  busy={busyId === user.id}
-                  onToggle={toggleFollow}
-                />
-              ))}
-              {searched && !results.length && <Empty text="일치하는 유저가 없습니다." />}
-            </div>
-          </section>
           <NetworkPanel
             title="팔로워"
             users={network.followers}
@@ -163,77 +128,7 @@ export function Community(): ReactElement {
           />
         </div>
       </div>
-    </section>
-  );
-}
-
-function WeeklyPodium({
-  data,
-}: {
-  data: Awaited<ReturnType<typeof api.weeklyComparison>>;
-}): ReactElement {
-  const podium = [data.entries[1], data.entries[0], data.entries[2]].filter(
-    (entry): entry is (typeof data.entries)[number] => Boolean(entry),
-  );
-  const rest = data.entries.slice(3);
-  const period = `${new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(
-    new Date(data.startsAt),
-  )} – ${new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(
-    new Date(new Date(data.endsAt).getTime() - 1),
-  )}`;
-  return (
-    <section className="weekly-podium-panel" aria-labelledby="weekly-podium-title">
-      <header>
-        <div>
-          <span className="page-kicker">FOLLOWING WEEKLY</span>
-          <h2 id="weekly-podium-title">이번 주 디버거</h2>
-        </div>
-        <small>
-          <CalendarDays /> {period} · 해결 문제 기준
-        </small>
-      </header>
-      <div className="weekly-podium">
-        {podium.map((entry) => (
-          <Link
-            className={`podium-place place-${entry.rank} ${entry.isSelf ? 'is-me' : ''}`}
-            to={`/community/users/${entry.id}`}
-            key={entry.id}
-          >
-            <span className="podium-rank">#{entry.rank}</span>
-            <span className="podium-avatar">{entry.username.charAt(0).toUpperCase()}</span>
-            <strong>
-              {entry.username} {entry.isSelf && <em>나</em>}
-            </strong>
-            <b>
-              {entry.solvedCount}
-              <small>문제</small>
-            </b>
-            <span className="podium-stars">
-              <Star /> {entry.earnedStars} 별
-            </span>
-            <i aria-hidden="true" />
-          </Link>
-        ))}
-      </div>
-      {rest.length > 0 && (
-        <ol className="weekly-rest">
-          {rest.map((entry) => (
-            <li className={entry.isSelf ? 'is-me' : ''} key={entry.id}>
-              <b>#{entry.rank}</b>
-              <Link to={`/community/users/${entry.id}`}>{entry.username}</Link>
-              <span>{entry.solvedCount}문제</span>
-              <small>
-                <Star /> {entry.earnedStars}
-              </small>
-            </li>
-          ))}
-        </ol>
-      )}
-      {data.entries.length === 1 && (
-        <p className="weekly-podium-empty">
-          팔로잉을 추가하면 이번 주 기록을 함께 비교할 수 있습니다.
-        </p>
-      )}
+      {!loading && !myId && <Empty text="내 네트워크 정보를 불러오지 못했습니다." />}
     </section>
   );
 }

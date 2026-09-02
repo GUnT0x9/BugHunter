@@ -11,6 +11,8 @@ import {
   Users,
   Medal,
   ListChecks,
+  Trophy,
+  Swords,
 } from 'lucide-react';
 import type { User } from '@bughunter/contracts';
 
@@ -26,6 +28,8 @@ const LEARNING_NAV: Array<{ to: string; label: string; icon: ReactElement }> = [
   { to: '/achievements', label: '업적', icon: <Medal size={15} /> },
   { to: '/quests', label: '퀘스트', icon: <ListChecks size={15} /> },
   { to: '/community', label: '커뮤니티', icon: <Users size={15} /> },
+  { to: '/rankings', label: '랭킹', icon: <Trophy size={15} /> },
+  { to: '/challenges', label: '챌린지', icon: <Swords size={15} /> },
 ];
 
 type ShellProps = {
