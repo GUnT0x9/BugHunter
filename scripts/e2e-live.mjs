@@ -273,9 +273,15 @@ try {
   console.log(`E2E PASS: ${checks.length} checks (${baseURL})`);
 } finally {
   await browser?.close();
+  let removed = 0;
   for (const account of [first, second]) {
-    await account.context.delete('/api/auth/me', { data: { password } }).catch(() => null);
+    const response = await account.context
+      .delete('/api/auth/me', { data: { password } })
+      .catch(() => null);
+    if (response?.ok()) removed += 1;
   }
+  if (removed > 0) console.log(`E2E cleanup: removed ${removed} temporary users`);
+  else console.warn('E2E cleanup warning: temporary users were not removed');
   await first.context.dispose();
   await second.context.dispose();
 }
