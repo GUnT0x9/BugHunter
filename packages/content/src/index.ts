@@ -9,6 +9,7 @@ import { chapter4Missions } from './missions/chapter4.js';
 import { chapter5Missions } from './missions/chapter5.js';
 import { chapter6Missions } from './missions/chapter6.js';
 import { chapter7Missions } from './missions/chapter7.js';
+import { chapter8Missions } from './missions/chapter8.js';
 
 export type { BugTypeSeed, MissionSeed, ChapterSeed } from './types.js';
 export { bugTypes } from './bugTypes.js';
@@ -22,11 +23,12 @@ export const missions: MissionSeed[] = [
   ...chapter5Missions,
   ...chapter6Missions,
   ...chapter7Missions,
+  ...chapter8Missions,
 ];
 
 export function validateContentShape(): string[] {
   const errors: string[] = [];
-  if (missions.length !== 45) errors.push(`Mission 수가 45가 아닙니다: ${missions.length}`);
+  if (missions.length !== 55) errors.push(`Mission 수가 55가 아닙니다: ${missions.length}`);
   const slugSet = new Set<string>();
   const validBugTypes = new Set(bugTypes.map((b) => b.slug));
   for (const chapter of chapters) {

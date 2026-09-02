@@ -340,16 +340,25 @@ export const api = {
     request<{ id: string }>(`/admin/missions/${id}/publish`, { method: 'PATCH' }),
   unpublishAdminMission: (id: string) =>
     request<{ id: string }>(`/admin/missions/${id}/unpublish`, { method: 'PATCH' }),
-  adminSubmissionLogs: (input: { page: number; status?: string; query?: string }) => {
+  adminSubmissionLogs: (input: {
+    page: number;
+    status?: string;
+    query?: string;
+    from?: string;
+    to?: string;
+  }) => {
     const params = new URLSearchParams({ page: String(input.page), limit: '30' });
     if (input.status) params.set('status', input.status);
     if (input.query?.trim()) params.set('query', input.query.trim());
+    if (input.from) params.set('from', input.from);
+    if (input.to) params.set('to', input.to);
     return request<{
       items: AdminSubmissionLog[];
       total: number;
       page: number;
       limit: number;
       pages: number;
+      summary: { passed: number; failed: number; pending: number };
     }>(`/admin/submissions?${params}`);
   },
   adminSubmissionLog: (id: string) => request<AdminSubmissionLogDetail>(`/admin/submissions/${id}`),

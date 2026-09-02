@@ -33,6 +33,16 @@ export class AdminRepository {
     const search = input.query || undefined;
     const where: Prisma.SubmissionWhereInput = {
       ...(input.status ? { status: input.status } : {}),
+      ...(input.from || input.to
+        ? {
+            createdAt: {
+              ...(input.from ? { gte: new Date(`${input.from}T00:00:00+09:00`) } : {}),
+              ...(input.to
+                ? { lt: new Date(new Date(`${input.to}T00:00:00+09:00`).getTime() + 86_400_000) }
+                : {}),
+            },
+          }
+        : {}),
       ...(search
         ? {
             OR: [
@@ -45,7 +55,7 @@ export class AdminRepository {
         : {}),
     };
     const skip = (input.page - 1) * input.limit;
-    const [total, items] = await this.prisma.$transaction([
+    const [total, items, passed, failed, pending] = await this.prisma.$transaction([
       this.prisma.submission.count({ where }),
       this.prisma.submission.findMany({
         where,
@@ -63,6 +73,11 @@ export class AdminRepository {
           mission: { select: { id: true, title: true, slug: true } },
         },
       }),
+      this.prisma.submission.count({ where: { ...where, status: 'PASSED' } }),
+      this.prisma.submission.count({
+        where: { ...where, status: { in: ['FAILED', 'ERROR', 'TIMED_OUT'] } },
+      }),
+      this.prisma.submission.count({ where: { ...where, status: { in: ['QUEUED', 'RUNNING'] } } }),
     ]);
     return {
       items,
@@ -70,6 +85,11 @@ export class AdminRepository {
       page: input.page,
       limit: input.limit,
       pages: Math.max(1, Math.ceil(total / input.limit)),
+      summary: {
+        passed,
+        failed,
+        pending,
+      },
     };
   }
 

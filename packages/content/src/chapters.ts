@@ -42,4 +42,10 @@ export const chapters: ChapterSeed[] = [
     title: '예외 처리와 종합 디버깅',
     description: 'ZeroDivisionError, ValueError, FileNotFoundError 등 예외를 try/except로 안전하게 처리하고, 빈 입력·복합 예외를 종합 디버깅합니다.',
   },
+  {
+    order: 8,
+    slug: 'mixed-boss-rush',
+    title: '종합 보스 러시',
+    description: '앞선 7개 챕터의 버그 패턴을 섞은 난이도 1~5 종합 문제로, 문법·자료형·로직·반복·함수·인덱스·예외를 한 번에 점검합니다.',
+  },
 ];
