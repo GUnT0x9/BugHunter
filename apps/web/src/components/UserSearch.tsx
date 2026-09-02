@@ -1,9 +1,8 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
 import type { CommunityUser } from '@bughunter/contracts';
-import { Search, UserMinus, UserPlus } from 'lucide-react';
+import { Search, UserMinus, UserPlus, UserX } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
-import { Empty } from './ui/Empty.js';
 
 export function UserSearch(): ReactElement {
   const [query, setQuery] = useState('');
@@ -91,7 +90,14 @@ export function UserSearch(): ReactElement {
             )}
           </article>
         ))}
-        {searched && results.length === 0 && <Empty text="일치하는 사용자가 없습니다." />}
+        {searched && results.length === 0 && (
+          <div className="user-search-empty" role="status">
+            <UserX />
+            <strong>검색 결과 없음</strong>
+            <span>“{query.trim()}” 이름의 디버거를 찾지 못했습니다.</span>
+            <small>철자를 확인하거나 다른 닉네임으로 검색해보세요.</small>
+          </div>
+        )}
         {!searched && (
           <div className="user-search-idle">
             <Search />
