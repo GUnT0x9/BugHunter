@@ -135,6 +135,7 @@ export const PublicProfileSchema = CommunityUserSchema.extend({
       title: z.string(),
       description: z.string(),
       secret: z.boolean(),
+      rarity: z.enum(['COMMON', 'RARE', 'EPIC', 'LEGENDARY']),
     }),
   ),
 });

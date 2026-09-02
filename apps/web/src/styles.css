@@ -2563,8 +2563,12 @@ a.community-avatar {
   background: var(--panel);
   opacity: 0.65;
 }
+.rarity-common { --rarity-color: #d7dde5; }
+.rarity-rare { --rarity-color: #4de8ff; }
+.rarity-epic { --rarity-color: #ff4fd8; }
+.rarity-legendary { --rarity-color: #ffd84d; }
 .achievement-card.unlocked {
-  border-color: var(--border-hover);
+  border-color: color-mix(in srgb, var(--rarity-color) 48%, var(--border));
   opacity: 1;
 }
 .achievement-mark {
@@ -2576,8 +2580,9 @@ a.community-avatar {
   color: var(--text-faint);
 }
 .achievement-card.unlocked .achievement-mark {
-  color: var(--text);
-  box-shadow: 0 0 8px rgb(255 255 255 / 12%);
+  border-color: var(--rarity-color);
+  color: var(--rarity-color);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--rarity-color) 32%, transparent);
 }
 .achievement-mark svg {
   width: 17px;
@@ -2612,7 +2617,8 @@ a.community-avatar {
 .achievement-progress > div > span {
   display: block;
   height: 100%;
-  background: var(--text-dim);
+  background: var(--rarity-color, var(--text-dim));
+  box-shadow: 0 0 7px color-mix(in srgb, var(--rarity-color, var(--text-dim)) 45%, transparent);
 }
 .achievement-progress small {
   display: flex;
@@ -2659,7 +2665,8 @@ a.community-avatar {
 }
 .featured-achievements article > svg {
   width: 18px;
-  color: var(--text-dim);
+  color: var(--rarity-color, var(--text-dim));
+  filter: drop-shadow(0 0 5px color-mix(in srgb, currentColor 45%, transparent));
 }
 .featured-achievements article > div {
   display: grid;

@@ -260,12 +260,13 @@ export class ProgressRepository {
         return secretDifference || right.target - left.target;
       })
       .slice(0, 3)
-      .map(({ code, group, title, description, secret }) => ({
+      .map(({ code, group, title, description, secret, rarity }) => ({
         code,
         group,
         title,
         description,
         secret: secret ?? false,
+        rarity,
       }));
   }
 

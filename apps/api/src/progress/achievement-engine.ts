@@ -26,6 +26,46 @@ export type AchievementDefinition = {
   comingSoon?: boolean;
 };
 
+export type AchievementRarity = 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+
+export function achievementRarity(definition: AchievementDefinition): AchievementRarity {
+  if (
+    definition.secret ||
+    [
+      'SOLVED_45',
+      'STARS_120',
+      'PERFECT_30',
+      'NOHINT_30',
+      'FIRSTTRY_20',
+      'BOSS_PERFECT_ALL',
+      'MAXSTREAK_30',
+      'LEVEL_20',
+      'XP_30000',
+      'COMEBACKS_15',
+    ].includes(definition.code) ||
+    (definition.group === 'CATEGORY' && definition.target === 100)
+  )
+    return 'LEGENDARY';
+  if (
+    definition.comingSoon ||
+    [
+      'SOLVED_30',
+      'STARS_75',
+      'PERFECT_15',
+      'NOHINT_15',
+      'FIRSTTRY_10',
+      'BOSSSOLVED_9',
+      'MAXSTREAK_14',
+      'LEVEL_10',
+      'XP_10000',
+      'DAILYBEST_5',
+    ].includes(definition.code)
+  )
+    return 'EPIC';
+  if (definition.target > 1 || definition.group === 'CATEGORY') return 'RARE';
+  return 'COMMON';
+}
+
 const tier = (
   group: AchievementGroup,
   metric: string,
@@ -254,6 +294,7 @@ export function evaluateAchievements(
           ? '숨겨진 조건을 만족하면 공개됩니다.'
           : definition.description,
       progress: definition.secret && !unlocked ? 0 : Math.min(progress, definition.target),
+      rarity: achievementRarity(definition),
       unlocked,
     };
   });

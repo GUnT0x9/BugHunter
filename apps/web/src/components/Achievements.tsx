@@ -20,6 +20,7 @@ const GROUP_LABELS: Record<string, string> = {
   SEASON: '시즌',
   SECRET: '비밀',
 };
+const RARITY_LABELS = { COMMON: '일반', RARE: '희귀', EPIC: '영웅', LEGENDARY: '전설' } as const;
 
 export function Achievements(): ReactElement {
   const [data, setData] = useState<Awaited<ReturnType<typeof api.achievements>> | null>(null);
@@ -74,7 +75,7 @@ export function Achievements(): ReactElement {
             const ratio = item.target ? Math.round((item.progress / item.target) * 100) : 0;
             return (
               <article
-                className={`achievement-card ${item.unlocked ? 'unlocked' : ''} ${item.secret ? 'secret' : ''}`}
+                className={`achievement-card rarity-${item.rarity.toLowerCase()} ${item.unlocked ? 'unlocked' : ''} ${item.secret ? 'secret' : ''}`}
                 key={item.code}
               >
                 <div className="achievement-mark">
@@ -82,7 +83,7 @@ export function Achievements(): ReactElement {
                 </div>
                 <div className="achievement-copy">
                   <span>
-                    {GROUP_LABELS[item.group] ?? item.group}
+                    {RARITY_LABELS[item.rarity]} · {GROUP_LABELS[item.group] ?? item.group}
                     {item.comingSoon ? ' · 준비 중' : ''}
                   </span>
                   <h2>{item.title}</h2>

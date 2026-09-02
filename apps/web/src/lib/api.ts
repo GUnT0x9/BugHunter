@@ -131,6 +131,7 @@ export const api = {
         progress: number;
         secret?: boolean;
         comingSoon?: boolean;
+        rarity: 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
         unlocked: boolean;
       }>;
     }>('/achievements'),

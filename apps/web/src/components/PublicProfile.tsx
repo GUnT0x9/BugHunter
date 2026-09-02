@@ -119,10 +119,15 @@ export function PublicProfile(): ReactElement {
           </header>
           <div>
             {profile.featuredAchievements.map((achievement) => (
-              <article key={achievement.code}>
+              <article
+                className={`rarity-${achievement.rarity.toLowerCase()}`}
+                key={achievement.code}
+              >
                 <Medal />
                 <div>
-                  <span>{achievement.group}</span>
+                  <span>
+                    {achievement.rarity} · {achievement.group}
+                  </span>
                   <strong>{achievement.title}</strong>
                   <small>{achievement.description}</small>
                 </div>

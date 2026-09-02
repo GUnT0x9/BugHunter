@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateAchievements } from './achievement-engine.js';
+import { achievementRarity, evaluateAchievements } from './achievement-engine.js';
 
 describe('achievement engine', () => {
   it('retroactively unlocks achievements from current metrics', () => {
@@ -24,5 +24,28 @@ describe('achievement engine', () => {
     expect(
       evaluateAchievements({ seasonSolved: 99 }, []).find((item) => item.code === 'SEASON_START'),
     ).toMatchObject({ comingSoon: true, unlocked: false });
+  });
+
+  it('assigns rarity from the difficulty of the condition', () => {
+    expect(
+      achievementRarity({
+        code: 'SOLVED_1',
+        group: 'COLLECTION',
+        metric: 'solved',
+        target: 1,
+        title: '첫 디버깅',
+        description: '문제 1개 해결',
+      }),
+    ).toBe('COMMON');
+    expect(
+      achievementRarity({
+        code: 'CATEGORY_LOGIC_100',
+        group: 'CATEGORY',
+        metric: 'category:logic',
+        target: 100,
+        title: 'Logic 마스터',
+        description: '숙련도 100%',
+      }),
+    ).toBe('LEGENDARY');
   });
 });
