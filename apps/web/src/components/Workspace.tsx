@@ -490,7 +490,10 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
                         : '이미 완료한 Mission입니다.'}
                     </p>
                     {result.rating && (
-                      <div className="completion-rating" aria-label={`별 ${result.rating.stars}개`}>
+                      <div
+                        className={`completion-rating category-${mission.bugType.slug}`}
+                        aria-label={`별 ${result.rating.stars}개`}
+                      >
                         <div className="mission-stars">
                           {[1, 2, 3].map((star) => (
                             <Star

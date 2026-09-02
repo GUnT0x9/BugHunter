@@ -14,7 +14,7 @@ const publicSelect = {
   explanation: true,
   baseXp: true,
   chapter: { select: { id: true, sortOrder: true } },
-  bugType: { select: { id: true, name: true, description: true } },
+  bugType: { select: { id: true, slug: true, name: true, description: true } },
   hints: { select: { id: true, level: true, content: true }, orderBy: { level: 'asc' as const } },
   tests: {
     select: { id: true, sortOrder: true, input: true, expectedOutput: true, isHidden: true },
@@ -126,6 +126,7 @@ export class MissionRepository {
       isBoss: mission.isBoss,
       bugType: {
         id: mission.bugType.id,
+        slug: mission.bugType.slug,
         name: mission.bugType.name,
         description: mission.bugType.description,
       },

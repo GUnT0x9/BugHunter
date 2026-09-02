@@ -173,7 +173,12 @@ export const MissionPublicSchema = z.object({
   language: z.literal('python'),
   difficulty: z.number().int().min(1).max(5),
   isBoss: z.boolean(),
-  bugType: z.object({ id: z.string(), name: z.string(), description: z.string() }),
+  bugType: z.object({
+    id: z.string(),
+    slug: z.string(),
+    name: z.string(),
+    description: z.string(),
+  }),
   initialCode: z.string(),
   explanation: z.string().nullable(),
   hints: z.array(HintSchema),

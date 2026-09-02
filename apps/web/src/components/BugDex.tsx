@@ -59,7 +59,7 @@ export function BugDex(): ReactElement {
           </header>
           <div className="mastery-grid">
             {mastery.map((item) => (
-              <article className="mastery-item" key={item.slug}>
+              <article className={`mastery-item category-${item.slug}`} key={item.slug}>
                 <header>
                   <strong>{item.name.replace(' Bug', '')}</strong>
                   <b>{item.percentage}%</b>
@@ -131,7 +131,7 @@ export function BugDex(): ReactElement {
                 <span>{item.mission.bugType.name}</span>
                 <h2>{item.mission.title}</h2>
                 <div
-                  className="mission-stars"
+                  className={`mission-stars category-${item.mission.bugType.slug}`}
                   aria-label={`별 ${item.rating.stars}개 중 3개`}
                   title="클리어 · 힌트 미사용 · 첫 제출 성공"
                 >
