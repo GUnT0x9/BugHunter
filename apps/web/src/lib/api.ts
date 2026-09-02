@@ -100,7 +100,7 @@ export const api = {
           baseXp: number;
           sortOrder: number;
           chapter: { sortOrder: number; title: string };
-          bugType: { name: string };
+          bugType: { slug: string; name: string };
         };
       }>
     >('/bugdex'),

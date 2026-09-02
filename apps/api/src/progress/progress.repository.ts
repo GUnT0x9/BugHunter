@@ -98,7 +98,7 @@ export class ProgressRepository {
             baseXp: true,
             sortOrder: true,
             chapter: { select: { sortOrder: true, title: true } },
-            bugType: { select: { name: true } },
+            bugType: { select: { slug: true, name: true } },
           },
         },
       },

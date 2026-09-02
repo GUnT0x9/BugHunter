@@ -19,6 +19,13 @@
   --amber: #ffb454;
   --red: #ff6b5e;
   --red-dim: #2a0f0c;
+  --category-syntax: #c58f8a;
+  --category-type: #b49ac8;
+  --category-logic: #7fa9bd;
+  --category-loop: #7ea997;
+  --category-index: #b5a06f;
+  --category-function: #8f9fc2;
+  --category-exception: #bd8fa5;
   --glow-green: 0 0 10px rgba(72, 255, 155, 0.28);
   --border-hover: #39443a;
   --bg-focus: #081209;
@@ -1987,17 +1994,27 @@ button:disabled {
 .bugdex-hero p { max-width: 620px; margin: 0; color: var(--text-dim); }
 .bugdex-summary { display: flex; gap: 18px; padding-bottom: 3px; color: var(--text-faint); font: 700 12px var(--mono); white-space: nowrap; }
 .bugdex-summary span + span { padding-left: 18px; border-left: 1px solid var(--border-2); color: var(--text-dim); }
+.bugdex-filters { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 1px solid var(--border); }
+.bugdex-filters button { display: flex; align-items: center; gap: 7px; padding: 10px 14px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-faint); font: 700 12px var(--sans); cursor: pointer; }
+.bugdex-filters button:hover { color: var(--text); background: var(--panel); }
+.bugdex-filters button.active { border-bottom-color: var(--green-mid); color: var(--text); }
+.bugdex-filters button span { color: var(--text-faint); font: 700 10px var(--mono); }
 .bugdex-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-.bugdex-card { --card-accent: var(--green); display: grid; grid-template-rows: auto auto 1fr auto; min-height: 310px; padding: 20px; border: 1px solid var(--border); border-radius: 2px; background: var(--panel); color: var(--text); text-decoration: none; transition: border-color 150ms ease, background-color 150ms ease; }
-.bugdex-card.is-boss { --card-accent: var(--amber); }
+.bugdex-card { display: grid; grid-template-rows: auto auto 1fr auto; min-height: 310px; padding: 20px; border: 1px solid var(--border); border-radius: 2px; background: var(--panel); color: var(--text); text-decoration: none; transition: border-color 150ms ease, background-color 150ms ease; }
 .bugdex-card:hover { border-color: var(--border-hover); background: var(--panel-2); }
 .bugdex-card > header { display: flex; justify-content: space-between; align-items: center; }
 .bugdex-card-code { color: var(--text-faint); font: 800 10px var(--mono); letter-spacing: .08em; }
 .bugdex-rarity { display: flex; align-items: center; gap: 5px; color: var(--text-faint); font: 700 10px var(--mono); }
 .bugdex-rarity.boss { color: var(--amber); }
 .bugdex-rarity svg { width: 11px; height: 11px; }
-.bugdex-card-number { margin: 24px 0 -8px; color: var(--border-2); font: 900 64px/.9 var(--sans); letter-spacing: -.08em; transition: color 150ms ease; }
-.bugdex-card:hover .bugdex-card-number { color: var(--border-hover); }
+.bugdex-card-number { margin: 24px 0 -8px; color: var(--text-dim); font: 900 64px/.9 var(--sans); letter-spacing: -.08em; }
+.bugdex-card-number.category-syntax { color: var(--category-syntax); }
+.bugdex-card-number.category-type { color: var(--category-type); }
+.bugdex-card-number.category-logic { color: var(--category-logic); }
+.bugdex-card-number.category-loop { color: var(--category-loop); }
+.bugdex-card-number.category-index { color: var(--category-index); }
+.bugdex-card-number.category-function { color: var(--category-function); }
+.bugdex-card-number.category-exception { color: var(--category-exception); }
 .bugdex-card-copy > span { color: var(--text-faint); font: 700 10px var(--mono); letter-spacing: .06em; }
 .bugdex-card-copy h2 { margin: 7px 0 10px; font-size: 21px; line-height: 1.25; letter-spacing: -.02em; }
 .bugdex-card-copy p { display: -webkit-box; margin: 0; overflow: hidden; color: var(--text-dim); font-size: 12.5px; line-height: 1.65; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
@@ -2005,7 +2022,7 @@ button:disabled {
 .bugdex-card > footer span { display: flex; align-items: center; gap: 4px; }
 .bugdex-card > footer span svg, .bugdex-card > footer > svg { width: 13px; }
 .bugdex-card > footer strong { justify-self: end; color: var(--text-dim); }
-.bugdex-card:hover .bugdex-card-copy h2, .bugdex-card:hover > footer > svg { color: var(--card-accent); }
+.bugdex-card:hover > footer > svg { color: var(--text); }
 
 .stat-grid {
   display: grid;
