@@ -4,13 +4,16 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DuelStatus, SubmissionStatus } from '@prisma/client';
+import { DuelStatus, SubmissionStatus, type Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../common/prisma.service.js';
 import type { User } from '@bughunter/contracts';
 import { MissionRepository } from '../missions/mission.repository.js';
 
 const ROOM_MS = 15 * 60 * 1000;
+const WIN_XP = 50;
+const DAILY_XP_CAP = 300;
+const SAME_OPPONENT_REWARD_LIMIT = 3;
 
 @Injectable()
 export class DuelService {
@@ -26,6 +29,52 @@ export class DuelService {
       select: { roomId: true },
     });
     return entry ? this.get(userId, entry.roomId) : null;
+  }
+
+  async history(userId: string) {
+    const entries = await this.prisma.duelRoom.findMany({
+      where: { status: DuelStatus.FINISHED, participants: { some: { userId } } },
+      orderBy: { finishedAt: 'desc' },
+      take: 20,
+      include: {
+        mission: { select: { id: true, title: true } },
+        participants: { include: { user: { select: { id: true, username: true } } } },
+      },
+    });
+    const wins = entries.filter((room) => room.winnerId === userId).length;
+    const losses = entries.filter((room) => room.winnerId && room.winnerId !== userId).length;
+    const draws = entries.length - wins - losses;
+    let streak = 0;
+    for (const room of entries) {
+      if (room.winnerId !== userId) break;
+      streak += 1;
+    }
+    return {
+      summary: {
+        total: entries.length,
+        wins,
+        losses,
+        draws,
+        winRate: entries.length ? Math.round((wins / entries.length) * 100) : 0,
+        streak,
+      },
+      entries: entries.map((room) => {
+        const me = room.participants.find((entry) => entry.userId === userId);
+        const opponent = room.participants.find((entry) => entry.userId !== userId);
+        return {
+          id: room.id,
+          mission: room.mission,
+          result: room.winnerId === userId ? 'WIN' : room.winnerId ? 'LOSS' : 'DRAW',
+          opponent: opponent?.user ?? null,
+          attempts: me?.attempts ?? 0,
+          hintUsed: me?.hintUsed ?? false,
+          solvedAt: me?.solvedAt ?? null,
+          startedAt: room.startedAt,
+          finishedAt: room.finishedAt,
+          rewardXp: room.winnerId === userId ? room.rewardXp : 0,
+        };
+      }),
+    };
   }
 
   async create(user: User, missionId: string) {
@@ -156,23 +205,11 @@ export class DuelService {
             Number(a.hintUsed) - Number(b.hintUsed),
         );
       if (solved[0]) {
-        room = await this.prisma.duelRoom.update({
-          where: { id },
-          data: { status: DuelStatus.FINISHED, winnerId: solved[0].id, finishedAt: new Date() },
-          include: {
-            mission: { select: { id: true, title: true, difficulty: true } },
-            participants: { include: { user: { select: { id: true, username: true } } } },
-          },
-        });
+        await this.finishRoom(id, solved[0].id, rows);
+        room = await this.roomOrThrow(id);
       } else if (expired) {
-        room = await this.prisma.duelRoom.update({
-          where: { id },
-          data: { status: DuelStatus.FINISHED, finishedAt: new Date() },
-          include: {
-            mission: { select: { id: true, title: true, difficulty: true } },
-            participants: { include: { user: { select: { id: true, username: true } } } },
-          },
-        });
+        await this.finishRoom(id, null, rows);
+        room = await this.roomOrThrow(id);
       }
     }
     return {
@@ -184,6 +221,7 @@ export class DuelService {
       expiresAt: room.expiresAt,
       finishedAt: room.finishedAt,
       winnerId: room.winnerId,
+      rewardXp: room.rewardXp,
       meId: userId,
       participants: rows,
     };
@@ -225,4 +263,70 @@ export class DuelService {
       })) ?? { attempts: 0, highestHint: 0 }
     );
   }
+
+  private roomOrThrow(id: string) {
+    return this.prisma.duelRoom.findUniqueOrThrow({
+      where: { id },
+      include: {
+        mission: { select: { id: true, title: true, difficulty: true } },
+        participants: { include: { user: { select: { id: true, username: true } } } },
+      },
+    });
+  }
+
+  private async finishRoom(
+    roomId: string,
+    winnerId: string | null,
+    rows: Array<{ id: string; attempts: number; hintUsed: boolean; solvedAt: Date | null }>,
+  ) {
+    return this.prisma.$transaction(
+      async (tx) => {
+        const claimed = await tx.duelRoom.updateMany({
+          where: { id: roomId, status: DuelStatus.ACTIVE },
+          data: { status: DuelStatus.FINISHED, winnerId, finishedAt: new Date() },
+        });
+        if (!claimed.count) return;
+        for (const row of rows) {
+          await tx.duelParticipant.update({
+            where: { roomId_userId: { roomId, userId: row.id } },
+            data: { attempts: row.attempts, hintUsed: row.hintUsed, solvedAt: row.solvedAt },
+          });
+        }
+        if (!winnerId) return;
+        const opponentId = rows.find((row) => row.id !== winnerId)?.id;
+        const dayStart = koreanDayStart(new Date());
+        const [daily, repeatCount] = await Promise.all([
+          tx.duelReward.aggregate({
+            where: { userId: winnerId, createdAt: { gte: dayStart } },
+            _sum: { amount: true },
+          }),
+          opponentId
+            ? tx.duelReward.count({
+                where: {
+                  userId: winnerId,
+                  createdAt: { gte: dayStart },
+                  room: { participants: { some: { userId: opponentId } } },
+                },
+              })
+            : 0,
+        ]);
+        const remaining = Math.max(0, DAILY_XP_CAP - (daily._sum.amount ?? 0));
+        const amount = repeatCount < SAME_OPPONENT_REWARD_LIMIT ? Math.min(WIN_XP, remaining) : 0;
+        await tx.duelReward.create({ data: { roomId, userId: winnerId, amount } });
+        await tx.duelRoom.update({ where: { id: roomId }, data: { rewardXp: amount } });
+        if (amount)
+          await tx.user.update({
+            where: { id: winnerId },
+            data: { totalXp: { increment: amount } },
+          });
+      },
+      { isolationLevel: 'Serializable' as Prisma.TransactionIsolationLevel },
+    );
+  }
+}
+
+function koreanDayStart(now: Date): Date {
+  const shifted = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  shifted.setUTCHours(0, 0, 0, 0);
+  return new Date(shifted.getTime() - 9 * 60 * 60 * 1000);
 }

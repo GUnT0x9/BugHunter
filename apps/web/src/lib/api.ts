@@ -33,6 +33,7 @@ export type DuelRoom = {
   expiresAt: string;
   finishedAt: string | null;
   winnerId: string | null;
+  rewardXp: number;
   meId: string;
   participants: Array<{
     id: string;
@@ -40,6 +41,28 @@ export type DuelRoom = {
     attempts: number;
     hintUsed: boolean;
     solvedAt: string | null;
+  }>;
+};
+export type DuelHistory = {
+  summary: {
+    total: number;
+    wins: number;
+    losses: number;
+    draws: number;
+    winRate: number;
+    streak: number;
+  };
+  entries: Array<{
+    id: string;
+    mission: { id: string; title: string };
+    result: 'WIN' | 'LOSS' | 'DRAW';
+    opponent: { id: string; username: string } | null;
+    attempts: number;
+    hintUsed: boolean;
+    solvedAt: string | null;
+    startedAt: string | null;
+    finishedAt: string | null;
+    rewardXp: number;
   }>;
 };
 
@@ -241,6 +264,7 @@ export const api = {
       method: 'POST',
     }),
   activeDuel: () => request<DuelRoom | null>('/duels/active'),
+  duelHistory: () => request<DuelHistory>('/duels/history'),
   duel: (id: string) => request<DuelRoom>(`/duels/${id}`),
   createDuel: (missionId: string) =>
     request<DuelRoom>('/duels', { method: 'POST', body: JSON.stringify({ missionId }) }),

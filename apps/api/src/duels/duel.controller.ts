@@ -16,6 +16,11 @@ export class DuelController {
     return this.duels.active(user.id);
   }
 
+  @Get('history')
+  history(@CurrentUser() user: User) {
+    return this.duels.history(user.id);
+  }
+
   @Get(':id')
   get(@CurrentUser() user: User, @Param('id') id: string) {
     return this.duels.get(user.id, id);

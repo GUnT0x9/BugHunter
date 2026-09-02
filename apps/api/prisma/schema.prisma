@@ -64,6 +64,7 @@ model User {
   questClaims  QuestRewardClaim[]
   duelEntries  DuelParticipant[]
   duelWins     DuelRoom[]         @relation("DuelWinner")
+  duelRewards  DuelReward[]
 }
 
 model QuestRewardClaim {
@@ -166,7 +167,9 @@ model DuelRoom {
   startedAt    DateTime?
   expiresAt    DateTime
   finishedAt   DateTime?
+  rewardXp     Int               @default(0)
   participants DuelParticipant[]
+  reward       DuelReward?
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 
@@ -176,14 +179,29 @@ model DuelRoom {
 model DuelParticipant {
   roomId      String
   userId      String
-  room        DuelRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  attemptBase Int      @default(0)
-  hintBase    Int      @default(0)
-  joinedAt    DateTime @default(now())
+  room        DuelRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attemptBase Int       @default(0)
+  hintBase    Int       @default(0)
+  joinedAt    DateTime  @default(now())
+  attempts    Int       @default(0)
+  hintUsed    Boolean   @default(false)
+  solvedAt    DateTime?
 
   @@id([roomId, userId])
   @@index([userId, joinedAt])
+}
+
+model DuelReward {
+  id        String   @id @default(cuid())
+  roomId    String   @unique
+  room      DuelRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model MissionTestCase {

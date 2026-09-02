@@ -30,7 +30,6 @@ const LEARNING_NAV: NavigationItem[] = [
   { to: '/bugdex', label: '버그 도감', icon: <Bug size={15} /> },
   { to: '/achievements', label: '업적', icon: <Medal size={15} /> },
   { to: '/quests', label: '퀘스트', icon: <ListChecks size={15} /> },
-  { to: '/search', label: '사용자 검색', icon: <Search size={16} />, iconOnly: true },
   { to: '/rankings', label: '랭킹', icon: <Trophy size={15} /> },
   { to: '/challenges', label: '챌린지', icon: <Swords size={15} /> },
 ];
@@ -78,6 +77,16 @@ export function Shell({ user, progress, onLogout, children }: ShellProps): React
           </nav>
 
           <div className="topbar-right">
+            <NavLink
+              to="/search"
+              className={({ isActive }) =>
+                isActive ? 'topbar-search active' : 'topbar-search'
+              }
+              aria-label="사용자 검색"
+              title="사용자 검색"
+            >
+              <Search size={16} />
+            </NavLink>
             <NavLink to="/my" className="topbar-account">
               <UserRound size={15} />
               <span>{user.role === 'ADMIN' ? 'ADMIN' : '내 학습'}</span>

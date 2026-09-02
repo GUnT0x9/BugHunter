@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
-import type { DuelRoom } from '../lib/api.js';
+import type { DuelHistory, DuelRoom } from '../lib/api.js';
 import { Empty } from './ui/Empty.js';
 import type { MissionPublic } from '@bughunter/contracts';
 
@@ -38,6 +38,7 @@ export function Challenges({
   const [missionId, setMissionId] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [duelBusy, setDuelBusy] = useState(false);
+  const [duelHistory, setDuelHistory] = useState<DuelHistory | null>(null);
   async function load(): Promise<void> {
     const [nextCoop, nextEvent] = await Promise.all([
       api.cooperativeChallenge(),
@@ -58,9 +59,11 @@ export function Challenges({
   }, [missionId, missions]);
   useEffect(() => {
     if (mode !== 'duel') return;
-    void api
-      .activeDuel()
-      .then(setDuel)
+    void Promise.all([api.activeDuel(), api.duelHistory()])
+      .then(([active, history]) => {
+        setDuel(active);
+        setDuelHistory(history);
+      })
       .catch(() => null);
   }, [mode]);
   useEffect(() => {
@@ -69,19 +72,29 @@ export function Challenges({
       () =>
         void api
           .duel(duel.id)
-          .then(setDuel)
+          .then((next) => {
+            setDuel(next);
+            if (next.status === 'FINISHED') {
+              void api
+                .duelHistory()
+                .then(setDuelHistory)
+                .catch(() => null);
+              onReward();
+            }
+          })
           .catch(() => null),
       2_000,
     );
     return () => window.clearInterval(timer);
   }, [duel?.id, duel?.status]);
 
-  async function createDuel(): Promise<void> {
-    if (!missionId) return;
+  async function createDuel(nextMissionId = missionId): Promise<void> {
+    if (!nextMissionId) return;
     setDuelBusy(true);
     setError('');
     try {
-      setDuel(await api.createDuel(missionId));
+      setMissionId(nextMissionId);
+      setDuel(await api.createDuel(nextMissionId));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : '대결방을 만들지 못했습니다.');
     } finally {
@@ -334,8 +347,10 @@ export function Challenges({
           onCreate={() => void createDuel()}
           onJoin={() => void joinDuel()}
           onCancel={() => void cancelDuel()}
+          onRematch={(nextMissionId) => void createDuel(nextMissionId)}
         />
       )}
+      {mode === 'duel' && duelHistory && <DuelHistoryPanel data={duelHistory} />}
     </section>
   );
 }
@@ -421,6 +436,7 @@ function DuelPanel({
   onCreate,
   onJoin,
   onCancel,
+  onRematch,
 }: {
   duel: DuelRoom | null;
   missions: MissionPublic[];
@@ -432,7 +448,17 @@ function DuelPanel({
   onCreate: () => void;
   onJoin: () => void;
   onCancel: () => void;
+  onRematch: (missionId: string) => void;
 }): ReactElement {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (duel?.status !== 'ACTIVE') return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, [duel?.status]);
+  const remainingSeconds = duel
+    ? Math.max(0, Math.ceil((new Date(duel.expiresAt).getTime() - now) / 1_000))
+    : 0;
   if (duel)
     return (
       <section className={`duel-arena status-${duel.status.toLowerCase()}`}>
@@ -441,7 +467,15 @@ function DuelPanel({
             <span>HEAD TO HEAD · {duel.status}</span>
             <h2>{duel.mission.title}</h2>
           </div>
-          <strong>{duel.code}</strong>
+          <div className="duel-room-meta">
+            <strong>{duel.code}</strong>
+            {duel.status === 'ACTIVE' && (
+              <time>
+                {String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:
+                {String(remainingSeconds % 60).padStart(2, '0')}
+              </time>
+            )}
+          </div>
         </header>
         <div className="duel-contenders">
           {duel.participants.map((player, index) => (
@@ -483,6 +517,11 @@ function DuelPanel({
             {duel.winnerId
               ? `${duel.participants.find((item) => item.id === duel.winnerId)?.username} 승리`
               : '제한 시간 종료'}
+            {duel.winnerId === duel.meId && (
+              <small>
+                {duel.rewardXp ? `+${duel.rewardXp} XP 획득` : '오늘의 반복/일일 보상 한도 도달'}
+              </small>
+            )}
           </p>
         )}
         <footer>
@@ -496,7 +535,16 @@ function DuelPanel({
               방 취소
             </button>
           )}
-          {['FINISHED', 'CANCELLED'].includes(duel.status) && (
+          {duel.status === 'FINISHED' && (
+            <button
+              className="btn primary"
+              disabled={busy}
+              onClick={() => onRematch(duel.mission.id)}
+            >
+              같은 문제 재대결
+            </button>
+          )}
+          {duel.status === 'CANCELLED' && (
             <button className="btn" onClick={() => window.location.reload()}>
               새 대결 준비
             </button>
@@ -544,6 +592,55 @@ function DuelPanel({
         </div>
       </div>
       <small>승리 기준: 해결 시각 → 제출 횟수 → 힌트 미사용 · 제한 시간 15분</small>
+    </section>
+  );
+}
+
+function DuelHistoryPanel({ data }: { data: DuelHistory }): ReactElement {
+  return (
+    <section className="duel-history">
+      <header>
+        <div>
+          <span>MATCH RECORD</span>
+          <h2>대결 전적</h2>
+        </div>
+        <dl>
+          <div>
+            <dt>승률</dt>
+            <dd>{data.summary.winRate}%</dd>
+          </div>
+          <div>
+            <dt>전적</dt>
+            <dd>
+              {data.summary.wins}승 {data.summary.losses}패 {data.summary.draws}무
+            </dd>
+          </div>
+          <div>
+            <dt>연승</dt>
+            <dd>{data.summary.streak}</dd>
+          </div>
+        </dl>
+      </header>
+      {data.entries.length ? (
+        <ol>
+          {data.entries.map((entry) => (
+            <li key={entry.id} className={`result-${entry.result.toLowerCase()}`}>
+              <b>{entry.result}</b>
+              <div>
+                <strong>{entry.opponent?.username ?? '상대 없음'}</strong>
+                <small>{entry.mission.title}</small>
+              </div>
+              <span>
+                {entry.attempts}회 제출 · 힌트 {entry.hintUsed ? '사용' : '미사용'}
+              </span>
+              <em>{entry.rewardXp ? `+${entry.rewardXp} XP` : '—'}</em>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p>아직 완료한 대결이 없습니다.</p>
+      )}
+      <footer>승리 50 XP · 일일 최대 300 XP · 같은 상대는 하루 3승까지 보상</footer>
     </section>
   );
 }
