@@ -9,6 +9,7 @@ type AdminMissionSidebarProps = {
   busy: boolean;
   onSearch: (value: string) => void;
   onSelect: (id: string) => void;
+  onCreate: () => void;
   onDuplicate: () => void;
 };
 
@@ -25,6 +26,7 @@ export function AdminMissionSidebar({
   busy,
   onSearch,
   onSelect,
+  onCreate,
   onDuplicate,
 }: AdminMissionSidebarProps): ReactElement {
   const selected = missions.find((mission) => mission.id === selectedId);
@@ -111,9 +113,18 @@ export function AdminMissionSidebar({
         {groups.length === 0 && <p className="admin-empty">검색 결과가 없습니다.</p>}
       </div>
 
-      <button className="admin-add-mission" disabled={!selectedId || busy} onClick={onDuplicate}>
-        <Plus size={15} /> 새 미션 추가
-      </button>
+      <div className="admin-sidebar-actions">
+        <button className="admin-add-mission" disabled={!selectedId || busy} onClick={onCreate}>
+          <Plus size={15} /> 새 미션 추가
+        </button>
+        <button
+          className="admin-duplicate-mission"
+          disabled={!selectedId || busy}
+          onClick={onDuplicate}
+        >
+          선택 미션 복제
+        </button>
+      </div>
     </aside>
   );
 }

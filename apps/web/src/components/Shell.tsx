@@ -13,6 +13,7 @@ import {
   ListChecks,
   Trophy,
   Swords,
+  ScrollText,
 } from 'lucide-react';
 import type { User } from '@bughunter/contracts';
 
@@ -42,7 +43,11 @@ type ShellProps = {
 export function Shell({ user, progress, onLogout, children }: ShellProps): ReactElement {
   const navigation =
     user.role === 'ADMIN'
-      ? [...LEARNING_NAV, { to: '/admin/missions', label: '관리', icon: <Settings2 size={15} /> }]
+      ? [
+          ...LEARNING_NAV,
+          { to: '/admin/missions', label: '문제 관리', icon: <Settings2 size={15} /> },
+          { to: '/admin/submissions', label: '제출 로그', icon: <ScrollText size={15} /> },
+        ]
       : LEARNING_NAV;
   return (
     <div className="app-top-layout">

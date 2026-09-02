@@ -27,5 +27,9 @@ export const AdminMissionSchema = z.object({
 });
 
 export type AdminMissionInput = z.infer<typeof AdminMissionSchema>;
+export const AdminMissionDraftCreateSchema = z.object({
+  chapterId: z.string().min(1),
+  bugTypeId: z.string().min(1),
+});
 export const AdminMissionPatchSchema = AdminMissionSchema.partial();
 export type AdminMissionPatch = z.infer<typeof AdminMissionPatchSchema>;

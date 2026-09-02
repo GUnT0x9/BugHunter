@@ -12,7 +12,11 @@ import {
 import { parseBody } from '../common/validation.js';
 import { AdminGuard } from '../auth/admin.guard.js';
 import { SessionAuthGuard } from '../auth/session-auth.guard.js';
-import { AdminMissionPatchSchema, AdminMissionSchema } from './admin-mission.schema.js';
+import {
+  AdminMissionDraftCreateSchema,
+  AdminMissionPatchSchema,
+  AdminMissionSchema,
+} from './admin-mission.schema.js';
 import { AdminJudgeValidationService } from './admin-judge-validation.service.js';
 import { AdminRepository } from './admin.repository.js';
 
@@ -33,6 +37,11 @@ export class AdminController {
   create(@Body() body: unknown) {
     const input = parseBody(AdminMissionSchema, body);
     return this.admin.createMission({ ...input, isBoss: input.isBoss ?? false });
+  }
+
+  @Post('draft')
+  createDraft(@Body() body: unknown) {
+    return this.admin.createDraftMission(parseBody(AdminMissionDraftCreateSchema, body));
   }
 
   @Get(':id/preview')

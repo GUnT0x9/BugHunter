@@ -13,6 +13,18 @@ import type {
 } from '@bughunter/contracts';
 import type { AdminMission, AdminMissionDraft, AdminValidationReport } from './admin-types.js';
 
+export type AdminSubmissionLog = {
+  id: string;
+  status: string;
+  executionTimeMs: number | null;
+  resultJson: unknown;
+  createdAt: string;
+  updatedAt: string;
+  user: { id: string; username: string };
+  mission: { id: string; title: string; slug: string };
+};
+export type AdminSubmissionLogDetail = AdminSubmissionLog & { code: string };
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -261,6 +273,11 @@ export const api = {
   searchUsers: (query: string) =>
     request<CommunityUser[]>(`/community/users?query=${encodeURIComponent(query)}`),
   adminMissions: () => request<AdminMission[]>('/admin/missions'),
+  createAdminMissionDraft: (input: { chapterId: string; bugTypeId: string }) =>
+    request<{ id: string }>('/admin/missions/draft', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
   updateAdminMission: (id: string, input: AdminMissionDraft) =>
     request<{ id: string }>(`/admin/missions/${id}`, {
       method: 'PATCH',
@@ -274,4 +291,17 @@ export const api = {
     request<{ id: string }>(`/admin/missions/${id}/publish`, { method: 'PATCH' }),
   unpublishAdminMission: (id: string) =>
     request<{ id: string }>(`/admin/missions/${id}/unpublish`, { method: 'PATCH' }),
+  adminSubmissionLogs: (input: { page: number; status?: string; query?: string }) => {
+    const params = new URLSearchParams({ page: String(input.page), limit: '30' });
+    if (input.status) params.set('status', input.status);
+    if (input.query?.trim()) params.set('query', input.query.trim());
+    return request<{
+      items: AdminSubmissionLog[];
+      total: number;
+      page: number;
+      limit: number;
+      pages: number;
+    }>(`/admin/submissions?${params}`);
+  },
+  adminSubmissionLog: (id: string) => request<AdminSubmissionLogDetail>(`/admin/submissions/${id}`),
 };

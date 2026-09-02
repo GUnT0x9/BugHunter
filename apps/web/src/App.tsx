@@ -15,6 +15,7 @@ import { PublicProfile } from './components/PublicProfile.js';
 import { Workspace } from './components/Workspace.js';
 import { ProgressBar } from './components/ui/ProgressBar.js';
 import { AdminMissionStudio } from './components/admin/AdminMissionStudio.js';
+import { AdminSubmissionLogs } from './components/admin/AdminSubmissionLogs.js';
 import { Achievements } from './components/Achievements.js';
 import { QuestBoard } from './components/QuestBoard.js';
 import { Rankings } from './components/Rankings.js';
@@ -81,6 +82,18 @@ function AuthenticatedApp({
 
   useEffect(() => {
     void refresh();
+    const refreshPublishedMissions = () => {
+      void api
+        .missions()
+        .then(setMissions)
+        .catch(() => null);
+    };
+    const timer = window.setInterval(refreshPublishedMissions, 30_000);
+    window.addEventListener('focus', refreshPublishedMissions);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refreshPublishedMissions);
+    };
   }, []);
 
   async function logout(): Promise<void> {
@@ -121,7 +134,17 @@ function AuthenticatedApp({
         <Route path="/profile" element={<Navigate to="/my" replace />} />
         <Route
           path="/admin/missions"
-          element={user.role === 'ADMIN' ? <AdminMissionStudio /> : <Navigate to="/" replace />}
+          element={
+            user.role === 'ADMIN' ? (
+              <AdminMissionStudio onPublished={() => void refresh()} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
+          path="/admin/submissions"
+          element={user.role === 'ADMIN' ? <AdminSubmissionLogs /> : <Navigate to="/" replace />}
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -11,6 +11,8 @@ type AdminMissionEditorProps = {
   tab: AdminStudioTab;
   onChange: (next: AdminMissionDraft) => void;
   onResetCode: () => void;
+  chapters: Array<{ id: string; sortOrder: number; title: string }>;
+  bugTypes: Array<{ id: string; name: string }>;
 };
 
 const beforeMount: BeforeMount = (monaco) => installBugHunterTheme(monaco);
@@ -20,13 +22,17 @@ export function AdminMissionEditor({
   tab,
   onChange,
   onResetCode,
+  chapters,
+  bugTypes,
 }: AdminMissionEditorProps): ReactElement {
   return (
     <>
       <div className="admin-editor-view" hidden={tab !== 'code'}>
         <CodeEditor draft={draft} onChange={onChange} onResetCode={onResetCode} />
       </div>
-      {tab === 'details' && <DetailsEditor draft={draft} onChange={onChange} />}
+      {tab === 'details' && (
+        <DetailsEditor draft={draft} onChange={onChange} chapters={chapters} bugTypes={bugTypes} />
+      )}
       {tab === 'tests' && <TestsEditor draft={draft} onChange={onChange} />}
       {tab === 'guidance' && <GuidanceEditor draft={draft} onChange={onChange} />}
     </>
@@ -37,7 +43,7 @@ function CodeEditor({
   draft,
   onChange,
   onResetCode,
-}: Omit<AdminMissionEditorProps, 'tab'>): ReactElement {
+}: Pick<AdminMissionEditorProps, 'draft' | 'onChange' | 'onResetCode'>): ReactElement {
   const setCode = (key: 'initialCode' | 'referenceSolution', value: string): void => {
     onChange({ ...draft, [key]: value });
   };
@@ -101,10 +107,44 @@ const editorOptions = {
 function DetailsEditor({
   draft,
   onChange,
-}: Pick<AdminMissionEditorProps, 'draft' | 'onChange'>): ReactElement {
+  chapters,
+  bugTypes,
+}: Pick<AdminMissionEditorProps, 'draft' | 'onChange' | 'chapters' | 'bugTypes'>): ReactElement {
   return (
     <div className="admin-form-scroll">
       <div className="admin-form-grid">
+        <Field label="챕터">
+          <select
+            value={draft.chapterId}
+            onChange={(event) => onChange({ ...draft, chapterId: event.target.value })}
+          >
+            {chapters.map((chapter) => (
+              <option value={chapter.id} key={chapter.id}>
+                CH.{chapter.sortOrder} {chapter.title}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="버그 카테고리">
+          <select
+            value={draft.bugTypeId}
+            onChange={(event) => onChange({ ...draft, bugTypeId: event.target.value })}
+          >
+            {bugTypes.map((bugType) => (
+              <option value={bugType.id} key={bugType.id}>
+                {bugType.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="챕터 내 순서">
+          <input
+            type="number"
+            min={1}
+            value={draft.sortOrder}
+            onChange={(event) => onChange({ ...draft, sortOrder: Number(event.target.value) })}
+          />
+        </Field>
         <Field label="미션 제목" wide>
           <input
             value={draft.title}

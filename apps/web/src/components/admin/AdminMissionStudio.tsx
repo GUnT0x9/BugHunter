@@ -20,7 +20,7 @@ const TAB_LABELS: Array<{ id: AdminStudioTab; label: string }> = [
   { id: 'guidance', label: '힌트 · 개념' },
 ];
 
-export function AdminMissionStudio(): ReactElement {
+export function AdminMissionStudio({ onPublished }: { onPublished: () => void }): ReactElement {
   const [missions, setMissions] = useState<AdminMission[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<AdminMissionDraft | null>(null);
@@ -31,6 +31,7 @@ export function AdminMissionStudio(): ReactElement {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const selected = useMemo(
     () => missions.find((mission) => mission.id === selectedId) ?? null,
     [missions, selectedId],
@@ -138,6 +139,7 @@ export function AdminMissionStudio(): ReactElement {
       if (publish) await api.publishAdminMission(selected.id);
       else await api.unpublishAdminMission(selected.id);
       setMissions(await api.adminMissions());
+      onPublished();
       setNotice(publish ? '미션을 공개했습니다.' : '미션을 비공개로 전환했습니다.');
     } catch (requestError: unknown) {
       setError(errorMessage(requestError));
@@ -155,6 +157,22 @@ export function AdminMissionStudio(): ReactElement {
       const duplicate = await api.duplicateAdminMission(selected.id);
       await loadMissions(duplicate.id);
       setNotice('선택한 미션을 비공개 사본으로 만들었습니다.');
+    } catch (requestError: unknown) {
+      setError(errorMessage(requestError));
+      setBusyAction(null);
+    }
+  }
+
+  async function createMission(chapterId: string, bugTypeId: string): Promise<void> {
+    if (dirty && !window.confirm('저장하지 않은 변경을 버리고 새 미션을 만들까요?')) return;
+    setBusyAction('create');
+    setError('');
+    try {
+      const created = await api.createAdminMissionDraft({ chapterId, bugTypeId });
+      setCreateOpen(false);
+      await loadMissions(created.id);
+      setTab('details');
+      setNotice('새 비공개 미션 초안을 만들었습니다. 내용을 작성한 뒤 검증해주세요.');
     } catch (requestError: unknown) {
       setError(errorMessage(requestError));
       setBusyAction(null);
@@ -184,6 +202,7 @@ export function AdminMissionStudio(): ReactElement {
         busy={busyAction !== null}
         onSearch={setSearch}
         onSelect={selectMission}
+        onCreate={() => setCreateOpen(true)}
         onDuplicate={() => void duplicateCurrent()}
       />
 
@@ -252,6 +271,8 @@ export function AdminMissionStudio(): ReactElement {
               referenceSolution: selected.referenceSolution,
             })
           }
+          chapters={uniqueChapters(missions)}
+          bugTypes={uniqueBugTypes(missions)}
         />
       </main>
 
@@ -275,7 +296,93 @@ export function AdminMissionStudio(): ReactElement {
           onClose={() => setPreviewOpen(false)}
         />
       )}
+      {createOpen && (
+        <AdminCreateMissionDialog
+          missions={missions}
+          selected={selected}
+          busy={busyAction === 'create'}
+          onCreate={(chapterId, bugTypeId) => void createMission(chapterId, bugTypeId)}
+          onClose={() => setCreateOpen(false)}
+        />
+      )}
     </section>
+  );
+}
+
+function uniqueChapters(missions: AdminMission[]) {
+  return [...new Map(missions.map((mission) => [mission.chapter.id, mission.chapter])).values()]
+    .sort((left, right) => left.sortOrder - right.sortOrder)
+    .map(({ id, sortOrder, title }) => ({ id, sortOrder, title }));
+}
+
+function uniqueBugTypes(missions: AdminMission[]) {
+  return [...new Map(missions.map((mission) => [mission.bugType.id, mission.bugType])).values()]
+    .sort((left, right) => left.name.localeCompare(right.name, 'ko'))
+    .map(({ id, name }) => ({ id, name }));
+}
+
+function AdminCreateMissionDialog({
+  missions,
+  selected,
+  busy,
+  onCreate,
+  onClose,
+}: {
+  missions: AdminMission[];
+  selected: AdminMission;
+  busy: boolean;
+  onCreate: (chapterId: string, bugTypeId: string) => void;
+  onClose: () => void;
+}): ReactElement {
+  const [chapterId, setChapterId] = useState(selected.chapterId);
+  const [bugTypeId, setBugTypeId] = useState(selected.bugTypeId);
+  return (
+    <div
+      className="admin-create-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-mission-title"
+    >
+      <form
+        className="admin-create-dialog"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onCreate(chapterId, bugTypeId);
+        }}
+      >
+        <span className="admin-eyebrow">NEW MISSION</span>
+        <h2 id="create-mission-title">새 미션 초안 만들기</h2>
+        <p>초안은 비공개로 생성됩니다. 저장 후 검증을 통과해야 발행할 수 있습니다.</p>
+        <label>
+          챕터
+          <select value={chapterId} onChange={(event) => setChapterId(event.target.value)}>
+            {uniqueChapters(missions).map((chapter) => (
+              <option value={chapter.id} key={chapter.id}>
+                CH.{chapter.sortOrder} {chapter.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          버그 카테고리
+          <select value={bugTypeId} onChange={(event) => setBugTypeId(event.target.value)}>
+            {uniqueBugTypes(missions).map((bugType) => (
+              <option value={bugType.id} key={bugType.id}>
+                {bugType.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div>
+          <button type="button" className="btn" disabled={busy} onClick={onClose}>
+            취소
+          </button>
+          <button type="submit" className="btn primary" disabled={busy}>
+            {busy ? '생성 중…' : '초안 만들기'}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 

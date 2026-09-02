@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import type { Prisma } from '@prisma/client';
 import type { AdminMissionInput, AdminMissionPatch } from './admin-mission.schema.js';
+import type { AdminSubmissionQuery } from './admin-submission.schema.js';
 import { validateMissionShape, type MissionValidationReport } from './admin-validation.js';
 import { PrismaService } from '../common/prisma.service.js';
 
@@ -24,6 +26,67 @@ export class AdminRepository {
     return this.prisma.mission.findMany({
       include: adminMissionInclude,
       orderBy: [{ chapter: { sortOrder: 'asc' } }, { sortOrder: 'asc' }],
+    });
+  }
+
+  async listSubmissionLogs(input: AdminSubmissionQuery) {
+    const search = input.query || undefined;
+    const where: Prisma.SubmissionWhereInput = {
+      ...(input.status ? { status: input.status } : {}),
+      ...(search
+        ? {
+            OR: [
+              { id: { contains: search, mode: 'insensitive' } },
+              { user: { username: { contains: search, mode: 'insensitive' } } },
+              { mission: { title: { contains: search, mode: 'insensitive' } } },
+              { mission: { slug: { contains: search, mode: 'insensitive' } } },
+            ],
+          }
+        : {}),
+    };
+    const skip = (input.page - 1) * input.limit;
+    const [total, items] = await this.prisma.$transaction([
+      this.prisma.submission.count({ where }),
+      this.prisma.submission.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: input.limit,
+        select: {
+          id: true,
+          status: true,
+          executionTimeMs: true,
+          resultJson: true,
+          createdAt: true,
+          updatedAt: true,
+          user: { select: { id: true, username: true } },
+          mission: { select: { id: true, title: true, slug: true } },
+        },
+      }),
+    ]);
+    return {
+      items,
+      total,
+      page: input.page,
+      limit: input.limit,
+      pages: Math.max(1, Math.ceil(total / input.limit)),
+    };
+  }
+
+  getSubmissionLog(id: string) {
+    return this.prisma.submission.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        status: true,
+        code: true,
+        executionTimeMs: true,
+        resultJson: true,
+        createdAt: true,
+        updatedAt: true,
+        user: { select: { id: true, username: true } },
+        mission: { select: { id: true, title: true, slug: true } },
+      },
     });
   }
 
@@ -57,6 +120,57 @@ export class AdminRepository {
         },
       });
       await this.replaceConcepts(tx, mission.id, input.concepts);
+      return mission;
+    });
+  }
+
+  async createDraftMission(input: { chapterId: string; bugTypeId: string }) {
+    return this.prisma.$transaction(async (tx) => {
+      await Promise.all([
+        tx.chapter.findUniqueOrThrow({ where: { id: input.chapterId } }),
+        tx.bugType.findUniqueOrThrow({ where: { id: input.bugTypeId } }),
+      ]);
+      const latest = await tx.mission.aggregate({
+        where: { chapterId: input.chapterId },
+        _max: { sortOrder: true },
+      });
+      const mission = await tx.mission.create({
+        data: {
+          chapterId: input.chapterId,
+          bugTypeId: input.bugTypeId,
+          slug: `draft-${randomUUID()}`,
+          sortOrder: (latest._max.sortOrder ?? 0) + 1,
+          title: '새 디버깅 미션',
+          description: '새 디버깅 미션의 문제 설명을 입력하세요.',
+          difficulty: 1,
+          isBoss: false,
+          initialCode: "# 버그가 있는 초기 코드를 작성하세요.\nprint('TODO')\n",
+          referenceSolution: "# 올바른 정답 코드를 작성하세요.\nprint('DONE')\n",
+          explanation: '버그의 원인과 올바른 수정 원리를 설명하세요.',
+          baseXp: 100,
+          isPublished: false,
+          tests: {
+            create: [
+              { sortOrder: 1, input: '', expectedOutput: 'DONE', isHidden: false },
+              { sortOrder: 2, input: 'sample', expectedOutput: 'DONE', isHidden: false },
+              { sortOrder: 3, input: 'hidden', expectedOutput: 'DONE', isHidden: true },
+            ],
+          },
+          hints: {
+            create: [
+              { level: 1, content: '오류 메시지와 출력 결과를 먼저 확인하세요.' },
+              { level: 2, content: '입력과 기대 출력의 차이를 비교하세요.' },
+              { level: 3, content: '수정할 코드 위치와 관련 개념을 확인하세요.' },
+            ],
+          },
+        },
+      });
+      const concept = await tx.concept.upsert({
+        where: { slug: 'new-concept' },
+        update: {},
+        create: { slug: 'new-concept', name: '새 개념' },
+      });
+      await tx.missionConcept.create({ data: { missionId: mission.id, conceptId: concept.id } });
       return mission;
     });
   }
