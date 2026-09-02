@@ -8,8 +8,6 @@
 
 - XP 기준 전체 랭킹 상위 50명과 내 순위
 - 닉네임 부분 일치 검색(2~32자, 최대 20명)
-- 친구 요청, 수락, 거절, 요청 취소, 친구 삭제
-- 받은 요청·보낸 요청·친구 목록 구분
 - 공개 사용자 프로필과 자기소개, 가입일, 최근 해결 활동
 - 승인 없이 연결되는 단방향 팔로우와 팔로워·팔로잉 목록
 - 랭킹, 검색, 친구 및 팔로우 목록에서 사용자 프로필로 이동
@@ -19,10 +17,7 @@
 
 - 동일 XP 사용자는 같은 순위로 표시한다.
 - 자기 자신에게는 친구 요청을 보낼 수 없다.
-- 두 사용자 사이에는 방향과 관계없이 하나의 친구 레코드만 존재한다.
-- 팔로우는 친구와 독립된 단방향 관계이며 자기 자신을 팔로우할 수 없다.
-- 친구 요청은 수신자만 수락할 수 있다.
-- 관계 당사자만 요청 또는 친구 관계를 삭제할 수 있다.
+- 팔로우는 단방향 관계이며 자기 자신을 팔로우할 수 없다.
 - 이메일, 역할, 가입일과 세부 학습 이력은 커뮤니티 API에서 노출하지 않는다.
 
 ## API
@@ -33,10 +28,6 @@
 - `GET /api/community/users/:id/follows`
 - `POST /api/community/users/:id/follow`
 - `DELETE /api/community/users/:id/follow`
-- `GET /api/community/friends`
-- `POST /api/community/friends/:userId`
-- `POST /api/community/friendships/:id/accept`
-- `DELETE /api/community/friendships/:id`
 
 ## 후속 확장 후보
 

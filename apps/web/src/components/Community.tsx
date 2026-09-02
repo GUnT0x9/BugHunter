@@ -1,17 +1,16 @@
 import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
-import type { CommunityUser, FriendOverview, RankingResponse } from '@bughunter/contracts';
-import { Check, Clock3, Search, Trophy, UserMinus, UserPlus, Users, X } from 'lucide-react';
-import { api } from '../lib/api.js';
+import type { CommunityUser, FollowOverview, RankingResponse } from '@bughunter/contracts';
+import { Search, Trophy, UserMinus, UserPlus, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { api } from '../lib/api.js';
 import { Empty } from './ui/Empty.js';
 
-const emptyFriends: FriendOverview = { friends: [], incoming: [], outgoing: [] };
 const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : '요청을 처리하지 못했습니다.';
 
 export function Community(): ReactElement {
   const [ranking, setRanking] = useState<RankingResponse | null>(null);
-  const [friends, setFriends] = useState<FriendOverview>(emptyFriends);
+  const [network, setNetwork] = useState<FollowOverview>({ followers: [], following: [] });
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<CommunityUser[]>([]);
   const [searched, setSearched] = useState(false);
@@ -20,14 +19,14 @@ export function Community(): ReactElement {
   const [error, setError] = useState('');
 
   async function loadOverview(): Promise<void> {
-    const [nextRanking, nextFriends] = await Promise.all([api.rankings(), api.friends()]);
+    const nextRanking = await api.rankings();
+    const nextNetwork = await api.follows(nextRanking.me.id);
     setRanking(nextRanking);
-    setFriends(nextFriends);
+    setNetwork(nextNetwork);
   }
-
   useEffect(() => {
     void loadOverview()
-      .catch((loadError: unknown) => setError(messageOf(loadError)))
+      .catch((reason: unknown) => setError(messageOf(reason)))
       .finally(() => setLoading(false));
   }, []);
 
@@ -42,20 +41,20 @@ export function Community(): ReactElement {
     setSearched(true);
     try {
       setResults(await api.searchUsers(normalized));
-    } catch (searchError: unknown) {
-      setError(messageOf(searchError));
+    } catch (reason: unknown) {
+      setError(messageOf(reason));
     }
   }
 
-  async function act(id: string, action: () => Promise<unknown>): Promise<void> {
-    setBusyId(id);
+  async function toggleFollow(user: CommunityUser): Promise<void> {
+    setBusyId(user.id);
     setError('');
     try {
-      await action();
+      await (user.isFollowing ? api.unfollow(user.id) : api.follow(user.id));
       await loadOverview();
-      if (searched && query.trim().length >= 2) setResults(await api.searchUsers(query.trim()));
-    } catch (actionError: unknown) {
-      setError(messageOf(actionError));
+      if (searched) setResults(await api.searchUsers(query.trim()));
+    } catch (reason: unknown) {
+      setError(messageOf(reason));
     } finally {
       setBusyId('');
     }
@@ -67,7 +66,7 @@ export function Community(): ReactElement {
         <div>
           <span className="page-kicker">COMMUNITY</span>
           <h1 className="page-title">함께 성장하기</h1>
-          <p>다른 디버거의 기록을 확인하고 친구와 학습 페이스를 맞춰보세요.</p>
+          <p>관심 있는 디버거를 팔로우하고 서로의 성장 기록을 확인하세요.</p>
         </div>
         {ranking?.me && (
           <div className="my-rank-card">
@@ -84,30 +83,25 @@ export function Community(): ReactElement {
           {error}
         </p>
       )}
-
       <div className="community-grid">
         <section className="community-panel ranking-panel" aria-labelledby="ranking-title">
           <div className="community-panel-title">
             <h2 id="ranking-title">
-              <Trophy aria-hidden="true" /> XP 랭킹
+              <Trophy /> XP 랭킹
             </h2>
             <span>TOP 50</span>
           </div>
           <ol className="ranking-list">
             {ranking?.entries.map((entry) => (
-              <li key={entry.id} className={entry.relationship === 'SELF' ? 'is-me' : ''}>
+              <li key={entry.id} className={entry.isSelf ? 'is-me' : ''}>
                 <b className={`rank-number rank-${entry.rank}`}>#{entry.rank}</b>
-                <Link
-                  className="community-avatar"
-                  to={`/community/users/${entry.id}`}
-                  aria-label={`${entry.username} 프로필`}
-                >
+                <Link className="community-avatar" to={`/community/users/${entry.id}`}>
                   {entry.username.charAt(0).toUpperCase()}
                 </Link>
                 <Link className="community-user-copy" to={`/community/users/${entry.id}`}>
                   <strong>
                     {entry.username}
-                    {entry.relationship === 'SELF' && <em>나</em>}
+                    {entry.isSelf && <em>나</em>}
                   </strong>
                   <small>
                     LV.{entry.level} · 미션 {entry.solvedCount}개 해결
@@ -119,12 +113,11 @@ export function Community(): ReactElement {
           </ol>
           {!loading && !ranking?.entries.length && <Empty text="아직 랭킹 데이터가 없습니다." />}
         </section>
-
         <div className="community-side">
-          <section className="community-panel" aria-labelledby="search-title">
+          <section className="community-panel">
             <div className="community-panel-title">
-              <h2 id="search-title">
-                <Search aria-hidden="true" /> 유저 검색
+              <h2>
+                <Search /> 유저 검색
               </h2>
             </div>
             <form className="community-search" onSubmit={(event) => void search(event)}>
@@ -141,47 +134,58 @@ export function Community(): ReactElement {
             </form>
             <div className="community-user-list search-results">
               {results.map((user) => (
-                <UserRow key={user.id} user={user} busy={busyId === user.id} onAct={act} />
+                <UserRow
+                  key={user.id}
+                  user={user}
+                  busy={busyId === user.id}
+                  onToggle={toggleFollow}
+                />
               ))}
               {searched && !results.length && <Empty text="일치하는 유저가 없습니다." />}
             </div>
           </section>
-
-          <section className="community-panel" aria-labelledby="requests-title">
-            <div className="community-panel-title">
-              <h2 id="requests-title">
-                <Clock3 aria-hidden="true" /> 친구 요청
-              </h2>
-              <span>{friends.incoming.length} RECEIVED</span>
-            </div>
-            <div className="community-user-list">
-              {friends.incoming.map((user) => (
-                <UserRow key={user.id} user={user} busy={busyId === user.id} onAct={act} />
-              ))}
-              {friends.outgoing.map((user) => (
-                <UserRow key={user.id} user={user} busy={busyId === user.id} onAct={act} />
-              ))}
-              {!friends.incoming.length && !friends.outgoing.length && (
-                <Empty text="대기 중인 친구 요청이 없습니다." />
-              )}
-            </div>
-          </section>
-
-          <section className="community-panel" aria-labelledby="friends-title">
-            <div className="community-panel-title">
-              <h2 id="friends-title">
-                <Users aria-hidden="true" /> 내 친구
-              </h2>
-              <span>{friends.friends.length} FRIENDS</span>
-            </div>
-            <div className="community-user-list">
-              {friends.friends.map((user) => (
-                <UserRow key={user.id} user={user} busy={busyId === user.id} onAct={act} />
-              ))}
-              {!friends.friends.length && <Empty text="유저를 검색해 첫 친구를 추가해보세요." />}
-            </div>
-          </section>
+          <NetworkPanel
+            title="팔로워"
+            users={network.followers}
+            busyId={busyId}
+            onToggle={toggleFollow}
+          />
+          <NetworkPanel
+            title="팔로잉"
+            users={network.following}
+            busyId={busyId}
+            onToggle={toggleFollow}
+          />
         </div>
+      </div>
+    </section>
+  );
+}
+
+function NetworkPanel({
+  title,
+  users,
+  busyId,
+  onToggle,
+}: {
+  title: string;
+  users: CommunityUser[];
+  busyId: string;
+  onToggle: (user: CommunityUser) => Promise<void>;
+}): ReactElement {
+  return (
+    <section className="community-panel">
+      <div className="community-panel-title">
+        <h2>
+          <Users /> {title}
+        </h2>
+        <span>{users.length}</span>
+      </div>
+      <div className="community-user-list">
+        {users.map((user) => (
+          <UserRow key={user.id} user={user} busy={busyId === user.id} onToggle={onToggle} />
+        ))}
+        {!users.length && <Empty text={`아직 ${title} 사용자가 없습니다.`} />}
       </div>
     </section>
   );
@@ -190,20 +194,15 @@ export function Community(): ReactElement {
 function UserRow({
   user,
   busy,
-  onAct,
+  onToggle,
 }: {
   user: CommunityUser;
   busy: boolean;
-  onAct: (id: string, action: () => Promise<unknown>) => Promise<void>;
+  onToggle: (user: CommunityUser) => Promise<void>;
 }): ReactElement {
-  const friendshipId = user.friendshipId;
   return (
     <article className="community-user-row">
-      <Link
-        className="community-avatar"
-        to={`/community/users/${user.id}`}
-        aria-label={`${user.username} 프로필`}
-      >
+      <Link className="community-avatar" to={`/community/users/${user.id}`}>
         {user.username.charAt(0).toUpperCase()}
       </Link>
       <Link className="community-user-copy" to={`/community/users/${user.id}`}>
@@ -212,65 +211,18 @@ function UserRow({
           LV.{user.level} · {user.totalXp.toLocaleString()} XP · 미션 {user.solvedCount}개
         </small>
       </Link>
-      <span className="community-user-actions">
-        <button
-          className={user.isFollowing ? 'btn ghost' : 'btn'}
-          disabled={busy}
-          onClick={() =>
-            void onAct(user.id, () =>
-              user.isFollowing ? api.unfollow(user.id) : api.follow(user.id),
-            )
-          }
-        >
-          {user.isFollowing ? <UserMinus aria-hidden="true" /> : <UserPlus aria-hidden="true" />}
-          {user.isFollowing ? '팔로잉' : '팔로우'}
-        </button>
-        {user.relationship === 'NONE' && (
+      {!user.isSelf && (
+        <span className="community-user-actions">
           <button
-            className="btn primary"
+            className={user.isFollowing ? 'btn ghost' : 'btn primary'}
             disabled={busy}
-            onClick={() => void onAct(user.id, () => api.requestFriend(user.id))}
+            onClick={() => void onToggle(user)}
           >
-            <UserPlus aria-hidden="true" /> 친구 추가
+            {user.isFollowing ? <UserMinus /> : <UserPlus />}
+            {user.isFollowing ? '팔로잉' : '팔로우'}
           </button>
-        )}
-        {user.relationship === 'PENDING_INCOMING' && friendshipId && (
-          <>
-            <button
-              className="btn primary"
-              disabled={busy}
-              onClick={() => void onAct(user.id, () => api.acceptFriend(friendshipId))}
-            >
-              <Check aria-hidden="true" /> 수락
-            </button>
-            <button
-              className="btn ghost"
-              disabled={busy}
-              onClick={() => void onAct(user.id, () => api.removeFriendship(friendshipId))}
-            >
-              <X aria-hidden="true" /> 거절
-            </button>
-          </>
-        )}
-        {user.relationship === 'PENDING_OUTGOING' && friendshipId && (
-          <button
-            className="btn ghost"
-            disabled={busy}
-            onClick={() => void onAct(user.id, () => api.removeFriendship(friendshipId))}
-          >
-            <Clock3 aria-hidden="true" /> 요청 취소
-          </button>
-        )}
-        {user.relationship === 'FRIEND' && friendshipId && (
-          <button
-            className="btn ghost"
-            disabled={busy}
-            onClick={() => void onAct(user.id, () => api.removeFriendship(friendshipId))}
-          >
-            <UserMinus aria-hidden="true" /> 친구 삭제
-          </button>
-        )}
-      </span>
+        </span>
+      )}
     </article>
   );
 }

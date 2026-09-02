@@ -2,7 +2,6 @@ import { Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/
 import type {
   CommunityUser,
   FollowOverview,
-  FriendOverview,
   PublicProfile,
   RankingResponse,
   User,
@@ -44,34 +43,5 @@ export class CommunityController {
   @Delete('users/:id/follow')
   unfollow(@CurrentUser() user: User, @Param('id') userId: string): Promise<{ ok: true }> {
     return this.community.unfollow(user.id, userId);
-  }
-
-  @Get('friends')
-  friends(@CurrentUser() user: User): Promise<FriendOverview> {
-    return this.community.friends(user.id);
-  }
-
-  @Post('friends/:userId')
-  requestFriend(
-    @CurrentUser() user: User,
-    @Param('userId') targetUserId: string,
-  ): Promise<CommunityUser> {
-    return this.community.requestFriend(user.id, targetUserId);
-  }
-
-  @Post('friendships/:id/accept')
-  acceptFriend(
-    @CurrentUser() user: User,
-    @Param('id') friendshipId: string,
-  ): Promise<CommunityUser> {
-    return this.community.acceptFriend(user.id, friendshipId);
-  }
-
-  @Delete('friendships/:id')
-  removeFriendship(
-    @CurrentUser() user: User,
-    @Param('id') friendshipId: string,
-  ): Promise<{ ok: true }> {
-    return this.community.removeFriendship(user.id, friendshipId);
   }
 }

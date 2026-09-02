@@ -92,22 +92,13 @@ export const ProfileSummarySchema = z.object({
   averageExecutionTimeMs: z.number().int().nonnegative(),
 });
 
-export const COMMUNITY_RELATIONSHIPS = [
-  'SELF',
-  'NONE',
-  'PENDING_INCOMING',
-  'PENDING_OUTGOING',
-  'FRIEND',
-] as const;
-
 export const CommunityUserSchema = z.object({
   id: z.string(),
   username: z.string(),
   totalXp: z.number().int().nonnegative(),
   level: z.number().int().positive(),
   solvedCount: z.number().int().nonnegative(),
-  relationship: z.enum(COMMUNITY_RELATIONSHIPS),
-  friendshipId: z.string().nullable(),
+  isSelf: z.boolean(),
   isFollowing: z.boolean(),
   followsMe: z.boolean(),
 });
@@ -117,7 +108,6 @@ export const PublicProfileSchema = CommunityUserSchema.extend({
   joinedAt: z.string().datetime(),
   followerCount: z.number().int().nonnegative(),
   followingCount: z.number().int().nonnegative(),
-  friendCount: z.number().int().nonnegative(),
   recentActivity: ProfileSummarySchema.shape.recentActivity,
 });
 
@@ -131,12 +121,6 @@ export const RankingEntrySchema = CommunityUserSchema.extend({ rank: z.number().
 export const RankingResponseSchema = z.object({
   entries: z.array(RankingEntrySchema),
   me: RankingEntrySchema,
-});
-
-export const FriendOverviewSchema = z.object({
-  friends: z.array(CommunityUserSchema),
-  incoming: z.array(CommunityUserSchema),
-  outgoing: z.array(CommunityUserSchema),
 });
 
 export const TestCaseSchema = z.object({
@@ -259,11 +243,9 @@ export type LoginInput = z.infer<typeof LoginInputSchema>;
 export type RegisterInput = z.infer<typeof RegisterInputSchema>;
 export type ProfileUpdate = z.infer<typeof ProfileUpdateSchema>;
 export type ProfileSummary = z.infer<typeof ProfileSummarySchema>;
-export type CommunityRelationship = (typeof COMMUNITY_RELATIONSHIPS)[number];
 export type CommunityUser = z.infer<typeof CommunityUserSchema>;
 export type RankingEntry = z.infer<typeof RankingEntrySchema>;
 export type RankingResponse = z.infer<typeof RankingResponseSchema>;
-export type FriendOverview = z.infer<typeof FriendOverviewSchema>;
 export type PublicProfile = z.infer<typeof PublicProfileSchema>;
 export type FollowOverview = z.infer<typeof FollowOverviewSchema>;
 export type TestCase = z.infer<typeof TestCaseSchema>;

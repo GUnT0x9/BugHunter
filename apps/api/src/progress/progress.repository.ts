@@ -83,10 +83,26 @@ export class ProgressRepository {
   }
 
   async bugdex(userId: string) {
-    return this.prisma.userBugDex.findMany({
-      where: { userId },
-      include: { bugType: true },
-      orderBy: { firstDiscoveredAt: 'asc' },
+    return this.prisma.missionProgress.findMany({
+      where: { userId, completedAt: { not: null } },
+      select: {
+        completedAt: true,
+        attempts: true,
+        mission: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            difficulty: true,
+            isBoss: true,
+            baseXp: true,
+            sortOrder: true,
+            chapter: { select: { sortOrder: true, title: true } },
+            bugType: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { completedAt: 'desc' },
     });
   }
 
@@ -126,32 +142,32 @@ export class ProgressRepository {
     since.setUTCDate(since.getUTCDate() - 83);
     const [user, days, recentActivity, completedCount, progressTotals, submissionTotals] =
       await Promise.all([
-      this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { createdAt: true } }),
-      this.prisma.learningDay.findMany({
-        where: { userId, date: { gte: since } },
-        select: { date: true },
-        orderBy: { date: 'asc' },
-      }),
-      this.prisma.missionProgress.findMany({
-        where: { userId, completedAt: { not: null } },
-        select: {
-          missionId: true,
-          completedAt: true,
-          mission: {
-            select: { title: true, baseXp: true, bugType: { select: { name: true } } },
+        this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { createdAt: true } }),
+        this.prisma.learningDay.findMany({
+          where: { userId, date: { gte: since } },
+          select: { date: true },
+          orderBy: { date: 'asc' },
+        }),
+        this.prisma.missionProgress.findMany({
+          where: { userId, completedAt: { not: null } },
+          select: {
+            missionId: true,
+            completedAt: true,
+            mission: {
+              select: { title: true, baseXp: true, bugType: { select: { name: true } } },
+            },
           },
-        },
-        orderBy: { completedAt: 'desc' },
-        take: 5,
-      }),
-      this.prisma.missionProgress.count({ where: { userId, completedAt: { not: null } } }),
-      this.prisma.missionProgress.aggregate({ where: { userId }, _sum: { attempts: true } }),
-      this.prisma.submission.aggregate({
-        where: { userId },
-        _count: { _all: true, executionTimeMs: true },
-        _avg: { executionTimeMs: true },
-      }),
-    ]);
+          orderBy: { completedAt: 'desc' },
+          take: 5,
+        }),
+        this.prisma.missionProgress.count({ where: { userId, completedAt: { not: null } } }),
+        this.prisma.missionProgress.aggregate({ where: { userId }, _sum: { attempts: true } }),
+        this.prisma.submission.aggregate({
+          where: { userId },
+          _count: { _all: true, executionTimeMs: true },
+          _avg: { executionTimeMs: true },
+        }),
+      ]);
     return {
       joinedAt: user.createdAt.toISOString(),
       activityDays: days.map((day) => ({ date: day.date.toISOString().slice(0, 10), count: 1 })),

@@ -1,7 +1,6 @@
 import type {
   ExecutionResult,
   CommunityUser,
-  FriendOverview,
   FollowOverview,
   LoginInput,
   MissionPublic,
@@ -88,9 +87,23 @@ export const api = {
       } | null;
     }>('/progress'),
   bugdex: () =>
-    request<Array<{ discoveredCount: number; bugType: { name: string; description: string } }>>(
-      '/bugdex',
-    ),
+    request<
+      Array<{
+        completedAt: string;
+        attempts: number;
+        mission: {
+          id: string;
+          title: string;
+          description: string;
+          difficulty: number;
+          isBoss: boolean;
+          baseXp: number;
+          sortOrder: number;
+          chapter: { sortOrder: number; title: string };
+          bugType: { name: string };
+        };
+      }>
+    >('/bugdex'),
   statistics: () =>
     request<{
       solvedCount: number;
@@ -102,13 +115,6 @@ export const api = {
   rankings: () => request<RankingResponse>('/community/rankings'),
   searchUsers: (query: string) =>
     request<CommunityUser[]>(`/community/users?query=${encodeURIComponent(query)}`),
-  friends: () => request<FriendOverview>('/community/friends'),
-  requestFriend: (userId: string) =>
-    request<CommunityUser>(`/community/friends/${userId}`, { method: 'POST' }),
-  acceptFriend: (friendshipId: string) =>
-    request<CommunityUser>(`/community/friendships/${friendshipId}/accept`, { method: 'POST' }),
-  removeFriendship: (friendshipId: string) =>
-    request<{ ok: true }>(`/community/friendships/${friendshipId}`, { method: 'DELETE' }),
   adminMissions: () => request<AdminMission[]>('/admin/missions'),
   updateAdminMission: (id: string, input: AdminMissionDraft) =>
     request<{ id: string }>(`/admin/missions/${id}`, {

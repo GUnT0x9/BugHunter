@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactElement } from 'react';
-import { ArrowLeft, CalendarDays, Check, Terminal, UserMinus, UserPlus, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Terminal, UserMinus, UserPlus } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import type { FollowOverview, PublicProfile as PublicProfileData } from '@bughunter/contracts';
 import { api } from '../lib/api.js';
@@ -72,7 +72,7 @@ export function PublicProfile(): ReactElement {
             <CalendarDays /> {dateLabel(profile.joinedAt)} 가입
           </span>
         </div>
-        {profile.relationship !== 'SELF' && (
+        {!profile.isSelf && (
           <div className="public-profile-actions">
             <button
               className={profile.isFollowing ? 'btn' : 'btn primary'}
@@ -86,28 +86,6 @@ export function PublicProfile(): ReactElement {
               {profile.isFollowing ? <UserMinus /> : <UserPlus />}{' '}
               {profile.isFollowing ? '팔로잉' : '팔로우'}
             </button>
-            {profile.relationship === 'NONE' && (
-              <button
-                className="btn"
-                disabled={busy}
-                onClick={() => void act(() => api.requestFriend(profile.id))}
-              >
-                <Users /> 친구 요청
-              </button>
-            )}
-            {profile.relationship === 'PENDING_INCOMING' && profile.friendshipId && (
-              <button
-                className="btn primary"
-                disabled={busy}
-                onClick={() => void act(() => api.acceptFriend(profile.friendshipId!))}
-              >
-                <Check /> 친구 수락
-              </button>
-            )}
-            {profile.relationship === 'PENDING_OUTGOING' && (
-              <span className="tag">친구 요청 보냄</span>
-            )}
-            {profile.relationship === 'FRIEND' && <span className="tag green">친구</span>}
           </div>
         )}
       </header>
@@ -132,10 +110,6 @@ export function PublicProfile(): ReactElement {
           <dt>팔로잉</dt>
           <dd>{profile.followingCount}</dd>
         </button>
-        <div>
-          <dt>친구</dt>
-          <dd>{profile.friendCount}</dd>
-        </div>
       </dl>
       <section className="community-panel public-profile-content">
         <div className="guide-tabs public-profile-tabs">

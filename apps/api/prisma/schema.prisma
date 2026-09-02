@@ -35,11 +35,6 @@ enum ExecutionStatus {
   TIMED_OUT
 }
 
-enum FriendshipStatus {
-  PENDING
-  ACCEPTED
-}
-
 model User {
   id             String            @id @default(cuid())
   email          String            @unique
@@ -57,8 +52,6 @@ model User {
   learningDays   LearningDay[]
   sessions       AuthSession[]
   executions     Execution[]
-  friendshipsAsA Friendship[]      @relation("FriendshipUserA")
-  friendshipsAsB Friendship[]      @relation("FriendshipUserB")
   following      Follow[]          @relation("FollowFollower")
   followers      Follow[]          @relation("FollowFollowing")
 }
@@ -73,22 +66,6 @@ model Follow {
   @@id([followerId, followingId])
   @@index([followingId, createdAt])
   @@index([followerId, createdAt])
-}
-
-model Friendship {
-  id            String           @id @default(cuid())
-  userAId       String
-  userBId       String
-  requestedById String
-  status        FriendshipStatus @default(PENDING)
-  userA         User             @relation("FriendshipUserA", fields: [userAId], references: [id], onDelete: Cascade)
-  userB         User             @relation("FriendshipUserB", fields: [userBId], references: [id], onDelete: Cascade)
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-
-  @@unique([userAId, userBId])
-  @@index([userAId, status])
-  @@index([userBId, status])
 }
 
 model AuthSession {
