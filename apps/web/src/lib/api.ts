@@ -24,6 +24,24 @@ export type AdminSubmissionLog = {
   mission: { id: string; title: string; slug: string };
 };
 export type AdminSubmissionLogDetail = AdminSubmissionLog & { code: string };
+export type DuelRoom = {
+  id: string;
+  code: string;
+  status: 'WAITING' | 'ACTIVE' | 'FINISHED' | 'CANCELLED';
+  mission: { id: string; title: string; difficulty: number };
+  startedAt: string | null;
+  expiresAt: string;
+  finishedAt: string | null;
+  winnerId: string | null;
+  meId: string;
+  participants: Array<{
+    id: string;
+    username: string;
+    attempts: number;
+    hintUsed: boolean;
+    solvedAt: string | null;
+  }>;
+};
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api';
 
@@ -222,6 +240,13 @@ export const api = {
     request<{ ok: true; awardedXp: number }>('/challenges/community-event/claim', {
       method: 'POST',
     }),
+  activeDuel: () => request<DuelRoom | null>('/duels/active'),
+  duel: (id: string) => request<DuelRoom>(`/duels/${id}`),
+  createDuel: (missionId: string) =>
+    request<DuelRoom>('/duels', { method: 'POST', body: JSON.stringify({ missionId }) }),
+  joinDuel: (code: string) =>
+    request<DuelRoom>('/duels/join', { method: 'POST', body: JSON.stringify({ code }) }),
+  cancelDuel: (id: string) => request<{ ok: true }>(`/duels/${id}/cancel`, { method: 'POST' }),
   statistics: () =>
     request<{
       solvedCount: number;

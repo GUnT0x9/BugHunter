@@ -2,18 +2,30 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { CalendarDays, Check, Flag, Gift, Star, Swords, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
+import type { DuelRoom } from '../lib/api.js';
 import { Empty } from './ui/Empty.js';
+import type { MissionPublic } from '@bughunter/contracts';
 
 const dateLabel = (value: string) =>
   new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(new Date(value));
 
-export function Challenges({ onReward }: { onReward: () => void }): ReactElement {
+export function Challenges({
+  onReward,
+  missions,
+}: {
+  onReward: () => void;
+  missions: MissionPublic[];
+}): ReactElement {
   const [coop, setCoop] = useState<Awaited<ReturnType<typeof api.cooperativeChallenge>> | null>(
     null,
   );
   const [event, setEvent] = useState<Awaited<ReturnType<typeof api.communityEvent>> | null>(null);
   const [claiming, setClaiming] = useState<'coop' | 'event' | ''>('');
   const [error, setError] = useState('');
+  const [duel, setDuel] = useState<DuelRoom | null>(null);
+  const [missionId, setMissionId] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+  const [duelBusy, setDuelBusy] = useState(false);
   async function load(): Promise<void> {
     const [nextCoop, nextEvent] = await Promise.all([
       api.cooperativeChallenge(),
@@ -27,6 +39,64 @@ export function Challenges({ onReward }: { onReward: () => void }): ReactElement
       setError(reason instanceof Error ? reason.message : '챌린지를 불러오지 못했습니다.'),
     );
   }, []);
+  useEffect(() => {
+    const firstUnlocked = missions.find((mission) => !mission.isLocked);
+    if (!missionId && firstUnlocked) setMissionId(firstUnlocked.id);
+  }, [missionId, missions]);
+  useEffect(() => {
+    void api
+      .activeDuel()
+      .then(setDuel)
+      .catch(() => null);
+  }, []);
+  useEffect(() => {
+    if (!duel || !['WAITING', 'ACTIVE'].includes(duel.status)) return;
+    const timer = window.setInterval(
+      () =>
+        void api
+          .duel(duel.id)
+          .then(setDuel)
+          .catch(() => null),
+      2_000,
+    );
+    return () => window.clearInterval(timer);
+  }, [duel?.id, duel?.status]);
+
+  async function createDuel(): Promise<void> {
+    if (!missionId) return;
+    setDuelBusy(true);
+    setError('');
+    try {
+      setDuel(await api.createDuel(missionId));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : '대결방을 만들지 못했습니다.');
+    } finally {
+      setDuelBusy(false);
+    }
+  }
+  async function joinDuel(): Promise<void> {
+    setDuelBusy(true);
+    setError('');
+    try {
+      setDuel(await api.joinDuel(joinCode));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : '대결방에 참가하지 못했습니다.');
+    } finally {
+      setDuelBusy(false);
+    }
+  }
+  async function cancelDuel(): Promise<void> {
+    if (!duel) return;
+    setDuelBusy(true);
+    try {
+      await api.cancelDuel(duel.id);
+      setDuel(null);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : '대결방을 취소하지 못했습니다.');
+    } finally {
+      setDuelBusy(false);
+    }
+  }
   async function claim(): Promise<void> {
     setClaiming('coop');
     setError('');
@@ -209,15 +279,163 @@ export function Challenges({ onReward }: { onReward: () => void }): ReactElement
           </div>
         </section>
       )}
-      <div className="challenge-mode-grid one-mode">
-        <article>
-          <Swords />
+      <DuelPanel
+        duel={duel}
+        missions={missions}
+        missionId={missionId}
+        joinCode={joinCode}
+        busy={duelBusy}
+        onMission={setMissionId}
+        onCode={(value) =>
+          setJoinCode(
+            value
+              .toUpperCase()
+              .replace(/[^A-F0-9]/g, '')
+              .slice(0, 6),
+          )
+        }
+        onCreate={() => void createDuel()}
+        onJoin={() => void joinDuel()}
+        onCancel={() => void cancelDuel()}
+      />
+    </section>
+  );
+}
+
+function DuelPanel({
+  duel,
+  missions,
+  missionId,
+  joinCode,
+  busy,
+  onMission,
+  onCode,
+  onCreate,
+  onJoin,
+  onCancel,
+}: {
+  duel: DuelRoom | null;
+  missions: MissionPublic[];
+  missionId: string;
+  joinCode: string;
+  busy: boolean;
+  onMission: (value: string) => void;
+  onCode: (value: string) => void;
+  onCreate: () => void;
+  onJoin: () => void;
+  onCancel: () => void;
+}): ReactElement {
+  if (duel)
+    return (
+      <section className={`duel-arena status-${duel.status.toLowerCase()}`}>
+        <header>
+          <div>
+            <span>HEAD TO HEAD · {duel.status}</span>
+            <h2>{duel.mission.title}</h2>
+          </div>
+          <strong>{duel.code}</strong>
+        </header>
+        <div className="duel-contenders">
+          {duel.participants.map((player, index) => (
+            <article className={duel.winnerId === player.id ? 'winner' : ''} key={player.id}>
+              <span>{index === 0 ? 'HOST' : 'CHALLENGER'}</span>
+              <h3>
+                {player.username}
+                {player.id === duel.meId ? ' (나)' : ''}
+              </h3>
+              <dl>
+                <div>
+                  <dt>제출</dt>
+                  <dd>{player.attempts}회</dd>
+                </div>
+                <div>
+                  <dt>힌트</dt>
+                  <dd>{player.hintUsed ? '사용' : '미사용'}</dd>
+                </div>
+                <div>
+                  <dt>상태</dt>
+                  <dd>{player.solvedAt ? '해결' : '도전 중'}</dd>
+                </div>
+              </dl>
+            </article>
+          ))}
+        </div>
+        {duel.status === 'WAITING' && (
+          <p className="duel-notice">
+            상대에게 참가 코드 <b>{duel.code}</b>를 알려주세요.
+          </p>
+        )}
+        {duel.status === 'ACTIVE' && (
+          <p className="duel-notice">
+            먼저 정답을 제출한 디버거가 승리합니다. 제한 시간은 15분입니다.
+          </p>
+        )}
+        {duel.status === 'FINISHED' && (
+          <p className="duel-result">
+            {duel.winnerId
+              ? `${duel.participants.find((item) => item.id === duel.winnerId)?.username} 승리`
+              : '제한 시간 종료'}
+          </p>
+        )}
+        <footer>
+          {duel.status === 'ACTIVE' && (
+            <Link className="btn primary" to={`/problems/${duel.mission.id}`}>
+              문제 풀러 가기
+            </Link>
+          )}
+          {duel.status === 'WAITING' && (
+            <button className="btn" disabled={busy} onClick={onCancel}>
+              방 취소
+            </button>
+          )}
+          {['FINISHED', 'CANCELLED'].includes(duel.status) && (
+            <button className="btn" onClick={() => window.location.reload()}>
+              새 대결 준비
+            </button>
+          )}
+        </footer>
+      </section>
+    );
+  return (
+    <section className="duel-lobby">
+      <header>
+        <Swords />
+        <div>
           <span>HEAD TO HEAD</span>
           <h2>같은 문제 경쟁</h2>
-          <p>동일 문제의 해결 기록을 공정한 기준으로 비교합니다.</p>
-          <small>다음 규칙 설정 대기</small>
-        </article>
+          <p>코드 하나로 상대를 초대하고 동일한 문제를 동시에 해결하세요.</p>
+        </div>
+      </header>
+      <div className="duel-lobby-grid">
+        <div>
+          <h3>대결방 만들기</h3>
+          <select value={missionId} onChange={(event) => onMission(event.target.value)}>
+            {missions
+              .filter((mission) => !mission.isLocked)
+              .map((mission) => (
+                <option value={mission.id} key={mission.id}>
+                  {mission.title}
+                </option>
+              ))}
+          </select>
+          <button className="btn primary" disabled={busy || !missionId} onClick={onCreate}>
+            방 만들기
+          </button>
+        </div>
+        <div>
+          <h3>참가 코드 입력</h3>
+          <input
+            value={joinCode}
+            onChange={(event) => onCode(event.target.value)}
+            placeholder="6자리 코드"
+            maxLength={6}
+          />
+          <button className="btn" disabled={busy || joinCode.length !== 6} onClick={onJoin}>
+            대결 참가
+          </button>
+        </div>
       </div>
+      <small>승리 기준: 해결 시각 → 제출 횟수 → 힌트 미사용 · 제한 시간 15분</small>
     </section>
   );
 }

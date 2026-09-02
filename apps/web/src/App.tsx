@@ -126,7 +126,10 @@ function AuthenticatedApp({
         <Route path="/statistics" element={<Statistics />} />
         <Route path="/community" element={<Community />} />
         <Route path="/rankings" element={<Rankings />} />
-        <Route path="/challenges" element={<Challenges onReward={() => void refresh()} />} />
+        <Route
+          path="/challenges"
+          element={<Challenges missions={missions} onReward={() => void refresh()} />}
+        />
         <Route path="/community/users/:id" element={<PublicProfile />} />
         <Route path="/roadmap" element={<Navigate to="/learn" replace />} />
         <Route path="/missions" element={<Navigate to="/problems" replace />} />

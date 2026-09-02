@@ -11,6 +11,7 @@ import { HealthController } from './health/health.controller.js';
 import { HealthService } from './health/health.service.js';
 import { MissionsModule } from './missions/missions.module.js';
 import { ProgressModule } from './progress/progress.module.js';
+import { DuelModule } from './duels/duel.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ProgressModule } from './progress/progress.module.js';
     ExecutionsModule,
     ProgressModule,
     AdminModule,
+    DuelModule,
   ],
   controllers: [HealthController],
   providers: [HealthService, { provide: APP_GUARD, useClass: RateLimitGuard }],
