@@ -14,6 +14,7 @@ import { missionRating } from '@bughunter/contracts';
 import { CommunityRepository } from './community.repository.js';
 import { ProgressRepository } from '../progress/progress.repository.js';
 import { questPeriods } from '../progress/quest-policy.js';
+import { cappedSolveTimeSeconds, compareSeasonScores, seasonPeriod } from './season-policy.js';
 
 type CommunityUserRow = NonNullable<Awaited<ReturnType<CommunityRepository['findCommunityUser']>>>;
 type FollowRow = { followerId: string; followingId: string };
@@ -111,6 +112,43 @@ export class CommunityService {
       startsAt: weekly.startsAt.toISOString(),
       endsAt: weekly.endsAt.toISOString(),
       entries,
+    };
+  }
+
+  async seasonRankings(currentUserId: string) {
+    const season = seasonPeriod();
+    const users = await this.repository.seasonUsers(season.startsAt, season.endsAt);
+    const ranked = users
+      .map((user) => {
+        const ratings = user.progress.map((item) => missionRating(item.attempts, item.highestHint));
+        const totalSolveTime = user.progress.reduce(
+          (sum, item) => sum + cappedSolveTimeSeconds(item.startedAt, item.completedAt!),
+          0,
+        );
+        return {
+          id: user.id,
+          username: user.username,
+          isSelf: user.id === currentUserId,
+          earnedStars: ratings.reduce((sum, rating) => sum + rating.stars, 0),
+          solvedCount: user.progress.length,
+          averageSolveTimeSeconds: user.progress.length
+            ? Math.round(totalSolveTime / user.progress.length)
+            : 86_400,
+          perfectCount: ratings.filter((rating) => rating.stars === 3).length,
+          totalAttempts: user.progress.reduce((sum, item) => sum + item.attempts, 0),
+        };
+      })
+      .sort(compareSeasonScores)
+      .map((entry, index) => ({ ...entry, rank: index + 1 }));
+    return {
+      season: {
+        key: season.key,
+        number: season.number,
+        startsAt: season.startsAt.toISOString(),
+        endsAt: season.endsAt.toISOString(),
+      },
+      entries: ranked.slice(0, 100),
+      me: ranked.find((entry) => entry.id === currentUserId)!,
     };
   }
   async profile(currentUserId: string, userId: string): Promise<PublicProfile> {

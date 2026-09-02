@@ -92,4 +92,16 @@ export class CommunityRepository {
       },
     });
   }
+  seasonUsers(startsAt: Date, endsAt: Date) {
+    return this.prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        progress: {
+          where: { completedAt: { gte: startsAt, lt: endsAt } },
+          select: { startedAt: true, completedAt: true, attempts: true, highestHint: true },
+        },
+      },
+    });
+  }
 }

@@ -25,6 +25,11 @@ export class CommunityController {
     return this.community.weeklyComparison(user.id);
   }
 
+  @Get('season-rankings')
+  seasonRankings(@CurrentUser() user: User) {
+    return this.community.seasonRankings(user.id);
+  }
+
   @Get('users')
   search(@CurrentUser() user: User, @Query('query') query = ''): Promise<CommunityUser[]> {
     return this.community.search(user.id, query);

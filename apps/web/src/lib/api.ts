@@ -180,6 +180,32 @@ export const api = {
         rank: number;
       }>;
     }>('/community/weekly-comparison'),
+  seasonRankings: () =>
+    request<{
+      season: { key: string; number: number; startsAt: string; endsAt: string };
+      entries: Array<{
+        id: string;
+        username: string;
+        isSelf: boolean;
+        earnedStars: number;
+        solvedCount: number;
+        averageSolveTimeSeconds: number;
+        perfectCount: number;
+        totalAttempts: number;
+        rank: number;
+      }>;
+      me: {
+        id: string;
+        username: string;
+        isSelf: boolean;
+        earnedStars: number;
+        solvedCount: number;
+        averageSolveTimeSeconds: number;
+        perfectCount: number;
+        totalAttempts: number;
+        rank: number;
+      };
+    }>('/community/season-rankings'),
   searchUsers: (query: string) =>
     request<CommunityUser[]>(`/community/users?query=${encodeURIComponent(query)}`),
   adminMissions: () => request<AdminMission[]>('/admin/missions'),

@@ -33,6 +33,7 @@ function setup() {
     profileCounts: vi.fn(),
     recentPublicActivity: vi.fn(),
     weeklyComparisonUsers: vi.fn(),
+    seasonUsers: vi.fn(),
   };
   return {
     repository,
@@ -117,5 +118,40 @@ describe('CommunityService', () => {
 
     expect(result.entries.map((entry) => entry.id)).toEqual(['user-b', 'user-a']);
     expect(result.entries[0]).toMatchObject({ solvedCount: 2, earnedStars: 4, rank: 1 });
+  });
+
+  it('builds a four-week season ranking with deterministic tie-breakers', async () => {
+    const { repository, service } = setup();
+    repository.seasonUsers.mockResolvedValue([
+      {
+        id: 'user-a',
+        username: '알파',
+        progress: [
+          {
+            startedAt: new Date('2026-09-01T00:00:00Z'),
+            completedAt: new Date('2026-09-01T00:10:00Z'),
+            attempts: 1,
+            highestHint: 0,
+          },
+        ],
+      },
+      {
+        id: 'user-b',
+        username: '베타',
+        progress: [
+          {
+            startedAt: new Date('2026-09-01T00:00:00Z'),
+            completedAt: new Date('2026-09-01T00:05:00Z'),
+            attempts: 1,
+            highestHint: 0,
+          },
+        ],
+      },
+    ]);
+
+    const result = await service.seasonRankings('user-a');
+
+    expect(result.entries.map((entry) => entry.id)).toEqual(['user-b', 'user-a']);
+    expect(result.me).toMatchObject({ id: 'user-a', rank: 2, earnedStars: 3 });
   });
 });
