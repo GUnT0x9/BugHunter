@@ -255,6 +255,7 @@ export const ExecutionResultSchema = z.object({
   awardedXp: z.number().int().nonnegative(),
   completed: z.boolean(),
   rating: MissionRatingSchema.nullable(),
+  mastered: z.boolean(),
 });
 
 export const SubmissionResultSchema = z.object({
@@ -269,6 +270,7 @@ export const SubmissionResultSchema = z.object({
   awardedXp: z.number().int().nonnegative(),
   completed: z.boolean(),
   rating: MissionRatingSchema.nullable(),
+  mastered: z.boolean(),
 });
 
 export const ChapterSchema = z.object({

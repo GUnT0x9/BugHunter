@@ -90,10 +90,15 @@ export class MissionRepository {
   }
 
   async recordHint(userId: string, missionId: string, level: number): Promise<void> {
+    const progress = await this.prisma.missionProgress.findUnique({
+      where: { userId_missionId: { userId, missionId } },
+      select: { completedAt: true, highestHint: true },
+    });
+    if (progress?.completedAt) return;
     await this.prisma.missionProgress.upsert({
       where: { userId_missionId: { userId, missionId } },
       create: { userId, missionId, highestHint: level },
-      update: { highestHint: { set: level } },
+      update: { highestHint: { set: Math.max(progress?.highestHint ?? 0, level) } },
     });
   }
 

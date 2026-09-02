@@ -145,6 +145,7 @@ async function processExecution(job: Job<JudgeJobData>): Promise<void> {
     awardedXp: 0,
     completed: false,
     rating: null,
+    mastered: false,
   };
 
   await prisma.$transaction(async (tx) => {
@@ -153,7 +154,7 @@ async function processExecution(job: Job<JudgeJobData>): Promise<void> {
     const award =
       execution.kind === ExecutionKind.SUBMIT && status === ExecutionStatus.SUCCEEDED
         ? await awardFirstCompletion(tx, execution.userId, execution.missionId)
-        : { awardedXp: 0, completed: false, rating: null };
+        : { awardedXp: 0, completed: false, rating: null, mastered: false };
     const result = { ...baseResult, ...award };
     const storedResult = jsonValue(result);
     await tx.execution.update({
@@ -232,6 +233,7 @@ function internalErrorResult(executionId: string, kind: ExecutionKind): Executio
     awardedXp: 0,
     completed: false,
     rating: null,
+    mastered: false,
   };
 }
 

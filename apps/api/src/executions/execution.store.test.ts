@@ -46,6 +46,35 @@ describe('ExecutionStore initial state', () => {
     expect(progressUpsert).not.toHaveBeenCalled();
   });
 
+  it('does not change the original rating inputs when submitting a completed mission for review', async () => {
+    const progressUpsert = vi.fn();
+    const transactionClient = {
+      execution: { create: vi.fn().mockResolvedValue({}) },
+      submission: { create: vi.fn().mockResolvedValue({ id: 'submission-review' }) },
+      missionProgress: {
+        findUnique: vi.fn().mockResolvedValue({ completedAt: new Date('2026-08-01T00:00:00Z') }),
+        upsert: progressUpsert,
+      },
+    };
+    const prisma = {
+      $transaction: vi.fn((callback: (client: typeof transactionClient) => Promise<unknown>) =>
+        callback(transactionClient),
+      ),
+    };
+    const store = new ExecutionStore(prisma as unknown as PrismaService);
+
+    await store.create({
+      id: 'review-run',
+      userId: 'user-1',
+      missionId: 'mission-1',
+      code: 'print(1)',
+      kind: 'SUBMIT',
+      customInput: null,
+    });
+
+    expect(progressUpsert).not.toHaveBeenCalled();
+  });
+
   it('returns an interrupted RUNNING execution to the durable queue', async () => {
     const executionUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
     const submissionUpdateMany = vi.fn().mockResolvedValue({ count: 1 });

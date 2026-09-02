@@ -93,6 +93,8 @@ export const api = {
         attempts: number;
         highestHint: number;
         rating: { stars: number; cleared: boolean; noHint: boolean; firstTry: boolean };
+        reviewAvailableAt: string;
+        mastered: boolean;
         mission: {
           id: string;
           title: string;

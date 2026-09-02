@@ -13,15 +13,21 @@ export class SubmissionRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, missionId: string, code: string) {
-    const [submission] = await this.prisma.$transaction([
-      this.prisma.submission.create({ data: { userId, missionId, code } }),
-      this.prisma.missionProgress.upsert({
+    return this.prisma.$transaction(async (tx) => {
+      const submission = await tx.submission.create({ data: { userId, missionId, code } });
+      const progress = await tx.missionProgress.findUnique({
         where: { userId_missionId: { userId, missionId } },
-        create: { userId, missionId, attempts: 1, lastCode: code },
-        update: { attempts: { increment: 1 }, lastCode: code },
-      }),
-    ]);
-    return submission;
+        select: { completedAt: true },
+      });
+      if (!progress?.completedAt) {
+        await tx.missionProgress.upsert({
+          where: { userId_missionId: { userId, missionId } },
+          create: { userId, missionId, attempts: 1, lastCode: code },
+          update: { attempts: { increment: 1 }, lastCode: code },
+        });
+      }
+      return submission;
+    });
   }
 
   updateStatus(
@@ -60,6 +66,7 @@ export class SubmissionRepository {
       awardedXp: result?.awardedXp ?? 0,
       completed: result?.completed ?? false,
       rating: result?.rating ?? null,
+      mastered: result?.mastered ?? false,
     };
   }
 }

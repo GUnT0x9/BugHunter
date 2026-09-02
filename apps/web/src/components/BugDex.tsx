@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
-import { ArrowUpRight, Crown, Star, Target } from 'lucide-react';
+import { ArrowUpRight, Crown, RotateCcw, ShieldCheck, Star, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { Empty } from './ui/Empty.js';
@@ -9,6 +9,7 @@ export function BugDex(): ReactElement {
   const [mastery, setMastery] = useState<Awaited<ReturnType<typeof api.mastery>>>([]);
   const [failed, setFailed] = useState(false);
   const [category, setCategory] = useState('all');
+  const [reviewStatus, setReviewStatus] = useState<'all' | 'due' | 'mastered'>('all');
   useEffect(() => {
     void Promise.all([api.bugdex(), api.mastery()])
       .then(([nextItems, nextMastery]) => {
@@ -31,8 +32,15 @@ export function BugDex(): ReactElement {
       ).map(([, value]) => value),
     [items],
   );
-  const visibleItems =
-    category === 'all' ? items : items.filter((item) => item.mission.bugType.slug === category);
+  const visibleItems = items.filter(
+    (item) =>
+      (category === 'all' || item.mission.bugType.slug === category) &&
+      (reviewStatus === 'all' ||
+        (reviewStatus === 'mastered' && item.mastered) ||
+        (reviewStatus === 'due' &&
+          !item.mastered &&
+          new Date(item.reviewAvailableAt) <= new Date())),
+  );
   return (
     <section className="page bugdex-page">
       <header className="bugdex-hero">
@@ -108,6 +116,28 @@ export function BugDex(): ReactElement {
           ))}
         </nav>
       )}
+      {items.length > 0 && (
+        <nav className="review-filters" aria-label="복습 상태 필터">
+          <button
+            className={reviewStatus === 'all' ? 'active' : ''}
+            onClick={() => setReviewStatus('all')}
+          >
+            전체 기록
+          </button>
+          <button
+            className={reviewStatus === 'due' ? 'active' : ''}
+            onClick={() => setReviewStatus('due')}
+          >
+            <RotateCcw /> 복습 가능
+          </button>
+          <button
+            className={reviewStatus === 'mastered' ? 'active' : ''}
+            onClick={() => setReviewStatus('mastered')}
+          >
+            <ShieldCheck /> MASTERED
+          </button>
+        </nav>
+      )}
       {items.length ? (
         <div className="bugdex-grid">
           {visibleItems.map((item) => (
@@ -116,7 +146,11 @@ export function BugDex(): ReactElement {
                 <span className="bugdex-card-code">
                   CH.{item.mission.chapter.sortOrder} · M.{item.mission.sortOrder}
                 </span>
-                {item.mission.isBoss ? (
+                {item.mastered ? (
+                  <span className="bugdex-rarity mastered">
+                    <ShieldCheck /> MASTERED
+                  </span>
+                ) : item.mission.isBoss ? (
                   <span className="bugdex-rarity boss">
                     <Crown /> BOSS
                   </span>

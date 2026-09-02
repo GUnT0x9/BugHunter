@@ -124,6 +124,11 @@ export class ProgressRepository {
               sortOrder: true,
               chapter: { select: { sortOrder: true, title: true } },
               bugType: { select: { slug: true, name: true } },
+              submissions: {
+                where: { userId, status: 'PASSED' },
+                select: { createdAt: true },
+                orderBy: { createdAt: 'desc' },
+              },
             },
           },
         },
@@ -133,6 +138,12 @@ export class ProgressRepository {
         items.map((item) => ({
           ...item,
           rating: missionRating(item.attempts, item.highestHint),
+          reviewAvailableAt: new Date(item.completedAt!.getTime() + 7 * 86_400_000).toISOString(),
+          mastered: item.mission.submissions.some(
+            (submission) =>
+              submission.createdAt.getTime() >= item.completedAt!.getTime() + 7 * 86_400_000,
+          ),
+          mission: { ...item.mission, submissions: undefined },
         })),
       );
   }

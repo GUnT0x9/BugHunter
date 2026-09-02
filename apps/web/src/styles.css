@@ -2398,6 +2398,9 @@ a.community-avatar {
 .bugdex-rarity.boss {
   color: var(--amber);
 }
+.bugdex-rarity.mastered {
+  color: var(--green);
+}
 .bugdex-rarity svg {
   width: 11px;
   height: 11px;
@@ -2501,6 +2504,10 @@ a.community-avatar {
 .bugdex-card:hover > footer > svg {
   color: var(--text);
 }
+.review-filters { display: flex; flex-wrap: wrap; gap: 7px; margin-top: -18px; }
+.review-filters button { display: flex; align-items: center; gap: 5px; padding: 6px 9px; border: 1px solid var(--border); background: transparent; color: var(--text-faint); font: 700 10px var(--mono); cursor: pointer; }
+.review-filters button svg { width: 12px; }
+.review-filters button:hover, .review-filters button.active { border-color: var(--border-hover); background: var(--panel-2); color: var(--text); }
 
 .achievements-page {
   display: grid;
@@ -3960,6 +3967,8 @@ a.community-avatar {
   border-color: currentColor;
   color: var(--text);
 }
+.mastered-result { display: flex; align-items: center; gap: 6px; margin-top: 9px; color: var(--green); font: 800 10px var(--mono); letter-spacing: .05em; }
+.mastered-result svg { width: 14px; height: 14px; }
 
 @keyframes success-pop {
   from {

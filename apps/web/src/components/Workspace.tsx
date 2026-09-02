@@ -12,6 +12,7 @@ import {
   RotateCcw,
   Send,
   Star,
+  ShieldCheck,
   Target,
   TerminalSquare,
   Trophy,
@@ -89,7 +90,7 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
       if (!next || ['QUEUED', 'RUNNING'].includes(next.status))
         throw new Error('실행 시간이 초과되었습니다. 잠시 후 다시 확인하세요.');
       setResult(next);
-      if (next.completed) onComplete();
+      if (next.kind === 'SUBMIT' && next.status === 'SUCCEEDED') onComplete();
     } catch (requestError: unknown) {
       setError(errorMessage(requestError));
     } finally {
@@ -506,6 +507,11 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
                         <span className={result.rating.cleared ? 'earned' : ''}>클리어</span>
                         <span className={result.rating.noHint ? 'earned' : ''}>힌트 미사용</span>
                         <span className={result.rating.firstTry ? 'earned' : ''}>첫 제출 성공</span>
+                      </div>
+                    )}
+                    {result.mastered && (
+                      <div className="mastered-result">
+                        <ShieldCheck /> MASTERED · 복습 검증 완료
                       </div>
                     )}
                   </div>

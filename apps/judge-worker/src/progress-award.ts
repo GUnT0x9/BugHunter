@@ -16,6 +16,7 @@ export type CompletionAward = {
   awardedXp: number;
   completed: boolean;
   rating: MissionRating;
+  mastered: boolean;
 };
 
 export async function awardFirstCompletion(
@@ -35,6 +36,7 @@ export async function awardFirstCompletion(
       awardedXp: 0,
       completed: false,
       rating: missionRating(progress.attempts, progress.highestHint),
+      mastered: Date.now() >= progress.completedAt.getTime() + 7 * 86_400_000,
     };
   }
   const attempts = progress?.attempts ?? 1;
@@ -58,5 +60,10 @@ export async function awardFirstCompletion(
     create: { userId, date: seoulDate(now), completedAt: now },
     update: { completedAt: now },
   });
-  return { awardedXp, completed: true, rating: missionRating(attempts, highestHint) };
+  return {
+    awardedXp,
+    completed: true,
+    rating: missionRating(attempts, highestHint),
+    mastered: false,
+  };
 }

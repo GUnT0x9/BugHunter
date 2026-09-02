@@ -48,6 +48,7 @@ function toExecutionResult(record: {
     awardedXp: result.awardedXp ?? 0,
     completed: result.completed ?? false,
     rating: result.rating ?? null,
+    mastered: result.mastered ?? false,
   };
 }
 
@@ -71,16 +72,22 @@ export class ExecutionStore {
             data: { userId: input.userId, missionId: input.missionId, code: input.code },
           });
           submissionId = submission.id;
-          await tx.missionProgress.upsert({
+          const existingProgress = await tx.missionProgress.findUnique({
             where: { userId_missionId: { userId: input.userId, missionId: input.missionId } },
-            create: {
-              userId: input.userId,
-              missionId: input.missionId,
-              attempts: 1,
-              lastCode: input.code,
-            },
-            update: { attempts: { increment: 1 }, lastCode: input.code },
+            select: { completedAt: true },
           });
+          if (!existingProgress?.completedAt) {
+            await tx.missionProgress.upsert({
+              where: { userId_missionId: { userId: input.userId, missionId: input.missionId } },
+              create: {
+                userId: input.userId,
+                missionId: input.missionId,
+                attempts: 1,
+                lastCode: input.code,
+              },
+              update: { attempts: { increment: 1 }, lastCode: input.code },
+            });
+          }
         }
         await tx.execution.create({
           data: {
@@ -185,6 +192,7 @@ export class ExecutionStore {
       awardedXp: 0,
       completed: false,
       rating: null,
+      mastered: false,
     };
   }
 }

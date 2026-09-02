@@ -16,7 +16,7 @@ export async function awardFirstCompletion(
   tx: Prisma.TransactionClient,
   userId: string,
   missionId: string,
-): Promise<{ awardedXp: number; completed: boolean; rating: MissionRating }> {
+): Promise<{ awardedXp: number; completed: boolean; rating: MissionRating; mastered: boolean }> {
   const mission = await tx.mission.findUniqueOrThrow({
     where: { id: missionId },
     select: { baseXp: true, bugTypeId: true },
@@ -29,6 +29,7 @@ export async function awardFirstCompletion(
       awardedXp: 0,
       completed: false,
       rating: missionRating(progress.attempts, progress.highestHint),
+      mastered: Date.now() >= progress.completedAt.getTime() + 7 * 86_400_000,
     };
   }
   const awardedXp =
@@ -58,5 +59,6 @@ export async function awardFirstCompletion(
     awardedXp,
     completed: true,
     rating: missionRating(progress?.attempts ?? 1, progress?.highestHint ?? 0),
+    mastered: false,
   };
 }
