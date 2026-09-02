@@ -40,12 +40,11 @@ export function Challenges({
   const [duelBusy, setDuelBusy] = useState(false);
   const [duelHistory, setDuelHistory] = useState<DuelHistory | null>(null);
   async function load(): Promise<void> {
-    const [nextCoop, nextEvent] = await Promise.all([
-      api.cooperativeChallenge(),
-      api.communityEvent(),
-    ]);
-    setCoop(nextCoop);
-    setEvent(nextEvent);
+    if (mode === 'coop') {
+      setCoop(await api.cooperativeChallenge());
+      return;
+    }
+    if (mode === 'event') setEvent(await api.communityEvent());
   }
   useEffect(() => {
     if (mode !== 'coop' && mode !== 'event') return;
@@ -264,7 +263,7 @@ export function Challenges({
             </div>
             <div className="event-rank">
               <small>내 순위</small>
-              <strong>#{event.me.rank}</strong>
+              <strong>{event.me.rank > 0 ? `#${event.me.rank}` : '관전자'}</strong>
             </div>
           </header>
           <div className="event-layout">

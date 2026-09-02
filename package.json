@@ -12,6 +12,7 @@
     "test:content": "pnpm --filter @bughunter/contracts build && pnpm --filter @bughunter/content test",
     "test:judge-content": "pnpm --filter @bughunter/contracts build && pnpm --filter @bughunter/content build && pnpm --filter @bughunter/judge-worker validate:content",
     "test:judge-api-content": "pnpm --filter @bughunter/contracts build && pnpm --filter @bughunter/content build && node scripts/validate-api-content.mjs",
+    "test:e2e:live": "node --env-file=.env scripts/e2e-live.mjs",
     "test:judge-docker": "RUN_DOCKER_TESTS=1 pnpm --filter @bughunter/judge-worker test",
     "db:generate": "pnpm --filter @bughunter/api prisma:generate",
     "db:migrate": "pnpm --filter @bughunter/api prisma:migrate",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@vercel/config": "^0.6.1",
+    "playwright": "1.62.1",
     "prettier": "^3.5.3",
     "typescript": "^5.8.3"
   }

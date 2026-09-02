@@ -503,17 +503,30 @@ export class ProgressRepository {
       Math.floor((weekly.startsAt.getTime() - rotationAnchor) / (7 * 86_400_000)),
     );
     const category = categories[weekIndex % categories.length]!;
-    const [users, claim] = await Promise.all([
+    const progressWhere = {
+      completedAt: { gte: weekly.startsAt, lt: weekly.endsAt },
+      mission: { bugTypeId: category.id },
+    };
+    const [users, currentUser, claim] = await Promise.all([
       this.prisma.user.findMany({
         where: { role: 'USER' },
         select: {
           id: true,
           username: true,
           progress: {
-            where: {
-              completedAt: { gte: weekly.startsAt, lt: weekly.endsAt },
-              mission: { bugTypeId: category.id },
-            },
+            where: progressWhere,
+            select: { attempts: true, highestHint: true },
+          },
+        },
+      }),
+      this.prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: {
+          id: true,
+          username: true,
+          role: true,
+          progress: {
+            where: progressWhere,
             select: { attempts: true, highestHint: true },
           },
         },
@@ -550,7 +563,18 @@ export class ProgressRepository {
           left.username.localeCompare(right.username, 'ko'),
       )
       .map((entry, index) => ({ ...entry, rank: index + 1 }));
-    const me = ranked.find((entry) => entry.id === userId)!;
+    const me = ranked.find((entry) => entry.id === userId) ?? {
+      id: currentUser.id,
+      username: currentUser.username,
+      isSelf: true,
+      solvedCount: currentUser.progress.length,
+      earnedStars: currentUser.progress.reduce(
+        (sum, progress) => sum + missionRating(progress.attempts, progress.highestHint).stars,
+        0,
+      ),
+      totalAttempts: currentUser.progress.reduce((sum, progress) => sum + progress.attempts, 0),
+      rank: 0,
+    };
     return {
       key: `COMMUNITY_EVENT_${category.slug.toUpperCase()}`,
       periodKey: weekly.key,
