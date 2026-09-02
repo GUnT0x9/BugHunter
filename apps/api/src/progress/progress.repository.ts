@@ -505,6 +505,7 @@ export class ProgressRepository {
     const category = categories[weekIndex % categories.length]!;
     const [users, claim] = await Promise.all([
       this.prisma.user.findMany({
+        where: { role: 'USER' },
         select: {
           id: true,
           username: true,

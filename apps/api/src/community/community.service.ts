@@ -52,6 +52,19 @@ export class CommunityService {
       this.repository.followsForUser(currentUserId),
     ]);
     if (!me) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    if ((me as { role?: string }).role === 'ADMIN') {
+      let previousXp: number | null = null;
+      let currentRank = 0;
+      const entries = users.map((user, index) => {
+        if (user.totalXp !== previousXp) currentRank = index + 1;
+        previousXp = user.totalXp;
+        return { ...toCommunityUser(user, currentUserId, follows), rank: currentRank };
+      });
+      return {
+        entries,
+        me: { ...toCommunityUser(me, currentUserId, follows), rank: 0 },
+      };
+    }
     let previousXp: number | null = null;
     let currentRank = 0;
     const entries = users.map((user, index) => {
@@ -117,7 +130,54 @@ export class CommunityService {
 
   async seasonRankings(currentUserId: string) {
     const season = seasonPeriod();
-    const users = await this.repository.seasonUsers(season.startsAt, season.endsAt);
+    const [users, meRow] = await Promise.all([
+      this.repository.seasonUsers(season.startsAt, season.endsAt),
+      this.repository.findCommunityUser(currentUserId),
+    ]);
+    if (meRow && (meRow as { role?: string }).role === 'ADMIN') {
+      const ranked = users
+        .map((user) => {
+          const ratings = user.progress.map((item) => missionRating(item.attempts, item.highestHint));
+          const totalSolveTime = user.progress.reduce(
+            (sum, item) => sum + cappedSolveTimeSeconds(item.startedAt, item.completedAt!),
+            0,
+          );
+          return {
+            id: user.id,
+            username: user.username,
+            isSelf: false,
+            earnedStars: ratings.reduce((sum, rating) => sum + rating.stars, 0),
+            solvedCount: user.progress.length,
+            averageSolveTimeSeconds: user.progress.length
+              ? Math.round(totalSolveTime / user.progress.length)
+              : 86_400,
+            perfectCount: ratings.filter((rating) => rating.stars === 3).length,
+            totalAttempts: user.progress.reduce((sum, item) => sum + item.attempts, 0),
+          };
+        })
+        .sort(compareSeasonScores)
+        .map((entry, index) => ({ ...entry, rank: index + 1 }));
+      return {
+        season: {
+          key: season.key,
+          number: season.number,
+          startsAt: season.startsAt.toISOString(),
+          endsAt: season.endsAt.toISOString(),
+        },
+        entries: ranked.slice(0, 100),
+        me: {
+          id: meRow.id,
+          username: meRow.username,
+          isSelf: true,
+          earnedStars: 0,
+          solvedCount: 0,
+          averageSolveTimeSeconds: 86_400,
+          perfectCount: 0,
+          totalAttempts: 0,
+          rank: 0,
+        },
+      };
+    }
     const ranked = users
       .map((user) => {
         const ratings = user.progress.map((item) => missionRating(item.attempts, item.highestHint));
@@ -160,6 +220,7 @@ export class CommunityService {
       this.progress.featuredAchievements(userId),
     ]);
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    if ((user as { role?: string }).role === 'ADMIN') throw new NotFoundException('사용자를 찾을 수 없습니다.');
     const [followerCount, followingCount] = counts;
     return {
       ...toCommunityUser(user, currentUserId, follows),
@@ -178,22 +239,26 @@ export class CommunityService {
     };
   }
   async follows(currentUserId: string, userId: string): Promise<FollowOverview> {
-    if (!(await this.repository.findCommunityUser(userId)))
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    const target = await this.repository.findCommunityUser(userId);
+    if (!target) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    if ((target as { role?: string }).role === 'ADMIN') throw new NotFoundException('사용자를 찾을 수 없습니다.');
     const [[followers, following], myFollows] = await Promise.all([
       this.repository.followOverview(userId),
       this.repository.followsForUser(currentUserId),
     ]);
+    const filteredFollowers = followers.filter((item) => (item.follower as { role?: string }).role !== 'ADMIN');
+    const filteredFollowing = following.filter((item) => (item.following as { role?: string }).role !== 'ADMIN');
     return {
-      followers: followers.map((item) => toCommunityUser(item.follower, currentUserId, myFollows)),
-      following: following.map((item) => toCommunityUser(item.following, currentUserId, myFollows)),
+      followers: filteredFollowers.map((item) => toCommunityUser(item.follower, currentUserId, myFollows)),
+      following: filteredFollowing.map((item) => toCommunityUser(item.following, currentUserId, myFollows)),
     };
   }
   async follow(currentUserId: string, targetUserId: string): Promise<{ ok: true }> {
     if (currentUserId === targetUserId)
       throw new ConflictException('자기 자신을 팔로우할 수 없습니다.');
-    if (!(await this.repository.findCommunityUser(targetUserId)))
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    const target = await this.repository.findCommunityUser(targetUserId);
+    if (!target) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    if ((target as { role?: string }).role === 'ADMIN') throw new NotFoundException('사용자를 찾을 수 없습니다.');
     try {
       await this.repository.createFollow(currentUserId, targetUserId);
     } catch (error: unknown) {

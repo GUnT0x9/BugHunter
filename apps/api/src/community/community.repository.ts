@@ -7,6 +7,7 @@ const communityUserSelect = {
   totalXp: true,
   bio: true,
   createdAt: true,
+  role: true,
   _count: { select: { progress: { where: { completedAt: { not: null } } } } },
 } as const;
 
@@ -15,6 +16,7 @@ export class CommunityRepository {
   constructor(private readonly prisma: PrismaService) {}
   topUsers(limit = 50) {
     return this.prisma.user.findMany({
+      where: { role: 'USER' },
       select: communityUserSelect,
       orderBy: [{ totalXp: 'desc' }, { username: 'asc' }],
       take: limit,
@@ -24,11 +26,11 @@ export class CommunityRepository {
     return this.prisma.user.findUnique({ where: { id }, select: communityUserSelect });
   }
   countUsersAhead(totalXp: number) {
-    return this.prisma.user.count({ where: { totalXp: { gt: totalXp } } });
+    return this.prisma.user.count({ where: { totalXp: { gt: totalXp }, role: 'USER' } });
   }
   searchUsers(query: string, currentUserId: string) {
     return this.prisma.user.findMany({
-      where: { id: { not: currentUserId }, username: { contains: query, mode: 'insensitive' } },
+      where: { id: { not: currentUserId }, username: { contains: query, mode: 'insensitive' }, role: 'USER' },
       select: communityUserSelect,
       orderBy: [{ totalXp: 'desc' }, { username: 'asc' }],
       take: 20,
@@ -81,7 +83,7 @@ export class CommunityRepository {
 
   weeklyComparisonUsers(userIds: string[], startsAt: Date, endsAt: Date) {
     return this.prisma.user.findMany({
-      where: { id: { in: userIds } },
+      where: { id: { in: userIds }, role: 'USER' },
       select: {
         id: true,
         username: true,
@@ -94,6 +96,7 @@ export class CommunityRepository {
   }
   seasonUsers(startsAt: Date, endsAt: Date) {
     return this.prisma.user.findMany({
+      where: { role: 'USER' },
       select: {
         id: true,
         username: true,
