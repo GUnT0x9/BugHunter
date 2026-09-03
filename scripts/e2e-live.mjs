@@ -121,15 +121,24 @@ try {
   await pollExecution(first.context, submission.executionId);
 
   const room = await json(
-    await first.context.post('/api/duels', { data: { missionId: mission.id } }),
+    await first.context.post('/api/duels', { data: { difficulty: mission.difficulty } }),
     '대결방 생성',
   );
+  assert(room.status === 'WAITING' && room.participants.length === 1, '대결방이 생성되지 않았습니다.');
   const joined = await json(
     await second.context.post('/api/duels/join', { data: { code: room.code } }),
     '대결방 참가',
   );
   assert(
-    joined.status === 'ACTIVE' && joined.participants.length === 2,
+    joined.status === 'WAITING' && joined.participants.length === 2,
+    '대기실에 2명이 모이지 않았습니다.',
+  );
+  const started = await json(
+    await first.context.post(`/api/duels/${joined.id}/start`),
+    '대결 시작',
+  );
+  assert(
+    started.status === 'ACTIVE' && started.participants.length === 2,
     '대결이 정상 시작되지 않았습니다.',
   );
 
@@ -223,10 +232,10 @@ try {
   const userPage = await userContext.newPage();
   await userPage.goto(`${baseURL}/search`, { waitUntil: 'networkidle' });
   await userPage.getByLabel('사용자 이름').fill(second.user.username);
-  await userPage.getByRole('button', { name: 'SEARCH' }).click();
+  await userPage.getByRole('button', { name: '검색', exact: true }).click();
   await userPage.getByText(second.user.username, { exact: true }).first().waitFor();
   await userPage.getByRole('button', { name: '팔로우', exact: true }).click();
-  await userPage.getByRole('button', { name: '팔로잉', exact: true }).waitFor();
+  await userPage.getByRole('button', { name: '팔로우 중', exact: true }).waitFor();
   checks.push('사용자 검색 UI');
   await first.context.delete(`/api/community/users/${second.user.id}/follow`);
 
