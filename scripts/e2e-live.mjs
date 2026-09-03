@@ -233,6 +233,17 @@ try {
   assert(await testResult.first().isVisible(), '제출 결과가 2초 안에 사라졌습니다.');
   assert(Boolean(resultText?.trim()), '제출 결과 내용이 비었습니다.');
   checks.push('문제 제출 결과 유지 UI');
+  if (mission.slug === 'chapter-1-mission-1') {
+    await userPage.evaluate(() => {
+      const monaco = window.monaco;
+      monaco.editor.getModels()[0].setValue('name = input().strip()\nprint("Debugrove", name)\n');
+    });
+    await userPage.getByRole('button', { name: /전체 테스트 제출/ }).click();
+    const clearDialog = userPage.getByRole('dialog', { name: '문제 해결!' });
+    await clearDialog.waitFor({ state: 'visible', timeout: 90_000 });
+    await clearDialog.getByRole('button', { name: '계속 학습하기' }).click();
+    checks.push('문제 해결 팝업 UI');
+  }
   await userContext.close();
 
   const loginContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
