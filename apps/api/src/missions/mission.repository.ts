@@ -24,15 +24,13 @@ const publicSelect = {
 } as const;
 
 export function isMissionLocked(
-  role: User['role'] | null,
-  chapterOrder: number,
-  previousInChapterId: string | null,
-  previousChapterBossId: string | null,
-  completed: ReadonlySet<string>,
+  _role: User['role'] | null,
+  _chapterOrder: number,
+  _previousInChapterId: string | null,
+  _previousChapterBossId: string | null,
+  _completed: ReadonlySet<string>,
 ): boolean {
-  if (role === 'ADMIN') return false;
-  if (previousInChapterId) return !completed.has(previousInChapterId);
-  return chapterOrder > 1 && !completed.has(previousChapterBossId ?? '');
+  return false;
 }
 
 @Injectable()

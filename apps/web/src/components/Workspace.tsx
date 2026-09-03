@@ -22,7 +22,7 @@ import {
   type ExecutionResult,
   type MissionPublic,
 } from '@bughunter/contracts';
-import { api } from '../lib/api.js';
+import { api, type DuelRoom } from '../lib/api.js';
 import { installBugHunterTheme } from '../lib/monaco-theme.js';
 import { Panel } from './ui/Panel.js';
 
@@ -55,6 +55,7 @@ export function Workspace({ mission, onBack, onComplete, duelRoomId }: Workspace
   const [error, setError] = useState('');
   const [guide, setGuide] = useState<'problem' | 'hint' | 'tests' | 'learn'>('problem');
   const [showClearPopup, setShowClearPopup] = useState(false);
+  const [duelRoom, setDuelRoom] = useState<DuelRoom | null>(null);
 
   useEffect(() => {
     // Completing a mission refreshes its progress data and replaces the mission object.
@@ -94,7 +95,7 @@ export function Workspace({ mission, onBack, onComplete, duelRoomId }: Workspace
         throw new Error('실행 시간이 초과되었습니다. 잠시 후 다시 확인하세요.');
       setResult(next);
       if (next.kind === 'SUBMIT' && next.status === 'SUCCEEDED') {
-        setShowClearPopup(true);
+        if (!duelRoomId) setShowClearPopup(true);
         onComplete();
       }
     } catch (requestError: unknown) {
@@ -111,6 +112,30 @@ export function Workspace({ mission, onBack, onComplete, duelRoomId }: Workspace
   const passedCount = result?.tests.filter((test) => test.passed).length ?? 0;
   const estimatedMinutes = Math.max(5, mission.difficulty * 4 + (mission.isBoss ? 5 : 0));
   const difficultyLabel = ['입문', '초급', '중급', '고급', '챌린지'][mission.difficulty - 1];
+
+  useEffect(() => {
+    if (!duelRoomId) return;
+    let stopped = false;
+    const poll = () =>
+      void api
+        .duel(duelRoomId)
+        .then((room) => {
+          if (!stopped) setDuelRoom(room);
+        })
+        .catch(() => null);
+    void poll();
+    const timer = window.setInterval(poll, 2_000);
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+    };
+  }, [duelRoomId]);
+
+  const duelFinished = duelRoom?.status === 'FINISHED';
+  const duelWon = duelFinished && duelRoom.winnerId === duelRoom.meId;
+  const duelWinnerName = duelFinished
+    ? (duelRoom.participants.find((p) => p.id === duelRoom.winnerId)?.username ?? null)
+    : null;
 
   useEffect(() => {
     if (!showClearPopup) return;
@@ -505,7 +530,38 @@ export function Workspace({ mission, onBack, onComplete, duelRoomId }: Workspace
           </div>
         </section>
       </main>
-      {showClearPopup && result && (
+      {duelRoomId && duelFinished && duelRoom && (
+        <div
+          className={`boss-clear-overlay ${duelWon ? 'is-mission' : 'is-boss'}`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="duel-result-title"
+        >
+          <div className="boss-clear-frame">
+            <div className="boss-clear-signal">
+              <span /> HEAD TO HEAD <span />
+            </div>
+            {duelWon ? (
+              <CheckCircle2 className="boss-clear-crown" aria-hidden="true" />
+            ) : (
+              <X className="boss-clear-crown" aria-hidden="true" />
+            )}
+            <h2 id="duel-result-title">{duelWon ? '승리!' : '패배'}</h2>
+            <p>
+              {duelWon
+                ? '먼저 문제를 해결했습니다.'
+                : duelWinnerName
+                  ? `${duelWinnerName}님이 먼저 해결했습니다.`
+                  : '제한 시간이 종료되었습니다.'}
+            </p>
+            <button className="btn boss-clear-confirm" onClick={onBack}>
+              대기실로 돌아가기
+            </button>
+            <small>대기실에서 최종 결과를 확인하세요</small>
+          </div>
+        </div>
+      )}
+      {showClearPopup && result && !duelRoomId && (
         <div
           className={`boss-clear-overlay ${mission.isBoss ? 'is-boss' : 'is-mission'}`}
           role="dialog"

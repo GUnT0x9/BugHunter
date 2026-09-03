@@ -6,17 +6,9 @@ describe('isMissionLocked', () => {
     expect(isMissionLocked('ADMIN', 7, 'previous', null, new Set())).toBe(false);
   });
 
-  it('keeps the first learner Mission open', () => {
+  it('unlocks all Missions for learners without sequential gating', () => {
     expect(isMissionLocked('USER', 1, null, null, new Set())).toBe(false);
-  });
-
-  it('requires the previous Mission for a learner', () => {
-    expect(isMissionLocked('USER', 2, 'previous', null, new Set())).toBe(true);
-    expect(isMissionLocked('USER', 2, 'previous', null, new Set(['previous']))).toBe(false);
-  });
-
-  it('requires the previous Chapter boss at a Chapter boundary', () => {
-    expect(isMissionLocked('USER', 3, null, 'boss', new Set())).toBe(true);
-    expect(isMissionLocked('USER', 3, null, 'boss', new Set(['boss']))).toBe(false);
+    expect(isMissionLocked('USER', 2, 'previous', null, new Set())).toBe(false);
+    expect(isMissionLocked('USER', 3, null, 'boss', new Set())).toBe(false);
   });
 });

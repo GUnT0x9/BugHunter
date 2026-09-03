@@ -486,7 +486,11 @@ function DuelPanel({
         <header>
           <div>
             <span>HEAD TO HEAD · {duel.status}</span>
-            <h2>{duel.mission.title}</h2>
+            <h2>
+              {duel.status === 'WAITING'
+                ? `난이도 ${duel.mission.difficulty} 랜덤 문제`
+                : duel.mission.title}
+            </h2>
           </div>
           <div className="duel-room-meta">
             <strong>{duel.code}</strong>
@@ -629,8 +633,9 @@ function DuelPanel({
         </div>
       </div>
       <small>
-        난이도를 고르면 둘 다 같은 문제를 랜덤으로 받습니다. 푼 문제도 다시 나올 수
-        있습니다. 승리 기준: 해결 시각 → 제출 횟수 → 힌트 미사용 · 제한 시간 15분
+        난이도를 고르면 시작할 때 둘 다 같은 문제를 랜덤으로 받습니다. 푼 문제도 다시
+        나올 수 있습니다. 승리 기준: 해결 시각 → 제출 횟수 → 힌트 미사용 · 제한 시간
+        15분
       </small>
     </section>
   );

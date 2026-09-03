@@ -141,20 +141,46 @@ export class DuelService {
   async start(userId: string, id: string) {
     const room = await this.prisma.duelRoom.findUnique({
       where: { id },
-      include: { participants: { orderBy: { joinedAt: 'asc' } } },
+      include: {
+        participants: { orderBy: { joinedAt: 'asc' } },
+        mission: { select: { difficulty: true } },
+      },
     });
     if (!room) throw new NotFoundException('대결방을 찾을 수 없습니다.');
     if (room.participants[0]?.userId !== userId || room.status !== DuelStatus.WAITING)
       throw new ForbiddenException('대기 중인 방장만 시작할 수 있습니다.');
     if (room.participants.length < 2)
       throw new ConflictException('상대가 참가해야 시작할 수 있습니다.');
-    await this.prisma.duelRoom.updateMany({
-      where: { id, status: DuelStatus.WAITING },
-      data: {
-        status: DuelStatus.ACTIVE,
-        startedAt: new Date(),
-        expiresAt: new Date(Date.now() + ROOM_MS),
-      },
+    const candidates = await this.prisma.mission.findMany({
+      where: { isPublished: true, difficulty: room.mission.difficulty },
+      select: { id: true },
+    });
+    if (!candidates.length)
+      throw new NotFoundException('해당 난이도의 문제를 찾을 수 없습니다.');
+    const missionId = candidates[Math.floor(Math.random() * candidates.length)]!.id;
+    const bases = await Promise.all(
+      room.participants.map((entry) => this.progress(entry.userId, missionId)),
+    );
+    await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.duelRoom.updateMany({
+        where: { id, status: DuelStatus.WAITING },
+        data: {
+          missionId,
+          status: DuelStatus.ACTIVE,
+          startedAt: new Date(),
+          expiresAt: new Date(Date.now() + ROOM_MS),
+        },
+      });
+      if (claimed.count !== 1) throw new ConflictException('대결 시작에 실패했습니다.');
+      for (const [index, entry] of room.participants.entries()) {
+        await tx.duelParticipant.update({
+          where: { roomId_userId: { roomId: id, userId: entry.userId } },
+          data: {
+            attemptBase: bases[index]!.attempts,
+            hintBase: bases[index]!.highestHint,
+          },
+        });
+      }
     });
     return this.get(userId, id);
   }
