@@ -77,12 +77,16 @@ export class DuelService {
     };
   }
 
-  async create(user: User, missionId: string) {
+  async create(user: User, difficulty: number) {
     const userId = user.id;
     await this.ensureAvailable(userId);
-    const mission = await this.missions.getPublic(missionId, user);
-    if (mission.isLocked)
-      throw new ForbiddenException('잠금 해제된 문제만 대결에 사용할 수 있습니다.');
+    const candidates = await this.prisma.mission.findMany({
+      where: { isPublished: true, difficulty },
+      select: { id: true },
+    });
+    if (!candidates.length)
+      throw new NotFoundException('해당 난이도의 문제를 찾을 수 없습니다.');
+    const missionId = candidates[Math.floor(Math.random() * candidates.length)]!.id;
     const progress = await this.progress(userId, missionId);
     for (let attempt = 0; attempt < 5; attempt += 1) {
       try {
@@ -115,18 +119,11 @@ export class DuelService {
       throw new NotFoundException('참가 가능한 대결방이 아닙니다.');
     if (room.participants.length >= 2) throw new ConflictException('이미 인원이 찬 대결방입니다.');
     if (room.participants.some((item) => item.userId === userId)) return this.get(userId, room.id);
-    const mission = await this.missions.getPublic(room.missionId, user);
-    if (mission.isLocked)
-      throw new ForbiddenException('이 문제를 먼저 잠금 해제해야 참가할 수 있습니다.');
     const progress = await this.progress(userId, room.missionId);
     await this.prisma.$transaction(async (tx) => {
       const claimed = await tx.duelRoom.updateMany({
         where: { id: room.id, status: DuelStatus.WAITING },
-        data: {
-          status: DuelStatus.ACTIVE,
-          startedAt: new Date(),
-          expiresAt: new Date(Date.now() + ROOM_MS),
-        },
+        data: { expiresAt: new Date(Date.now() + ROOM_MS) },
       });
       if (claimed.count !== 1) throw new ConflictException('다른 사용자가 먼저 참가했습니다.');
       await tx.duelParticipant.create({
@@ -139,6 +136,27 @@ export class DuelService {
       });
     });
     return this.get(userId, room.id);
+  }
+
+  async start(userId: string, id: string) {
+    const room = await this.prisma.duelRoom.findUnique({
+      where: { id },
+      include: { participants: { orderBy: { joinedAt: 'asc' } } },
+    });
+    if (!room) throw new NotFoundException('대결방을 찾을 수 없습니다.');
+    if (room.participants[0]?.userId !== userId || room.status !== DuelStatus.WAITING)
+      throw new ForbiddenException('대기 중인 방장만 시작할 수 있습니다.');
+    if (room.participants.length < 2)
+      throw new ConflictException('상대가 참가해야 시작할 수 있습니다.');
+    await this.prisma.duelRoom.updateMany({
+      where: { id, status: DuelStatus.WAITING },
+      data: {
+        status: DuelStatus.ACTIVE,
+        startedAt: new Date(),
+        expiresAt: new Date(Date.now() + ROOM_MS),
+      },
+    });
+    return this.get(userId, id);
   }
 
   async get(userId: string, id: string) {

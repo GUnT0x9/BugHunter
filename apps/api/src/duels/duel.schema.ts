@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const CreateDuelSchema = z.object({ missionId: z.string().min(1) });
+export const CreateDuelSchema = z.object({ difficulty: z.number().int().min(1).max(5) });
 export const JoinDuelSchema = z.object({
   code: z
     .string()

@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { CreateDuelSchema, JoinDuelSchema } from './duel.schema.js';
 
 describe('duel input schemas', () => {
-  it('accepts a mission id', () => {
-    expect(CreateDuelSchema.parse({ missionId: 'mission-1' })).toEqual({ missionId: 'mission-1' });
+  it('accepts a difficulty level', () => {
+    expect(CreateDuelSchema.parse({ difficulty: 3 })).toEqual({ difficulty: 3 });
+  });
+
+  it('rejects out-of-range difficulty', () => {
+    expect(() => CreateDuelSchema.parse({ difficulty: 6 })).toThrow();
   });
 
   it('normalizes a six-character invite code', () => {

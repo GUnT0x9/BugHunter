@@ -28,7 +28,12 @@ export class DuelController {
 
   @Post()
   create(@CurrentUser() user: User, @Body() body: unknown) {
-    return this.duels.create(user, parseBody(CreateDuelSchema, body).missionId);
+    return this.duels.create(user, parseBody(CreateDuelSchema, body).difficulty);
+  }
+
+  @Post(':id/start')
+  start(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.duels.start(user.id, id);
   }
 
   @Post('join')

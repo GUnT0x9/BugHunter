@@ -1,5 +1,13 @@
 import { useEffect, useState, type ReactElement } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 import type { MissionPublic, User } from '@bughunter/contracts';
 import { api } from './lib/api.js';
 import { AuthScreen } from './components/AuthScreen.js';
@@ -129,19 +137,19 @@ function AuthenticatedApp({
         <Route path="/rankings" element={<Rankings />} />
         <Route
           path="/challenges"
-          element={<Challenges missions={missions} onReward={() => void refresh()} />}
+          element={<Challenges onReward={() => void refresh()} />}
         />
         <Route
           path="/challenges/duel"
-          element={<Challenges mode="duel" missions={missions} onReward={() => void refresh()} />}
+          element={<Challenges mode="duel" onReward={() => void refresh()} />}
         />
         <Route
           path="/challenges/co-op"
-          element={<Challenges mode="coop" missions={missions} onReward={() => void refresh()} />}
+          element={<Challenges mode="coop" onReward={() => void refresh()} />}
         />
         <Route
           path="/challenges/event"
-          element={<Challenges mode="event" missions={missions} onReward={() => void refresh()} />}
+          element={<Challenges mode="event" onReward={() => void refresh()} />}
         />
         <Route path="/community/users/:id" element={<PublicProfile />} />
         <Route path="/roadmap" element={<Navigate to="/problems" replace />} />
@@ -181,6 +189,8 @@ function MissionRoute({
 }): ReactElement {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const duelRoomId = searchParams.get('duel');
   const [mission, setMission] = useState<MissionPublic | null>(
     () => missions.find((m) => m.id === id) ?? null,
   );
@@ -222,7 +232,17 @@ function MissionRoute({
       </div>
     );
 
-  return <Workspace mission={mission} onBack={() => navigate(-1)} onComplete={onComplete} />;
+  return (
+    <Workspace
+      mission={mission}
+      duelRoomId={duelRoomId}
+      onBack={() => {
+        if (duelRoomId) navigate('/challenges/duel');
+        else navigate(-1);
+      }}
+      onComplete={onComplete}
+    />
+  );
 }
 
 function LegacyMissionRedirect(): ReactElement {

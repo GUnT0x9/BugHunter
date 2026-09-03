@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -10,22 +10,19 @@ import {
   Swords,
   Users,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import type { DuelHistory, DuelRoom } from '../lib/api.js';
 import { Empty } from './ui/Empty.js';
-import type { MissionPublic } from '@bughunter/contracts';
 
 const dateLabel = (value: string) =>
   new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(new Date(value));
 
 export function Challenges({
   onReward,
-  missions,
   mode,
 }: {
   onReward: () => void;
-  missions: MissionPublic[];
   mode?: 'duel' | 'coop' | 'event';
 }): ReactElement {
   const [coop, setCoop] = useState<Awaited<ReturnType<typeof api.cooperativeChallenge>> | null>(
@@ -35,7 +32,7 @@ export function Challenges({
   const [claiming, setClaiming] = useState<'coop' | 'event' | ''>('');
   const [error, setError] = useState('');
   const [duel, setDuel] = useState<DuelRoom | null>(null);
-  const [missionId, setMissionId] = useState('');
+  const [difficulty, setDifficulty] = useState(3);
   const [joinCode, setJoinCode] = useState('');
   const [duelBusy, setDuelBusy] = useState(false);
   const [duelHistory, setDuelHistory] = useState<DuelHistory | null>(null);
@@ -52,10 +49,6 @@ export function Challenges({
       setError(reason instanceof Error ? reason.message : '챌린지를 불러오지 못했습니다.'),
     );
   }, [mode]);
-  useEffect(() => {
-    const firstUnlocked = missions.find((mission) => !mission.isLocked);
-    if (!missionId && firstUnlocked) setMissionId(firstUnlocked.id);
-  }, [missionId, missions]);
   useEffect(() => {
     if (mode !== 'duel') return;
     void Promise.all([api.activeDuel(), api.duelHistory()])
@@ -87,13 +80,13 @@ export function Challenges({
     return () => window.clearInterval(timer);
   }, [duel?.id, duel?.status]);
 
-  async function createDuel(nextMissionId = missionId): Promise<void> {
-    if (!nextMissionId) return;
+  async function createDuel(nextDifficulty = difficulty): Promise<void> {
     setDuelBusy(true);
     setError('');
     try {
-      setMissionId(nextMissionId);
-      setDuel(await api.createDuel(nextMissionId));
+      setDifficulty(nextDifficulty);
+      sessionStorage.removeItem('duel-entered');
+      setDuel(await api.createDuel(nextDifficulty));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : '대결방을 만들지 못했습니다.');
     } finally {
@@ -104,9 +97,22 @@ export function Challenges({
     setDuelBusy(true);
     setError('');
     try {
+      sessionStorage.removeItem('duel-entered');
       setDuel(await api.joinDuel(joinCode));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : '대결방에 참가하지 못했습니다.');
+    } finally {
+      setDuelBusy(false);
+    }
+  }
+  async function startDuel(): Promise<void> {
+    if (!duel) return;
+    setDuelBusy(true);
+    setError('');
+    try {
+      setDuel(await api.startDuel(duel.id));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : '대결을 시작하지 못했습니다.');
     } finally {
       setDuelBusy(false);
     }
@@ -330,11 +336,10 @@ export function Challenges({
       {mode === 'duel' && (
         <DuelPanel
           duel={duel}
-          missions={missions}
-          missionId={missionId}
+          difficulty={difficulty}
           joinCode={joinCode}
           busy={duelBusy}
-          onMission={setMissionId}
+          onDifficulty={setDifficulty}
           onCode={(value) =>
             setJoinCode(
               value
@@ -345,8 +350,9 @@ export function Challenges({
           }
           onCreate={() => void createDuel()}
           onJoin={() => void joinDuel()}
+          onStart={() => void startDuel()}
           onCancel={() => void cancelDuel()}
-          onRematch={(nextMissionId) => void createDuel(nextMissionId)}
+          onRematch={(nextDifficulty) => void createDuel(nextDifficulty)}
         />
       )}
       {mode === 'duel' && duelHistory && <DuelHistoryPanel data={duelHistory} />}
@@ -426,38 +432,54 @@ function ChallengeSystemSelect(): ReactElement {
 
 function DuelPanel({
   duel,
-  missions,
-  missionId,
+  difficulty,
   joinCode,
   busy,
-  onMission,
+  onDifficulty,
   onCode,
   onCreate,
   onJoin,
+  onStart,
   onCancel,
   onRematch,
 }: {
   duel: DuelRoom | null;
-  missions: MissionPublic[];
-  missionId: string;
+  difficulty: number;
   joinCode: string;
   busy: boolean;
-  onMission: (value: string) => void;
+  onDifficulty: (value: number) => void;
   onCode: (value: string) => void;
   onCreate: () => void;
   onJoin: () => void;
+  onStart: () => void;
   onCancel: () => void;
-  onRematch: (missionId: string) => void;
+  onRematch: (difficulty: number) => void;
 }): ReactElement {
+  const navigate = useNavigate();
   const [now, setNow] = useState(Date.now());
+  const enteredRef = useRef(sessionStorage.getItem('duel-entered'));
   useEffect(() => {
     if (duel?.status !== 'ACTIVE') return;
     const timer = window.setInterval(() => setNow(Date.now()), 1_000);
     return () => window.clearInterval(timer);
   }, [duel?.status]);
+  useEffect(() => {
+    if (duel?.status === 'FINISHED' || duel?.status === 'CANCELLED') {
+      sessionStorage.removeItem('duel-entered');
+      enteredRef.current = null;
+    }
+  }, [duel?.status, duel?.id]);
+  useEffect(() => {
+    if (duel?.status !== 'ACTIVE' || enteredRef.current === duel.id) return;
+    enteredRef.current = duel.id;
+    sessionStorage.setItem('duel-entered', duel.id);
+    navigate(`/problems/${duel.mission.id}?duel=${duel.id}`);
+  }, [duel?.status, duel?.id, duel?.mission.id, navigate]);
   const remainingSeconds = duel
     ? Math.max(0, Math.ceil((new Date(duel.expiresAt).getTime() - now) / 1_000))
     : 0;
+  const isHost = duel ? duel.participants[0]?.id === duel.meId : false;
+  const fullHouse = duel ? duel.participants.length >= 2 : false;
   if (duel)
     return (
       <section className={`duel-arena status-${duel.status.toLowerCase()}`}>
@@ -504,11 +526,17 @@ function DuelPanel({
         {duel.status === 'WAITING' && (
           <p className="duel-notice">
             상대에게 참가 코드 <b>{duel.code}</b>를 알려주세요.
+            {fullHouse
+              ? isHost
+                ? ' 두 명이 모였습니다. 시작을 눌러 동시에 입장하세요.'
+                : ' 방장이 시작을 누르면 동시에 문제로 이동합니다.'
+              : ' 상대를 기다리는 중입니다.'}
           </p>
         )}
         {duel.status === 'ACTIVE' && (
           <p className="duel-notice">
-            먼저 정답을 제출한 디버거가 승리합니다. 제한 시간은 15분입니다.
+            먼저 정답을 제출한 디버거가 승리합니다. 제한 시간은 15분입니다. 문제를 다 풀면
+            대기실로 돌아와 결과를 확인하세요.
           </p>
         )}
         {duel.status === 'FINISHED' && (
@@ -525,22 +553,30 @@ function DuelPanel({
         )}
         <footer>
           {duel.status === 'ACTIVE' && (
-            <Link className="btn primary" to={`/problems/${duel.mission.id}`}>
+            <Link className="btn primary" to={`/problems/${duel.mission.id}?duel=${duel.id}`}>
               문제 풀러 가기
             </Link>
           )}
-          {duel.status === 'WAITING' && (
-            <button className="btn" disabled={busy} onClick={onCancel}>
-              방 취소
-            </button>
+          {duel.status === 'WAITING' && isHost && (
+            <>
+              <button className="btn primary" disabled={busy || !fullHouse} onClick={onStart}>
+                {fullHouse ? '대결 시작' : '상대 대기 중…'}
+              </button>
+              <button className="btn" disabled={busy} onClick={onCancel}>
+                방 취소
+              </button>
+            </>
+          )}
+          {duel.status === 'WAITING' && !isHost && (
+            <span className="duel-notice">방장이 시작하기를 기다리는 중입니다.</span>
           )}
           {duel.status === 'FINISHED' && (
             <button
               className="btn primary"
               disabled={busy}
-              onClick={() => onRematch(duel.mission.id)}
+              onClick={() => onRematch(duel.mission.difficulty)}
             >
-              같은 문제 재대결
+              같은 난이도 재대결
             </button>
           )}
           {duel.status === 'CANCELLED' && (
@@ -564,16 +600,18 @@ function DuelPanel({
       <div className="duel-lobby-grid">
         <div>
           <h3>대결방 만들기</h3>
-          <select value={missionId} onChange={(event) => onMission(event.target.value)}>
-            {missions
-              .filter((mission) => !mission.isLocked)
-              .map((mission) => (
-                <option value={mission.id} key={mission.id}>
-                  {mission.title}
-                </option>
-              ))}
+          <select
+            value={difficulty}
+            onChange={(event) => onDifficulty(Number(event.target.value))}
+            aria-label="대결 난이도"
+          >
+            {[1, 2, 3, 4, 5].map((level) => (
+              <option value={level} key={level}>
+                난이도 {level} · 랜덤 문제
+              </option>
+            ))}
           </select>
-          <button className="btn primary" disabled={busy || !missionId} onClick={onCreate}>
+          <button className="btn primary" disabled={busy} onClick={onCreate}>
             방 만들기
           </button>
         </div>
@@ -590,7 +628,10 @@ function DuelPanel({
           </button>
         </div>
       </div>
-      <small>승리 기준: 해결 시각 → 제출 횟수 → 힌트 미사용 · 제한 시간 15분</small>
+      <small>
+        난이도를 고르면 둘 다 같은 문제를 랜덤으로 받습니다. 푼 문제도 다시 나올 수
+        있습니다. 승리 기준: 해결 시각 → 제출 횟수 → 힌트 미사용 · 제한 시간 15분
+      </small>
     </section>
   );
 }

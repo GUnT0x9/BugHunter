@@ -160,7 +160,7 @@ export function Profile({ user, progress, onUserUpdated }: ProfileProps): ReactE
             {summary ? `${dateLabel(summary.joinedAt)} 가입` : '가입일 불러오는 중'}
           </span>
         </div>
-        <Link className="btn primary profile-continue" to="/learn">
+        <Link className="btn primary profile-continue" to="/problems">
           학습 계속하기 <ArrowRight aria-hidden="true" />
         </Link>
       </header>

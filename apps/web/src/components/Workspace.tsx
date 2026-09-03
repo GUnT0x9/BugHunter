@@ -38,13 +38,14 @@ type WorkspaceProps = {
   mission: MissionPublic;
   onBack: () => void;
   onComplete: () => void;
+  duelRoomId?: string | null;
 };
 
 const beforeMount: BeforeMount = (monaco) => {
   installBugHunterTheme(monaco);
 };
 
-export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): ReactElement {
+export function Workspace({ mission, onBack, onComplete, duelRoomId }: WorkspaceProps): ReactElement {
   const activeMissionId = useRef(mission.id);
   const [code, setCode] = useState(mission.initialCode);
   const [customInput, setCustomInput] = useState(mission.visibleTests[0]?.input ?? '');
@@ -132,7 +133,7 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
       >
         <header className="workspace-header">
           <button className="btn ghost" onClick={onBack}>
-            ← 목록으로
+            {duelRoomId ? '← 대기실로' : '← 목록으로'}
           </button>
           <span className="wh-mission">
             CH.{mission.chapterOrder} / M.{mission.order}
@@ -548,8 +549,8 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
                 <dd>+{result.awardedXp} XP</dd>
               </div>
             </dl>
-            <button className="btn boss-clear-confirm" onClick={() => setShowClearPopup(false)}>
-              계속 학습하기
+            <button className="btn boss-clear-confirm" onClick={onBack}>
+              {duelRoomId ? '대기실로 돌아가기' : '계속 학습하기'}
             </button>
             <small>ESC 키로 닫기</small>
           </div>

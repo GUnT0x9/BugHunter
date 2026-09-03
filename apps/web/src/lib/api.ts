@@ -277,10 +277,11 @@ export const api = {
   activeDuel: () => request<DuelRoom | null>('/duels/active'),
   duelHistory: () => request<DuelHistory>('/duels/history'),
   duel: (id: string) => request<DuelRoom>(`/duels/${id}`),
-  createDuel: (missionId: string) =>
-    request<DuelRoom>('/duels', { method: 'POST', body: JSON.stringify({ missionId }) }),
+  createDuel: (difficulty: number) =>
+    request<DuelRoom>('/duels', { method: 'POST', body: JSON.stringify({ difficulty }) }),
   joinDuel: (code: string) =>
     request<DuelRoom>('/duels/join', { method: 'POST', body: JSON.stringify({ code }) }),
+  startDuel: (id: string) => request<DuelRoom>(`/duels/${id}/start`, { method: 'POST' }),
   cancelDuel: (id: string) => request<{ ok: true }>(`/duels/${id}/cancel`, { method: 'POST' }),
   statistics: () =>
     request<{
