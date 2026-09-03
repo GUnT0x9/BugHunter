@@ -4,10 +4,11 @@ import { AdminController } from './admin.controller.js';
 import { AdminSubmissionsController } from './admin-submissions.controller.js';
 import { AdminJudgeValidationService } from './admin-judge-validation.service.js';
 import { AdminRepository } from './admin.repository.js';
+import { AdminUsersController } from './admin-users.controller.js';
 
 @Module({
   imports: [AuthModule],
-  controllers: [AdminController, AdminSubmissionsController],
+  controllers: [AdminController, AdminSubmissionsController, AdminUsersController],
   providers: [AdminRepository, AdminJudgeValidationService],
 })
 export class AdminModule {}

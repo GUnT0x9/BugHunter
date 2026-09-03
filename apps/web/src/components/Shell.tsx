@@ -2,7 +2,6 @@ import type { ReactElement, ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Bug,
-  BookOpen,
   Code2,
   Home,
   LogOut,
@@ -14,6 +13,7 @@ import {
   Trophy,
   Swords,
   ScrollText,
+  Users,
 } from 'lucide-react';
 import type { User } from '@bughunter/contracts';
 
@@ -25,13 +25,12 @@ type NavigationItem = { to: string; label: string; icon: ReactElement; iconOnly?
 
 const LEARNING_NAV: NavigationItem[] = [
   { to: '/', label: '홈', icon: <Home size={15} /> },
-  { to: '/learn', label: '학습하기', icon: <BookOpen size={15} /> },
   { to: '/problems', label: '문제 풀기', icon: <Code2 size={15} /> },
   { to: '/bugdex', label: '버그 도감', icon: <Bug size={15} /> },
-  { to: '/achievements', label: '업적', icon: <Medal size={15} /> },
-  { to: '/quests', label: '퀘스트', icon: <ListChecks size={15} /> },
   { to: '/rankings', label: '랭킹', icon: <Trophy size={15} /> },
   { to: '/challenges', label: '챌린지', icon: <Swords size={15} /> },
+  { to: '/achievements', label: '업적', icon: <Medal size={15} /> },
+  { to: '/quests', label: '퀘스트', icon: <ListChecks size={15} /> },
 ];
 
 type ShellProps = {
@@ -48,6 +47,7 @@ export function Shell({ user, progress, onLogout, children }: ShellProps): React
           ...LEARNING_NAV,
           { to: '/admin/missions', label: '문제 관리', icon: <Settings2 size={15} /> },
           { to: '/admin/submissions', label: '제출 로그', icon: <ScrollText size={15} /> },
+          { to: '/admin/users', label: '사용자', icon: <Users size={15} /> },
         ]
       : LEARNING_NAV;
   return (
@@ -79,9 +79,7 @@ export function Shell({ user, progress, onLogout, children }: ShellProps): React
           <div className="topbar-right">
             <NavLink
               to="/search"
-              className={({ isActive }) =>
-                isActive ? 'topbar-search active' : 'topbar-search'
-              }
+              className={({ isActive }) => (isActive ? 'topbar-search active' : 'topbar-search')}
               aria-label="사용자 검색"
               title="사용자 검색"
             >

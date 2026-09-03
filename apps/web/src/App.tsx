@@ -5,7 +5,6 @@ import { api } from './lib/api.js';
 import { AuthScreen } from './components/AuthScreen.js';
 import { Shell, type Progress } from './components/Shell.js';
 import { Dashboard } from './components/Dashboard.js';
-import { Roadmap } from './components/Roadmap.js';
 import { MissionDirectory } from './components/MissionDirectory.js';
 import { BugDex } from './components/BugDex.js';
 import { Statistics } from './components/Statistics.js';
@@ -20,6 +19,7 @@ import { Achievements } from './components/Achievements.js';
 import { QuestBoard } from './components/QuestBoard.js';
 import { Rankings } from './components/Rankings.js';
 import { Challenges } from './components/Challenges.js';
+import { AdminUsers } from './components/admin/AdminUsers.js';
 
 function BootScreen(): ReactElement {
   return (
@@ -110,7 +110,7 @@ function AuthenticatedApp({
       )}
       <Routes>
         <Route path="/" element={<Dashboard progress={progress} missions={missions} />} />
-        <Route path="/learn" element={<Roadmap missions={missions} />} />
+        <Route path="/learn" element={<Navigate to="/problems" replace />} />
         <Route path="/problems" element={<MissionDirectory missions={missions} />} />
         <Route
           path="/problems/:id"
@@ -144,7 +144,7 @@ function AuthenticatedApp({
           element={<Challenges mode="event" missions={missions} onReward={() => void refresh()} />}
         />
         <Route path="/community/users/:id" element={<PublicProfile />} />
-        <Route path="/roadmap" element={<Navigate to="/learn" replace />} />
+        <Route path="/roadmap" element={<Navigate to="/problems" replace />} />
         <Route path="/missions" element={<Navigate to="/problems" replace />} />
         <Route path="/missions/:id" element={<LegacyMissionRedirect />} />
         <Route path="/profile" element={<Navigate to="/my" replace />} />
@@ -161,6 +161,10 @@ function AuthenticatedApp({
         <Route
           path="/admin/submissions"
           element={user.role === 'ADMIN' ? <AdminSubmissionLogs /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/admin/users"
+          element={user.role === 'ADMIN' ? <AdminUsers /> : <Navigate to="/" replace />}
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

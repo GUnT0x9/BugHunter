@@ -24,6 +24,16 @@ export type AdminSubmissionLog = {
   mission: { id: string; title: string; slug: string };
 };
 export type AdminSubmissionLogDetail = AdminSubmissionLog & { code: string };
+export type AdminUser = {
+  id: string;
+  email: string;
+  username: string;
+  role: 'USER' | 'ADMIN';
+  totalXp: number;
+  provider: 'GOOGLE' | 'PASSWORD';
+  createdAt: string;
+  _count: { submissions: number; progress: number; followers: number; following: number };
+};
 export type DuelRoom = {
   id: string;
   code: string;
@@ -323,6 +333,15 @@ export const api = {
   searchUsers: (query: string) =>
     request<CommunityUser[]>(`/community/users?query=${encodeURIComponent(query)}`),
   adminMissions: () => request<AdminMission[]>('/admin/missions'),
+  adminUsers: (input: { page: number; query?: string }) => {
+    const params = new URLSearchParams({ page: String(input.page), limit: '30' });
+    if (input.query?.trim()) params.set('query', input.query.trim());
+    return request<{ items: AdminUser[]; total: number; page: number; pages: number }>(
+      `/admin/users?${params}`,
+    );
+  },
+  deleteAdminUser: (id: string) =>
+    request<{ ok: true }>(`/admin/users/${id}`, { method: 'DELETE' }),
   createAdminMissionDraft: (input: { chapterId: string; bugTypeId: string }) =>
     request<{ id: string }>('/admin/missions/draft', {
       method: 'POST',

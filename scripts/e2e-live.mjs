@@ -142,6 +142,14 @@ try {
   );
   await json(await admin.get('/api/challenges/community-event'), '관리자 이벤트 조회');
   const adminMissions = await json(await admin.get('/api/admin/missions'), '관리자 문제 목록');
+  const adminUsers = await json(
+    await admin.get('/api/admin/users?page=1&limit=30'),
+    '관리자 사용자 목록',
+  );
+  assert(
+    adminUsers.items.some((item) => item.id === first.user.id),
+    '관리자 사용자 목록에 테스트 계정이 없습니다.',
+  );
   assert(adminMissions.length > 0, '관리자 문제 목록이 비었습니다.');
   const draft = await json(
     await admin.post('/api/admin/missions/draft', {
@@ -192,6 +200,7 @@ try {
     '/challenges/event',
     '/admin/missions',
     '/admin/submissions',
+    '/admin/users',
   ];
   for (const route of routes) {
     const errorsBefore = browserErrors.length;

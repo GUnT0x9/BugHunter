@@ -29,6 +29,57 @@ export class AdminRepository {
     });
   }
 
+  async listUsers(input: { page: number; limit: number; query: string }) {
+    const where: Prisma.UserWhereInput = input.query
+      ? {
+          OR: [
+            { username: { contains: input.query, mode: 'insensitive' } },
+            { email: { contains: input.query, mode: 'insensitive' } },
+          ],
+        }
+      : {};
+    const [total, items] = await this.prisma.$transaction([
+      this.prisma.user.count({ where }),
+      this.prisma.user.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (input.page - 1) * input.limit,
+        take: input.limit,
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          role: true,
+          totalXp: true,
+          googleSub: true,
+          createdAt: true,
+          _count: {
+            select: { submissions: true, progress: true, followers: true, following: true },
+          },
+        },
+      }),
+    ]);
+    return {
+      items: items.map(({ googleSub, ...user }) => ({
+        ...user,
+        provider: googleSub ? ('GOOGLE' as const) : ('PASSWORD' as const),
+      })),
+      total,
+      page: input.page,
+      pages: Math.max(1, Math.ceil(total / input.limit)),
+    };
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { id }, select: { role: true } });
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    if (user.role === 'ADMIN') throw new BadRequestException('관리자 계정은 삭제할 수 없습니다.');
+    await this.prisma.$transaction([
+      this.prisma.duelRoom.deleteMany({ where: { participants: { some: { userId: id } } } }),
+      this.prisma.user.delete({ where: { id } }),
+    ]);
+  }
+
   async listSubmissionLogs(input: AdminSubmissionQuery) {
     const search = input.query || undefined;
     const where: Prisma.SubmissionWhereInput = {
