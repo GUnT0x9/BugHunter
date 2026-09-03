@@ -1,8 +1,19 @@
 import { useMemo, useState, type ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ChevronRight, LockKeyhole } from 'lucide-react';
+import { ArrowRight, Check, ChevronRight, LockKeyhole } from 'lucide-react';
 import type { MissionPublic } from '@bughunter/contracts';
 import { Empty } from './ui/Empty.js';
+
+const CHAPTER_TITLES: Record<number, string> = {
+  1: '출력과 기본 문법',
+  2: '변수와 자료형',
+  3: '조건문',
+  4: '반복문',
+  5: '함수',
+  6: '리스트와 딕셔너리',
+  7: '예외 처리와 종합 디버깅',
+  8: '종합 보스 러시',
+};
 
 type MissionDirectoryProps = {
   missions: MissionPublic[];
@@ -46,9 +57,42 @@ export function MissionDirectory({ missions, onStart }: MissionDirectoryProps): 
     [missions, search, chapter, bugType, difficulty, status],
   );
 
+  const next =
+    missions.find((mission) => !mission.isLocked && !mission.isCompleted) ??
+    missions.find((mission) => !mission.isLocked) ??
+    null;
+
+  const grouped = useMemo(() => {
+    const map = new Map<number, MissionPublic[]>();
+    for (const mission of filtered) {
+      const list = map.get(mission.chapterOrder) ?? [];
+      list.push(mission);
+      map.set(mission.chapterOrder, list);
+    }
+    return [...map.entries()].sort((a, b) => a[0] - b[0]);
+  }, [filtered]);
+
   return (
     <section className="page">
       <h1 className="page-title">문제 풀기</h1>
+      {next && (
+        <section className="mission-continue" aria-label="이어서 풀기">
+          <div>
+            <span className="mc-id">
+              CH.{String(next.chapterOrder).padStart(2, '0')} → M.
+              {String(next.order).padStart(2, '0')}
+              {next.isBoss ? ' · 보스 미션' : ''}
+            </span>
+            <h2>{next.title}</h2>
+            <p className="mc-desc">
+              {next.bugType.name} · LV.{next.difficulty}
+            </p>
+          </div>
+          <button className="btn primary" onClick={() => handleStart(next.id)}>
+            계속 풀기 <ArrowRight size={16} />
+          </button>
+        </section>
+      )}
       <div className="mission-filters">
         <input
           value={search}
@@ -115,45 +159,61 @@ export function MissionDirectory({ missions, onStart }: MissionDirectoryProps): 
           <span>난이도</span>
           <span />
         </div>
-        {filtered.map((mission) => (
-          <button
-            key={mission.id}
-            className={mission.isLocked ? 'lt-row locked' : 'lt-row'}
-            disabled={mission.isLocked}
-            onClick={() => handleStart(mission.id)}
-          >
-            {mission.isLocked ? (
-              <LockKeyhole size={15} />
-            ) : mission.isCompleted ? (
-              <Check size={15} />
-            ) : (
-              <span className="led ok" />
-            )}
-            <span className="lt-code">
-              CH.{mission.chapterOrder}-M.{mission.order}
-              {mission.isBoss && <em className="lt-boss">BOSS</em>}
-            </span>
-            <span className="lt-main">
-              <span className="lt-title">{mission.title}</span>
-              <span className="lt-desc">{mission.description}</span>
-            </span>
-            <span className="lt-tag tag">{mission.bugType.name}</span>
-            <span className="lt-stars">
-              {Array.from({ length: 5 }, (_, index) => (
-                <span key={index} className={index < mission.difficulty ? '' : 'star-off'}>
-                  ★
+        {grouped.map(([chapterOrder, items]) => {
+          const done = items.filter((mission) => mission.isCompleted).length;
+          return (
+            <div className="lt-group" key={chapterOrder}>
+              <div className="lt-chapter" aria-hidden="true">
+                <span>
+                  CH.{String(chapterOrder).padStart(2, '0')} ·{' '}
+                  {CHAPTER_TITLES[chapterOrder] ?? `챕터 ${chapterOrder}`}
                 </span>
+                <span>
+                  {done}/{items.length} 완료
+                </span>
+              </div>
+              {items.map((mission) => (
+                <button
+                  key={mission.id}
+                  className={mission.isLocked ? 'lt-row locked' : 'lt-row'}
+                  disabled={mission.isLocked}
+                  onClick={() => handleStart(mission.id)}
+                >
+                  {mission.isLocked ? (
+                    <LockKeyhole size={15} />
+                  ) : mission.isCompleted ? (
+                    <Check size={15} />
+                  ) : (
+                    <span className="led ok" />
+                  )}
+                  <span className="lt-code">
+                    CH.{mission.chapterOrder}-M.{mission.order}
+                    {mission.isBoss && <em className="lt-boss">BOSS</em>}
+                  </span>
+                  <span className="lt-main">
+                    <span className="lt-title">{mission.title}</span>
+                    <span className="lt-desc">{mission.description}</span>
+                  </span>
+                  <span className="lt-tag tag">{mission.bugType.name}</span>
+                  <span className="lt-stars">
+                    {Array.from({ length: 5 }, (_, index) => (
+                      <span key={index} className={index < mission.difficulty ? '' : 'star-off'}>
+                        ★
+                      </span>
+                    ))}
+                  </span>
+                  <span className="lt-action">
+                    {mission.isCompleted ? (
+                      <span className="btn ghost">다시 풀기 <ChevronRight size={14} /></span>
+                    ) : (
+                      <span className="btn primary">시작 <ChevronRight size={14} /></span>
+                    )}
+                  </span>
+                </button>
               ))}
-            </span>
-            <span className="lt-action">
-              {mission.isCompleted ? (
-                <span className="btn ghost">다시 풀기 <ChevronRight size={14} /></span>
-              ) : (
-                <span className="btn primary">시작 <ChevronRight size={14} /></span>
-              )}
-            </span>
-          </button>
-        ))}
+            </div>
+          );
+        })}
       </div>
       {!filtered.length && <Empty text="현재 필터와 일치하는 미션이 없습니다." />}
     </section>
