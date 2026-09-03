@@ -3781,7 +3781,7 @@ a.community-avatar {
   height: calc(100dvh - var(--topbar-h));
   min-height: 680px;
   display: grid;
-  grid-template-columns: minmax(560px, 1fr) minmax(330px, 34vw);
+  grid-template-columns: minmax(330px, 34vw) minmax(560px, 1fr);
   grid-template-rows: auto minmax(300px, 1.45fr) minmax(330px, 1fr);
   overflow: hidden;
 }
@@ -3929,7 +3929,7 @@ a.community-avatar {
 }
 
 .editor-panel {
-  grid-column: 1;
+  grid-column: 2;
   grid-row: 2;
   min-height: 0;
   display: grid;
@@ -3995,9 +3995,9 @@ a.community-avatar {
 }
 
 .guide-panel {
-  grid-column: 2;
+  grid-column: 1;
   grid-row: 2 / 4;
-  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
   border-radius: 0;
   overflow: hidden;
 }
@@ -4221,7 +4221,7 @@ a.community-avatar {
 /* ────────────────────────── 실행 결과 ────────────────────────── */
 
 .output-panel {
-  grid-column: 1;
+  grid-column: 2;
   grid-row: 3;
   min-height: 0;
   overflow: hidden;
@@ -4547,6 +4547,11 @@ a.community-avatar {
 .boss-clear-report dd { margin: 5px 0 0; color: var(--text); font: 900 17px var(--mono); }
 .boss-clear-confirm { min-width: 180px; border-color: var(--amber); color: var(--amber); }
 .boss-clear-frame > small { margin-top: 10px; color: var(--text-faint); font: 700 9px var(--mono); }
+.boss-clear-overlay.is-mission .boss-clear-frame { border-color: var(--green); box-shadow: 0 0 28px rgb(78 255 142 / 16%); }
+.boss-clear-overlay.is-mission .boss-clear-frame::before, .boss-clear-overlay.is-mission .boss-clear-frame::after { background: var(--green); }
+.boss-clear-overlay.is-mission .boss-clear-signal, .boss-clear-overlay.is-mission .boss-clear-crown, .boss-clear-overlay.is-mission .boss-clear-frame h2 { color: var(--green); }
+.boss-clear-overlay.is-mission .boss-clear-crown { filter: drop-shadow(0 0 8px rgb(78 255 142 / 42%)); }
+.boss-clear-overlay.is-mission .boss-clear-confirm { border-color: var(--green); color: var(--green); }
 
 @keyframes boss-overlay-in {
   from { opacity: 0; }

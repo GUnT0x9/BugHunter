@@ -12,8 +12,6 @@ import {
   Play,
   RotateCcw,
   Send,
-  Star,
-  ShieldCheck,
   Target,
   TerminalSquare,
   Trophy,
@@ -55,7 +53,7 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [guide, setGuide] = useState<'problem' | 'hint' | 'tests' | 'learn'>('problem');
-  const [showBossClear, setShowBossClear] = useState(false);
+  const [showClearPopup, setShowClearPopup] = useState(false);
 
   useEffect(() => {
     // Completing a mission refreshes its progress data and replaces the mission object.
@@ -69,7 +67,7 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
     setError('');
     setGuide('problem');
     setBusy(false);
-    setShowBossClear(false);
+    setShowClearPopup(false);
   }, [mission.id, mission.initialCode, mission.visibleTests]);
 
   const execute = async (kind: 'run' | 'submit'): Promise<void> => {
@@ -94,8 +92,10 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
       if (!next || ['QUEUED', 'RUNNING'].includes(next.status))
         throw new Error('실행 시간이 초과되었습니다. 잠시 후 다시 확인하세요.');
       setResult(next);
-      if (next.completed && mission.isBoss) setShowBossClear(true);
-      if (next.kind === 'SUBMIT' && next.status === 'SUCCEEDED') onComplete();
+      if (next.kind === 'SUBMIT' && next.status === 'SUCCEEDED') {
+        setShowClearPopup(true);
+        onComplete();
+      }
     } catch (requestError: unknown) {
       setError(errorMessage(requestError));
     } finally {
@@ -112,13 +112,13 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
   const difficultyLabel = ['입문', '초급', '중급', '고급', '챌린지'][mission.difficulty - 1];
 
   useEffect(() => {
-    if (!showBossClear) return;
+    if (!showClearPopup) return;
     const closeOnEscape = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') setShowBossClear(false);
+      if (event.key === 'Escape') setShowClearPopup(false);
     };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [showBossClear]);
+  }, [showClearPopup]);
 
   return (
     <>
@@ -499,53 +499,14 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
                     실행 시간: {result.executionTimeMs}ms · 종료 코드: {result.exitCode ?? '-'}
                   </span>
                 )}
-                {allPassed && (
-                  <div className="success-banner">
-                    <CheckCircle2 />
-                    <div>
-                      <strong>버그를 수정했습니다!</strong>
-                      <p>
-                        {result.awardedXp
-                          ? `+${result.awardedXp} XP 획득`
-                          : '이미 완료한 Mission입니다.'}
-                      </p>
-                      {result.rating && (
-                        <div
-                          className={`completion-rating category-${mission.bugType.slug}`}
-                          aria-label={`별 ${result.rating.stars}개`}
-                        >
-                          <div className="mission-stars">
-                            {[1, 2, 3].map((star) => (
-                              <Star
-                                key={star}
-                                className={star <= result.rating!.stars ? 'earned' : ''}
-                              />
-                            ))}
-                            <b>{result.rating.stars}/3</b>
-                          </div>
-                          <span className={result.rating.cleared ? 'earned' : ''}>클리어</span>
-                          <span className={result.rating.noHint ? 'earned' : ''}>힌트 미사용</span>
-                          <span className={result.rating.firstTry ? 'earned' : ''}>
-                            첫 제출 성공
-                          </span>
-                        </div>
-                      )}
-                      {result.mastered && (
-                        <div className="mastered-result">
-                          <ShieldCheck /> MASTERED · 복습 검증 완료
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </>
             )}
           </div>
         </section>
       </main>
-      {showBossClear && result && (
+      {showClearPopup && result && (
         <div
-          className="boss-clear-overlay"
+          className={`boss-clear-overlay ${mission.isBoss ? 'is-boss' : 'is-mission'}`}
           role="dialog"
           aria-modal="true"
           aria-labelledby="boss-clear-title"
@@ -553,19 +514,23 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
           <div className="boss-clear-frame">
             <button
               className="boss-clear-close"
-              onClick={() => setShowBossClear(false)}
-              aria-label="보스 클리어 연출 닫기"
+              onClick={() => setShowClearPopup(false)}
+              aria-label="문제 해결 팝업 닫기"
             >
               <X />
             </button>
             <div className="boss-clear-signal">
-              <span /> BOSS SIGNAL TERMINATED <span />
+              <span /> {mission.isBoss ? 'BOSS SIGNAL TERMINATED' : 'MISSION COMPLETE'} <span />
             </div>
-            <Crown className="boss-clear-crown" aria-hidden="true" />
+            {mission.isBoss ? (
+              <Crown className="boss-clear-crown" aria-hidden="true" />
+            ) : (
+              <CheckCircle2 className="boss-clear-crown" aria-hidden="true" />
+            )}
             <span className="boss-clear-chapter">
               CHAPTER {String(mission.chapterOrder).padStart(2, '0')} · FINAL DEBUG
             </span>
-            <h2 id="boss-clear-title">BOSS CLEARED</h2>
+            <h2 id="boss-clear-title">{mission.isBoss ? 'BOSS CLEARED' : '문제 해결!'}</h2>
             <p>{mission.title}</p>
             <dl className="boss-clear-report">
               <div>
@@ -583,8 +548,8 @@ export function Workspace({ mission, onBack, onComplete }: WorkspaceProps): Reac
                 <dd>+{result.awardedXp} XP</dd>
               </div>
             </dl>
-            <button className="btn boss-clear-confirm" onClick={() => setShowBossClear(false)}>
-              클리어 기록 확인
+            <button className="btn boss-clear-confirm" onClick={() => setShowClearPopup(false)}>
+              계속 학습하기
             </button>
             <small>ESC 키로 닫기</small>
           </div>
