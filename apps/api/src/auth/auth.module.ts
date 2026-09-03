@@ -6,6 +6,7 @@ import { AuthService } from './auth.service.js';
 import { SessionAuthGuard } from './session-auth.guard.js';
 import { SessionRepository } from './session.repository.js';
 import { SessionService } from './session.service.js';
+import { GoogleAuthService } from './google-auth.service.js';
 
 @Module({
   controllers: [AuthController],
@@ -16,6 +17,7 @@ import { SessionService } from './session.service.js';
     SessionService,
     SessionAuthGuard,
     AdminGuard,
+    GoogleAuthService,
   ],
   exports: [SessionAuthGuard, AdminGuard, SessionService],
 })

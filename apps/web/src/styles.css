@@ -662,6 +662,11 @@ button:disabled {
   font-size: 14.5px;
 }
 
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 18px 0 12px; color: var(--text-muted); font-size: .76rem; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.auth-google { justify-content: center; width: 100%; border-color: var(--border-strong); background: var(--surface); color: var(--text); }
+.auth-google b { color: #4285f4; font: 700 1rem Arial, sans-serif; }
+
 .auth-switch {
   margin: 0;
   text-align: center;

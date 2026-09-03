@@ -9,6 +9,8 @@ const EnvSchema = z.object({
   SESSION_COOKIE_SAME_SITE: z.enum(['lax', 'none']).default('lax'),
   JUDGE_PROVIDER: z.enum(['docker', 'judge0', 'code_compiler']).default('docker'),
   JUDGE0_API_URL: z.string().url().default('https://ce.judge0.com'),
+  GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+  GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
 });
 
 export type AppEnv = z.infer<typeof EnvSchema>;

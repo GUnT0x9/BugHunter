@@ -35,8 +35,11 @@ Web browser는 Vercel의 `/api`에만 요청하며 Vercel이 Render API를 rever
 ## 3. Render origin 확정
 
 1. `render.yaml`의 `WEB_ORIGIN`이 최종 Vercel 주소와 같은지 확인합니다.
-2. 주소가 바뀌면 끝에 `/`를 붙이지 않고 값을 수정한 뒤 `main`에 push합니다.
-3. Render Blueprint가 변경사항을 동기화하고 API를 재배포할 때까지 기다립니다.
+2. Google 로그인을 사용할 경우 Render 환경 변수에 `GOOGLE_CLIENT_ID`,
+   `GOOGLE_CLIENT_SECRET`을 등록하고 Google Cloud의 승인된 리디렉션 URI에
+   `https://debugrove.vercel.app/api/auth/google/callback`을 정확히 추가합니다.
+3. 주소가 바뀌면 끝에 `/`를 붙이지 않고 값을 수정한 뒤 `main`에 push합니다.
+4. Render Blueprint가 변경사항을 동기화하고 API를 재배포할 때까지 기다립니다.
 
 ## 4. 배포 확인
 

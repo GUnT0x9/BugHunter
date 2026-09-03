@@ -109,6 +109,7 @@ export const api = {
       body: JSON.stringify(input),
     }),
   logout: () => request<{ ok: true }>('/auth/logout', { method: 'POST' }),
+  googleStatus: () => request<{ enabled: boolean }>('/auth/google/status'),
   missions: () => request<MissionPublic[]>('/missions'),
   mission: (id: string) => request<MissionPublic>(`/missions/${id}`),
   run: (missionId: string, code: string, input: string) =>

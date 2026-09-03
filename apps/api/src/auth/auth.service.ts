@@ -69,10 +69,27 @@ export class AuthService {
 
   async login(input: LoginInput): Promise<User> {
     const user = await this.repository.findByEmail(input.email.trim().toLowerCase());
-    if (!user || !(await argon2.verify(user.passwordHash, input.password))) {
+    if (!user?.passwordHash || !(await argon2.verify(user.passwordHash, input.password))) {
       throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
     }
     return toPublicUser(user);
+  }
+
+  async loginWithGoogle(profile: { sub: string; email: string; name: string }): Promise<User> {
+    const googleUser = await this.repository.findByGoogleSub(profile.sub);
+    if (googleUser) return toPublicUser(googleUser);
+    const email = profile.email.trim().toLowerCase();
+    const emailUser = await this.repository.findByEmail(email);
+    if (emailUser) return toPublicUser(await this.repository.linkGoogle(emailUser.id, profile.sub));
+
+    const base = (profile.name.trim() || email.split('@')[0] || 'debugger').slice(0, 28);
+    let username = base;
+    for (let suffix = 1; await this.repository.findByUsername(username); suffix += 1) {
+      username = `${base.slice(0, 27)}${suffix}`;
+    }
+    return toPublicUser(
+      await this.repository.createGoogle({ email, username, googleSub: profile.sub }),
+    );
   }
 
   async updateProfile(userId: string, input: ProfileUpdate): Promise<User> {
@@ -90,7 +107,7 @@ export class AuthService {
 
   async deleteAccount(userId: string, password: string): Promise<void> {
     const user = await this.repository.findById(userId);
-    if (!user || !(await argon2.verify(user.passwordHash, password))) {
+    if (!user?.passwordHash || !(await argon2.verify(user.passwordHash, password))) {
       throw new UnauthorizedException('비밀번호가 올바르지 않습니다.');
     }
     if (user.role === 'ADMIN') throw new ForbiddenException('관리자 계정은 삭제할 수 없습니다.');

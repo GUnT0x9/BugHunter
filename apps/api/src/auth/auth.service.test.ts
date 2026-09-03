@@ -32,9 +32,12 @@ function setup() {
     findByEmail: vi.fn(),
     findById: vi.fn(),
     findByUsername: vi.fn(),
+    findByGoogleSub: vi.fn(),
     create: vi.fn(),
     updateProfile: vi.fn(),
     deleteAccount: vi.fn(),
+    createGoogle: vi.fn(),
+    linkGoogle: vi.fn(),
   };
   return {
     repository,
@@ -94,6 +97,37 @@ describe('AuthService', () => {
     await expect(
       service.login({ email: 'HUNTER@EXAMPLE.COM', password: PASSWORD }),
     ).resolves.toMatchObject({ id: 'user-1', email: 'hunter@example.com' });
+  });
+
+  it('links a verified Google identity to an existing email account', async () => {
+    const { repository, service } = setup();
+    repository.findByGoogleSub.mockResolvedValue(null);
+    repository.findByEmail.mockResolvedValue(userRow());
+    repository.linkGoogle.mockResolvedValue(userRow());
+
+    await expect(
+      service.loginWithGoogle({ sub: 'google-1', email: 'HUNTER@example.com', name: 'Hunter' }),
+    ).resolves.toMatchObject({ id: 'user-1', email: 'hunter@example.com' });
+    expect(repository.linkGoogle).toHaveBeenCalledWith('user-1', 'google-1');
+  });
+
+  it('creates a unique nickname for a new Google account', async () => {
+    const { repository, service } = setup();
+    repository.findByGoogleSub.mockResolvedValue(null);
+    repository.findByEmail.mockResolvedValue(null);
+    repository.findByUsername.mockResolvedValueOnce(userRow()).mockResolvedValueOnce(null);
+    repository.createGoogle.mockImplementation(async (input) => ({
+      ...userRow({ email: input.email, username: input.username }),
+      googleSub: input.googleSub,
+      passwordHash: null,
+    }));
+
+    await service.loginWithGoogle({ sub: 'google-2', email: 'new@example.com', name: 'Hunter' });
+    expect(repository.createGoogle).toHaveBeenCalledWith({
+      email: 'new@example.com',
+      username: 'Hunter1',
+      googleSub: 'google-2',
+    });
   });
 
   it('uses the same unauthorized response for an unknown email and a wrong password', async () => {

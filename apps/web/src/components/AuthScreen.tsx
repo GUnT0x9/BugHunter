@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactElement } from 'react';
+import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
 import { ArrowLeft, Check, Eye, EyeOff } from 'lucide-react';
 import type { User } from '@bughunter/contracts';
 import { api } from '../lib/api.js';
@@ -36,7 +36,19 @@ export function AuthScreen({
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [googleEnabled, setGoogleEnabled] = useState(false);
   const strength = passwordStrength(password);
+
+  useEffect(() => {
+    void api
+      .googleStatus()
+      .then(({ enabled }) => setGoogleEnabled(enabled))
+      .catch(() => null);
+    if (new URLSearchParams(window.location.search).get('authError') === 'google') {
+      setError('Google 로그인에 실패했습니다. 다시 시도해주세요.');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   function changeMode(nextMode: AuthMode): void {
     setMode(nextMode);
@@ -98,7 +110,9 @@ export function AuthScreen({
             {isRegister ? (
               <span className="auth-typewriter auth-typewriter-register">ENTER THE HUNT_</span>
             ) : (
-              <span className="auth-typewriter auth-typewriter-brand">디버깅으로 배우는 Python</span>
+              <span className="auth-typewriter auth-typewriter-brand">
+                디버깅으로 배우는 Python
+              </span>
             )}
           </h1>
           <p>
@@ -225,6 +239,22 @@ export function AuthScreen({
           </button>
         </form>
 
+        {googleEnabled && (
+          <>
+            <div className="auth-divider">
+              <span>또는</span>
+            </div>
+            <button
+              className="btn auth-google"
+              type="button"
+              onClick={() => window.location.assign('/api/auth/google')}
+            >
+              <b aria-hidden="true">G</b>
+              Google로 계속하기
+            </button>
+          </>
+        )}
+
         <p className="auth-switch">
           {isRegister ? '이미 계정이 있나요?' : '아직 계정이 없나요?'}
           <button
@@ -235,7 +265,6 @@ export function AuthScreen({
             {isRegister ? '로그인' : '회원가입'}
           </button>
         </p>
-
       </section>
     </main>
   );

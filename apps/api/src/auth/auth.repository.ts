@@ -14,6 +14,10 @@ export class AuthRepository {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
+  findByGoogleSub(googleSub: string) {
+    return this.prisma.user.findUnique({ where: { googleSub } });
+  }
+
   findByUsername(username: string) {
     return this.prisma.user.findUnique({ where: { username } });
   }
@@ -27,6 +31,14 @@ export class AuthRepository {
 
   create(input: { email: string; username: string; passwordHash: string; role?: UserRole }) {
     return this.prisma.user.create({ data: input });
+  }
+
+  createGoogle(input: { email: string; username: string; googleSub: string }) {
+    return this.prisma.user.create({ data: input });
+  }
+
+  linkGoogle(id: string, googleSub: string) {
+    return this.prisma.user.update({ where: { id }, data: { googleSub } });
   }
 
   updateProfile(id: string, username: string, bio: string) {
