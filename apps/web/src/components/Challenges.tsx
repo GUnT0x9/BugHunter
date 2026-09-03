@@ -53,13 +53,31 @@ export function Challenges({
     if (mode !== 'duel') return;
     void Promise.all([api.activeDuel(), api.duelHistory()])
       .then(([active, history]) => {
-        setDuel(active);
         setDuelHistory(history);
+        if (active) {
+          sessionStorage.setItem('duel-last', active.id);
+          setDuel(active);
+          return;
+        }
+        const lastId = sessionStorage.getItem('duel-last');
+        if (!lastId) {
+          setDuel(null);
+          return;
+        }
+        void api
+          .duel(lastId)
+          .then((last) => setDuel(last))
+          .catch(() => {
+            sessionStorage.removeItem('duel-last');
+            setDuel(null);
+          });
       })
       .catch(() => null);
   }, [mode]);
   useEffect(() => {
-    if (!duel || !['WAITING', 'ACTIVE'].includes(duel.status)) return;
+    if (!duel) return;
+    sessionStorage.setItem('duel-last', duel.id);
+    if (!['WAITING', 'ACTIVE'].includes(duel.status)) return;
     const timer = window.setInterval(
       () =>
         void api
@@ -67,6 +85,7 @@ export function Challenges({
           .then((next) => {
             setDuel(next);
             if (next.status === 'FINISHED') {
+              sessionStorage.setItem('duel-last', next.id);
               void api
                 .duelHistory()
                 .then(setDuelHistory)
@@ -122,12 +141,19 @@ export function Challenges({
     setDuelBusy(true);
     try {
       await api.cancelDuel(duel.id);
+      sessionStorage.removeItem('duel-last');
+      sessionStorage.removeItem('duel-entered');
       setDuel(null);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : '대결방을 취소하지 못했습니다.');
     } finally {
       setDuelBusy(false);
     }
+  }
+  function leaveDuel(): void {
+    sessionStorage.removeItem('duel-last');
+    sessionStorage.removeItem('duel-entered');
+    setDuel(null);
   }
   async function claim(): Promise<void> {
     setClaiming('coop');
@@ -352,6 +378,7 @@ export function Challenges({
           onJoin={() => void joinDuel()}
           onStart={() => void startDuel()}
           onCancel={() => void cancelDuel()}
+          onLeave={() => leaveDuel()}
           onRematch={(nextDifficulty) => void createDuel(nextDifficulty)}
         />
       )}
@@ -441,6 +468,7 @@ function DuelPanel({
   onJoin,
   onStart,
   onCancel,
+  onLeave,
   onRematch,
 }: {
   duel: DuelRoom | null;
@@ -453,6 +481,7 @@ function DuelPanel({
   onJoin: () => void;
   onStart: () => void;
   onCancel: () => void;
+  onLeave: () => void;
   onRematch: (difficulty: number) => void;
 }): ReactElement {
   const navigate = useNavigate();
@@ -575,16 +604,36 @@ function DuelPanel({
             <span className="duel-notice">방장이 시작하기를 기다리는 중입니다.</span>
           )}
           {duel.status === 'FINISHED' && (
-            <button
-              className="btn primary"
-              disabled={busy}
-              onClick={() => onRematch(duel.mission.difficulty)}
-            >
-              같은 난이도 재대결
-            </button>
+            <>
+              <button
+                className="btn primary"
+                disabled={busy}
+                onClick={() => onRematch(duel.mission.difficulty)}
+              >
+                같은 난이도 재대결
+              </button>
+              <button
+                className="btn"
+                disabled={busy}
+                onClick={() => {
+                  sessionStorage.removeItem('duel-last');
+                  sessionStorage.removeItem('duel-entered');
+                  onLeave();
+                }}
+              >
+                로비로 나가기
+              </button>
+            </>
           )}
           {duel.status === 'CANCELLED' && (
-            <button className="btn" onClick={() => window.location.reload()}>
+            <button
+              className="btn"
+              onClick={() => {
+                sessionStorage.removeItem('duel-last');
+                sessionStorage.removeItem('duel-entered');
+                onLeave();
+              }}
+            >
               새 대결 준비
             </button>
           )}
