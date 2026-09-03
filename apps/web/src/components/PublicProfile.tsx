@@ -48,7 +48,7 @@ export function PublicProfile(): ReactElement {
     return (
       <section className="page">
         <Link className="btn ghost" to="/search">
-          <ArrowLeft /> 커뮤니티
+          <ArrowLeft /> 커뮤니티로
         </Link>
         <p className={error ? 'form-error' : 'muted'}>{error || '프로필을 불러오는 중입니다…'}</p>
       </section>
@@ -84,7 +84,7 @@ export function PublicProfile(): ReactElement {
               }
             >
               {profile.isFollowing ? <UserMinus /> : <UserPlus />}{' '}
-              {profile.isFollowing ? '팔로잉' : '팔로우'}
+              {profile.isFollowing ? '팔로우 중' : '팔로우'}
             </button>
           </div>
         )}
@@ -102,14 +102,22 @@ export function PublicProfile(): ReactElement {
           <dt>해결</dt>
           <dd>{profile.solvedCount}</dd>
         </div>
-        <button onClick={() => setTab('followers')}>
+        <div>
           <dt>팔로워</dt>
-          <dd>{profile.followerCount}</dd>
-        </button>
-        <button onClick={() => setTab('following')}>
+          <dd>
+            <button className="stat-count-btn" onClick={() => setTab('followers')}>
+              {profile.followerCount}
+            </button>
+          </dd>
+        </div>
+        <div>
           <dt>팔로잉</dt>
-          <dd>{profile.followingCount}</dd>
-        </button>
+          <dd>
+            <button className="stat-count-btn" onClick={() => setTab('following')}>
+              {profile.followingCount}
+            </button>
+          </dd>
+        </div>
       </dl>
       {profile.featuredAchievements.length > 0 && (
         <section className="featured-achievements" aria-labelledby="featured-achievements-title">

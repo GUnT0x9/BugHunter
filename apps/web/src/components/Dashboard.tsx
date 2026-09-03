@@ -22,10 +22,13 @@ export function Dashboard({ progress, missions, onStart }: DashboardProps): Reac
   const recommendations = missions.filter((mission) => !mission.isLocked).slice(0, 3);
   const progressMax = Math.max(1, (progress?.bugsFixed ?? 0) + 5);
   const progressPercent = Math.min(100, Math.round(((progress?.bugsFixed ?? 0) / progressMax) * 100));
+  const estimatedMinutes = next
+    ? Math.max(5, next.difficulty * 4 + (next.isBoss ? 5 : 0))
+    : 0;
 
   return (
     <section className="page dashboard-page">
-      <h1 className="dashboard-heading">이어서 학습하기</h1>
+      <h1 className="dashboard-heading">이어서 풀기</h1>
 
       <section className="dashboard-resume" aria-labelledby="resume-title">
         <div className="resume-panel">
@@ -37,7 +40,8 @@ export function Dashboard({ progress, missions, onStart }: DashboardProps): Reac
             <h2 id="resume-title">{next?.title ?? '학습 가능한 문제가 없습니다'}</h2>
             <p className="resume-desc">
               {next
-                ? `${next.bugType.name} · 약 18분` : '모든 문제를 완료했습니다.'}
+                ? `${next.bugType.name} · 약 ${estimatedMinutes}분`
+                : '모든 문제를 완료했습니다.'}
             </p>
           </div>
           <button
@@ -45,12 +49,12 @@ export function Dashboard({ progress, missions, onStart }: DashboardProps): Reac
             disabled={!next}
             onClick={() => next && handleStart(next.id)}
           >
-            계속 학습하기 <ArrowRight size={16} />
+            계속 풀기 <ArrowRight size={16} />
           </button>
         </div>
       </section>
 
-      <h2 className="section-heading">이번 주 학습 현황</h2>
+      <h2 className="section-heading">학습 현황</h2>
       <div className="weekly-summary">
         <div className="weekly-progress" aria-label={`주간 진도율 ${progressPercent}%`}>
           <strong>{progressPercent}%</strong>
@@ -62,7 +66,7 @@ export function Dashboard({ progress, missions, onStart }: DashboardProps): Reac
       </div>
 
       <div className="section-title-row">
-        <h2 className="section-heading">오늘의 추천 문제</h2>
+        <h2 className="section-heading">추천 문제</h2>
         <button className="text-link" onClick={() => navigate('/problems')}>전체 보기 <ArrowRight size={14} /></button>
       </div>
       <div className="recommendation-table">

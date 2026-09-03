@@ -77,7 +77,7 @@ export function Statistics(): ReactElement {
             ))}
           </div>
         ) : (
-          <Empty text="아직 기록된 버그 스킬이 없습니다." />
+          <Empty text="아직 해결한 버그 유형이 없습니다." />
         )}
       </Panel>
     </section>

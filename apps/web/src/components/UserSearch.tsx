@@ -57,9 +57,9 @@ export function UserSearch(): ReactElement {
           maxLength={32}
           aria-label="사용자 이름"
         />
-        <button className="btn primary" type="submit">
-          SEARCH
-        </button>
+          <button className="btn primary" type="submit">
+            검색
+          </button>
       </form>
       {error && (
         <p className="form-error" aria-live="polite">
@@ -85,7 +85,7 @@ export function UserSearch(): ReactElement {
                 onClick={() => void toggleFollow(user)}
               >
                 {user.isFollowing ? <UserMinus /> : <UserPlus />}
-                {user.isFollowing ? '팔로잉' : '팔로우'}
+                {user.isFollowing ? '팔로우 중' : '팔로우'}
               </button>
             )}
           </article>

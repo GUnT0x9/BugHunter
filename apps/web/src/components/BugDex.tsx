@@ -190,7 +190,7 @@ export function BugDex(): ReactElement {
       ) : failed ? (
         <Empty text="문제 도감을 불러오지 못했습니다. 잠시 후 다시 시도해주세요." tone="error" />
       ) : (
-        <Empty text="첫 Mission을 완료하면 문제 카드가 이곳에 수집됩니다." />
+        <Empty text="첫 문제를 완료하면 문제 카드가 이곳에 수집됩니다." />
       )}
     </section>
   );

@@ -161,7 +161,7 @@ export function Profile({ user, progress, onUserUpdated }: ProfileProps): ReactE
           </span>
         </div>
         <Link className="btn primary profile-continue" to="/problems">
-          학습 계속하기 <ArrowRight aria-hidden="true" />
+          계속 풀기 <ArrowRight aria-hidden="true" />
         </Link>
       </header>
 
@@ -220,7 +220,7 @@ export function Profile({ user, progress, onUserUpdated }: ProfileProps): ReactE
           <dd>{summary?.solvedCount ?? 0}</dd>
         </div>
         <div>
-          <dt>제출</dt>
+          <dt>누적 제출</dt>
           <dd>{summary?.totalSubmissions ?? 0}</dd>
         </div>
         <div>

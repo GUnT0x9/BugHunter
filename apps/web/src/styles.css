@@ -3534,6 +3534,16 @@ a.community-avatar {
 .public-profile-stats button:hover {
   background: var(--panel-3);
 }
+.stat-count-btn {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.stat-count-btn:hover {
+  color: var(--green);
+}
 .public-profile-stats dt {
   color: var(--text-faint);
   font: 800 10px var(--mono);

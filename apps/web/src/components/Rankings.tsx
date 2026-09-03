@@ -49,7 +49,7 @@ export function Rankings(): ReactElement {
         {season?.me && (
           <div className="season-my-rank">
             <span>SEASON {season.season.number}</span>
-            <strong>#{season.me.rank}</strong>
+            <strong>{season.me.rank > 0 ? `#${season.me.rank}` : '—'}</strong>
             <small>
               {season.me.earnedStars} 별 · {season.me.solvedCount}문제
             </small>
@@ -183,6 +183,9 @@ function WeeklyPodium({
             </li>
           ))}
         </ol>
+      )}
+      {data.entries.length === 0 && (
+        <p className="weekly-podium-empty">이번 주 기록이 아직 없습니다.</p>
       )}
       {data.entries.length === 1 && (
         <p className="weekly-podium-empty">
