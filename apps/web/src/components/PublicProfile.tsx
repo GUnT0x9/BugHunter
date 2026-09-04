@@ -56,7 +56,8 @@ export function PublicProfile(): ReactElement {
       </section>
     );
 
-  const activeDays = profile.activityDays.filter((day) => day.count > 0).length;
+  const activityDays = profile.activityDays ?? [];
+  const activeDays = activityDays.filter((day) => day.count > 0).length;
   const listedUsers = tab === 'followers' ? follows?.followers : follows?.following;
 
   return (
@@ -139,7 +140,7 @@ export function PublicProfile(): ReactElement {
               최근 12주 · 총 {activeDays}일
             </span>
           </div>
-          <ActivityHeatmap days={profile.activityDays} />
+          <ActivityHeatmap days={activityDays} />
         </section>
 
         <section className="profile-section" aria-labelledby="recent-heading">
