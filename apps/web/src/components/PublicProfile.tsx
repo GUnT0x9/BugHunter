@@ -5,6 +5,7 @@ import type { FollowOverview, PublicProfile as PublicProfileData } from '@bughun
 import { api } from '../lib/api.js';
 import { Empty } from './ui/Empty.js';
 import { ActivityHeatmap } from './ui/ActivityHeatmap.js';
+import { ProgressBar } from './ui/ProgressBar.js';
 
 const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : '요청을 처리하지 못했습니다.';
@@ -78,6 +79,12 @@ export function PublicProfile(): ReactElement {
             LV.{profile.level} · 디버거
           </p>
           <p className="profile-bio">{profile.bio || '아직 자기소개가 없습니다.'}</p>
+          <ProgressBar
+            label="현재 레벨 경험치"
+            value={profile.totalXp % 1000}
+            max={1000}
+            readout={`${(profile.totalXp % 1000).toLocaleString()} / 1,000 XP`}
+          />
           <span className="profile-joined">
             <CalendarDays aria-hidden="true" />
             {dateLabel(profile.joinedAt)} 가입
@@ -105,29 +112,18 @@ export function PublicProfile(): ReactElement {
           <dd>{profile.solvedCount}</dd>
         </div>
         <div>
-          <dt>획득 XP</dt>
-          <dd>{profile.totalXp.toLocaleString()}</dd>
+          <dt>누적 제출</dt>
+          <dd>{profile.totalSubmissions}</dd>
         </div>
         <div>
-          <dt>팔로워</dt>
-          <dd>
-            <button
-              className="stat-count-btn"
-              onClick={() => setTab(tab === 'followers' ? 'activity' : 'followers')}
-            >
-              {profile.followerCount}
-            </button>
-          </dd>
+          <dt>평균 시도</dt>
+          <dd>{profile.averageAttempts}</dd>
         </div>
         <div>
-          <dt>팔로잉</dt>
+          <dt>평균 실행 시간</dt>
           <dd>
-            <button
-              className="stat-count-btn"
-              onClick={() => setTab(tab === 'following' ? 'activity' : 'following')}
-            >
-              {profile.followingCount}
-            </button>
+            {profile.averageExecutionTimeMs}
+            <small>ms</small>
           </dd>
         </div>
       </dl>
@@ -194,22 +190,22 @@ export function PublicProfile(): ReactElement {
         </section>
       )}
 
-      {tab !== 'activity' && (
-        <section className="community-panel public-profile-content">
-          <div className="guide-tabs public-profile-tabs">
-            <button
-              className={tab === 'followers' ? 'active' : ''}
-              onClick={() => setTab('followers')}
-            >
-              팔로워
-            </button>
-            <button
-              className={tab === 'following' ? 'active' : ''}
-              onClick={() => setTab('following')}
-            >
-              팔로잉
-            </button>
-          </div>
+      <section className="community-panel public-profile-content">
+        <div className="guide-tabs public-profile-tabs">
+          <button
+            className={tab === 'followers' ? 'active' : ''}
+            onClick={() => setTab(tab === 'followers' ? 'activity' : 'followers')}
+          >
+            팔로워 {profile.followerCount}
+          </button>
+          <button
+            className={tab === 'following' ? 'active' : ''}
+            onClick={() => setTab(tab === 'following' ? 'activity' : 'following')}
+          >
+            팔로잉 {profile.followingCount}
+          </button>
+        </div>
+        {tab !== 'activity' && (
           <div className="community-user-list">
             {listedUsers?.map((user) => (
               <Link className="community-user-row" to={`/community/users/${user.id}`} key={user.id}>
@@ -227,8 +223,8 @@ export function PublicProfile(): ReactElement {
               <Empty text={`${tab === 'followers' ? '팔로워' : '팔로잉'}가 없습니다.`} />
             )}
           </div>
-        </section>
-      )}
+        )}
+      </section>
     </section>
   );
 }

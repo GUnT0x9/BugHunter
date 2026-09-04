@@ -32,6 +32,11 @@ function setup() {
     deleteFollow: vi.fn(),
     profileCounts: vi.fn(),
     activityDays: vi.fn().mockResolvedValue([]),
+    submissionTotals: vi
+      .fn()
+      .mockResolvedValue({ _count: { _all: 0 }, _avg: { executionTimeMs: null } }),
+    completedCount: vi.fn().mockResolvedValue(0),
+    attemptTotals: vi.fn().mockResolvedValue({ _sum: { attempts: null } }),
     recentPublicActivity: vi.fn(),
     weeklyComparisonUsers: vi.fn(),
     seasonUsers: vi.fn(),

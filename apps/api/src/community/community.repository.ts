@@ -72,6 +72,22 @@ export class CommunityRepository {
       }),
     ]);
   }
+  submissionTotals(userId: string) {
+    return this.prisma.submission.aggregate({
+      where: { userId },
+      _count: { _all: true },
+      _avg: { executionTimeMs: true },
+    });
+  }
+  completedCount(userId: string) {
+    return this.prisma.missionProgress.count({ where: { userId, completedAt: { not: null } } });
+  }
+  attemptTotals(userId: string) {
+    return this.prisma.missionProgress.aggregate({
+      where: { userId },
+      _sum: { attempts: true },
+    });
+  }
   activityDays(userId: string, since: Date) {
     return this.prisma.learningDay.findMany({
       where: { userId, date: { gte: since } },

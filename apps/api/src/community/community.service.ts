@@ -215,23 +215,31 @@ export class CommunityService {
     const since = new Date();
     since.setUTCHours(0, 0, 0, 0);
     since.setUTCDate(since.getUTCDate() - 83);
-    const [user, follows, counts, days, activity, featuredAchievements] = await Promise.all([
-      this.repository.findCommunityUser(userId),
-      this.repository.followsForUser(currentUserId),
-      this.repository.profileCounts(userId),
-      this.repository.activityDays(userId, since),
-      this.repository.recentPublicActivity(userId),
-      this.progress.featuredAchievements(userId),
-    ]);
+    const [user, follows, counts, days, submissionTotals, completedCount, progressTotals, activity, featuredAchievements] =
+      await Promise.all([
+        this.repository.findCommunityUser(userId),
+        this.repository.followsForUser(currentUserId),
+        this.repository.profileCounts(userId),
+        this.repository.activityDays(userId, since),
+        this.repository.submissionTotals(userId),
+        this.repository.completedCount(userId),
+        this.repository.attemptTotals(userId),
+        this.repository.recentPublicActivity(userId),
+        this.progress.featuredAchievements(userId),
+      ]);
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
     if ((user as { role?: string }).role === 'ADMIN') throw new NotFoundException('사용자를 찾을 수 없습니다.');
     const [followerCount, followingCount] = counts;
+    const totalAttempts = progressTotals._sum.attempts ?? 0;
     return {
       ...toCommunityUser(user, currentUserId, follows),
       bio: user.bio,
       joinedAt: user.createdAt.toISOString(),
       followerCount,
       followingCount,
+      totalSubmissions: submissionTotals._count._all,
+      averageAttempts: completedCount ? Number((totalAttempts / completedCount).toFixed(1)) : 0,
+      averageExecutionTimeMs: Math.round(submissionTotals._avg.executionTimeMs ?? 0),
       activityDays: days.map((day) => ({ date: day.date.toISOString().slice(0, 10), count: 1 })),
       featuredAchievements,
       recentActivity: activity.map((item) => ({
