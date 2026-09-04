@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement, type ReactNode } from 'react';
 import { CalendarDays, Clock3, Star, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { RankingResponse } from '@bughunter/contracts';
@@ -13,9 +13,45 @@ const periodLabel = (start: string, end: string) => {
 };
 
 const durationLabel = (seconds: number) => {
+  if (seconds < 60) return `${Math.max(1, Math.round(seconds))}초`;
   const minutes = Math.round(seconds / 60);
   return minutes >= 60 ? `${Math.floor(minutes / 60)}시간 ${minutes % 60}분` : `${minutes}분`;
 };
+
+type PodiumEntry = {
+  id: string;
+  username: string;
+  isSelf: boolean;
+  rank: number;
+  headline: ReactNode;
+  subline: ReactNode;
+};
+
+function PodiumTop({ entries }: { entries: PodiumEntry[] }): ReactElement {
+  const ordered = [entries[1], entries[0], entries[2]].filter(
+    (entry): entry is PodiumEntry => Boolean(entry),
+  );
+  return (
+    <div className="weekly-podium">
+      {ordered.map((entry) => (
+        <Link
+          className={`podium-place place-${entry.rank} ${entry.isSelf ? 'is-me' : ''}`}
+          to={`/community/users/${entry.id}`}
+          key={entry.id}
+        >
+          <span className="podium-rank">#{entry.rank}</span>
+          <span className="podium-avatar">{entry.username.charAt(0).toUpperCase()}</span>
+          <strong>
+            {entry.username} {entry.isSelf && <em>나</em>}
+          </strong>
+          <b>{entry.headline}</b>
+          <span className="podium-stars">{entry.subline}</span>
+          <i />
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 export function Rankings(): ReactElement {
   const [tab, setTab] = useState<RankingTab>('season');
@@ -95,8 +131,29 @@ function SeasonTable({
         </small>
       </header>
       <div className="season-rule">별 → 해결 문제 → 평균 해결 시간 → 3성 → 제출 시도 순</div>
+      {data.entries.length > 0 && (
+        <PodiumTop
+          entries={data.entries.slice(0, 3).map((entry) => ({
+            id: entry.id,
+            username: entry.username,
+            isSelf: entry.isSelf,
+            rank: entry.rank,
+            headline: (
+              <>
+                {entry.earnedStars}
+                <small>별</small>
+              </>
+            ),
+            subline: (
+              <>
+                {entry.solvedCount}문제 · 평균 {durationLabel(entry.averageSolveTimeSeconds)}
+              </>
+            ),
+          }))}
+        />
+      )}
       <ol>
-        {data.entries.map((entry) => (
+        {data.entries.slice(3).map((entry) => (
           <li className={entry.isSelf ? 'is-me' : ''} key={entry.id}>
             <b className={`rank-number rank-${entry.rank}`}>#{entry.rank}</b>
             <Link className="community-avatar" to={`/community/users/${entry.id}`}>
@@ -205,8 +262,31 @@ function AllTimeTable({ data }: { data: RankingResponse }): ReactElement {
         </h2>
         <span>TOP 50</span>
       </div>
+      {data.entries.length > 0 && (
+        <div className="alltime-podium-wrap">
+          <PodiumTop
+            entries={data.entries.slice(0, 3).map((entry) => ({
+              id: entry.id,
+              username: entry.username,
+              isSelf: entry.isSelf,
+              rank: entry.rank,
+              headline: (
+                <>
+                  {entry.totalXp.toLocaleString()}
+                  <small>XP</small>
+                </>
+              ),
+              subline: (
+                <>
+                  LV.{entry.level} · 미션 {entry.solvedCount}개
+                </>
+              ),
+            }))}
+          />
+        </div>
+      )}
       <ol className="ranking-list">
-        {data.entries.map((entry) => (
+        {data.entries.slice(3).map((entry) => (
           <li key={entry.id} className={entry.isSelf ? 'is-me' : ''}>
             <b className={`rank-number rank-${entry.rank}`}>#{entry.rank}</b>
             <Link className="community-avatar" to={`/community/users/${entry.id}`}>

@@ -986,6 +986,9 @@ button:disabled {
 .season-board > header small { display: flex; align-items: center; gap: 5px; color: var(--text-faint); font: 700 10px var(--mono); }
 .season-board > header small svg { width: 13px; }
 .season-rule { padding: 8px 20px; border-bottom: 1px solid var(--border); color: var(--text-faint); font: 700 9px var(--mono); }
+.season-board .weekly-podium { min-height: 230px; padding: 18px 20px 0; }
+.alltime-podium-wrap { padding: 18px 18px 0; border-bottom: 1px solid var(--border); }
+.alltime-podium-wrap .weekly-podium { min-height: 220px; padding: 10px 5% 0; }
 .season-board ol { margin: 0; padding: 0; list-style: none; }
 .season-board li { display: grid; grid-template-columns: 42px 34px minmax(180px, 1fr) 80px 72px 66px; align-items: center; gap: 12px; min-height: 62px; padding: 8px 18px; border-bottom: 1px solid var(--border); }
 .season-board li:last-child { border-bottom: 0; }
