@@ -64,8 +64,12 @@ export class CommunityRepository {
   }
   profileCounts(userId: string) {
     return Promise.all([
-      this.prisma.follow.count({ where: { followingId: userId } }),
-      this.prisma.follow.count({ where: { followerId: userId } }),
+      this.prisma.follow.count({
+        where: { followingId: userId, follower: { role: 'USER' } },
+      }),
+      this.prisma.follow.count({
+        where: { followerId: userId, following: { role: 'USER' } },
+      }),
     ]);
   }
   activityDays(userId: string, since: Date) {
