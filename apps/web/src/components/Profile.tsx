@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useMemo,
   useState,
   type FormEvent,
   type KeyboardEvent,
@@ -11,10 +10,10 @@ import { Link } from 'react-router-dom';
 import type { ProfileSummary, User } from '@bughunter/contracts';
 import { api } from '../lib/api.js';
 import { ProgressBar } from './ui/ProgressBar.js';
+import { ActivityHeatmap } from './ui/ActivityHeatmap.js';
 import type { Progress } from './Shell.js';
 
 type ProfileProps = { user: User; progress: Progress | null; onUserUpdated: (user: User) => void };
-const DAY_MS = 86_400_000;
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : '요청을 처리하지 못했습니다.';
 const dateLabel = (value: string): string =>
@@ -38,16 +37,7 @@ export function Profile({ user, progress, onUserUpdated }: ProfileProps): ReactE
       .catch((error: unknown) => setLoadError(errorMessage(error)));
   }, []);
 
-  const heatmap = useMemo(() => {
-    const counts = new Map(summary?.activityDays.map((day) => [day.date, day.count]) ?? []);
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-    return Array.from({ length: 84 }, (_, index) => {
-      const date = new Date(today.getTime() - (83 - index) * DAY_MS);
-      const key = date.toISOString().slice(0, 10);
-      return { date: key, count: counts.get(key) ?? 0 };
-    });
-  }, [summary]);
+  const activeDays = summary?.activityDays.filter((day) => day.count > 0).length ?? 0;
 
   async function save(event: FormEvent): Promise<void> {
     event.preventDefault();
@@ -170,23 +160,11 @@ export function Profile({ user, progress, onUserUpdated }: ProfileProps): ReactE
         <section className="profile-section" aria-labelledby="activity-heading">
           <div className="profile-section-title">
             <h2 id="activity-heading">학습 기록</h2>
-            <span>최근 12주</span>
+            <span>
+              최근 12주 · 총 {activeDays}일
+            </span>
           </div>
-          <div className="profile-heatmap" aria-label="최근 12주 학습 기록">
-            {heatmap.map((day) => (
-              <span
-                key={day.date}
-                className={day.count ? 'active' : ''}
-                title={`${day.date}: ${day.count ? '학습함' : '학습 없음'}`}
-              />
-            ))}
-          </div>
-          <div className="heatmap-legend">
-            <span>적음</span>
-            <i />
-            <i className="active" />
-            <span>많음</span>
-          </div>
+          <ActivityHeatmap days={summary?.activityDays ?? []} />
         </section>
 
         <section className="profile-section" aria-labelledby="recent-heading">

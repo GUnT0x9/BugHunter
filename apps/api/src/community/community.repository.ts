@@ -68,6 +68,13 @@ export class CommunityRepository {
       this.prisma.follow.count({ where: { followerId: userId } }),
     ]);
   }
+  activityDays(userId: string, since: Date) {
+    return this.prisma.learningDay.findMany({
+      where: { userId, date: { gte: since } },
+      select: { date: true },
+      orderBy: { date: 'asc' },
+    });
+  }
   recentPublicActivity(userId: string) {
     return this.prisma.missionProgress.findMany({
       where: { userId, completedAt: { not: null } },

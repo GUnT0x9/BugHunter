@@ -127,6 +127,7 @@ export const PublicProfileSchema = CommunityUserSchema.extend({
   joinedAt: z.string().datetime(),
   followerCount: z.number().int().nonnegative(),
   followingCount: z.number().int().nonnegative(),
+  activityDays: ProfileSummarySchema.shape.activityDays,
   recentActivity: ProfileSummarySchema.shape.recentActivity,
   featuredAchievements: z.array(
     z.object({

@@ -31,6 +31,7 @@ function setup() {
     createFollow: vi.fn(),
     deleteFollow: vi.fn(),
     profileCounts: vi.fn(),
+    activityDays: vi.fn().mockResolvedValue([]),
     recentPublicActivity: vi.fn(),
     weeklyComparisonUsers: vi.fn(),
     seasonUsers: vi.fn(),
